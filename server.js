@@ -55,6 +55,6 @@ app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.htm
 
 // --- Indítás ---
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
     console.log(`Szerver fut a ${PORT} porton`);
 });
