@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 
-// Fetch támogatás (Node 18+ alatt alapból van, de így a legbiztosabb)
+// Fetch támogatás
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const app = express();
@@ -37,25 +37,26 @@ app.get("/live-matches", async (req, res) => {
     }
 });
 
-// --- HTML ÚTVONALAK (JAVÍTOTT HIBAKEZELÉSSEL) ---
+// --- HTML ÚTVONALAK (NAGYBETŰS FÁJLOKHOZ IGAZÍTVA) ---
 
 app.get("/", (req, res) => {
-    // Próbáld meg a home.html-t (kisbetűvel)
-    const filePath = path.join(__dirname, "home.html");
+    // Itt most már nagy H-val keressük a Home.html-t
+    const filePath = path.join(__dirname, "Home.html");
     res.sendFile(filePath, (err) => {
         if (err) {
             console.error("Hiba a fájl küldésekor:", err.path);
             res.status(404).send(`
                 <h1>Hiba: Fájl nem található</h1>
-                <p>A szerver keresi a fájlt, de nem találja itt: <b>${err.path}</b></p>
-                <p>Ellenőrizd, hogy a GitHubon a fájl neve pontosan <b>home.html</b> (kisbetűvel)!</p>
+                <p>A szerver nagybetűs <b>Home.html</b> fájlt keresett itt: <b>${err.path}</b></p>
+                <p>Ellenőrizd a GitHubon, hogy tényleg nagy <b>H</b>-val van-e!</p>
             `);
         }
     });
 });
 
-app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
-app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
+// Itt is átírtam nagybetűsre a fájlneveket
+app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "Meccsek.html")));
+app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "Elemzes.html")));
 
 // --- SZERVER INDÍTÁS ---
 const PORT = process.env.PORT || 3000;
