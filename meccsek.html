@@ -2,6 +2,7 @@
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LuckyPitch | Matches</title>
     <style>
         :root { --primary: #00ff88; --text: white; --box-bg: rgba(0,0,0,0.7); --btn-bg: #cde1e3; --btn-text: black; }
@@ -19,7 +20,6 @@
 
         .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
         
-        /* NAVIGÁCIÓ JAVÍTÁSA */
         nav { 
             display: flex; 
             justify-content: space-between; 
@@ -37,14 +37,16 @@
         .date-btn { 
             background: transparent; border: 1px solid var(--text); color: var(--text); 
             padding: 10px; border-radius: 8px; cursor: pointer; min-width: 75px; text-align: center; 
+            transition: 0.2s;
         }
-        .date-btn.active { background: var(--btn-bg); color: var(--btn-text); }
+        .date-btn.active { background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-bg); }
+        .date-btn span { font-size: 12px; opacity: 0.8; }
 
         .league-section { background: var(--box-bg); border-radius: 12px; margin-bottom: 25px; overflow: hidden; border: 1px solid var(--text); }
-        .league-header { padding: 15px; background: rgba(255,255,255,0.1); font-weight: bold; }
+        .league-header { padding: 15px; background: rgba(255,255,255,0.1); font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); }
         
         .match-row { 
-            padding: 15px; display: grid; grid-template-columns: 1fr 120px 1fr; 
+            padding: 15px; display: grid; grid-template-columns: 1fr 140px 1fr; 
             align-items: center; border-top: 1px solid rgba(255,255,255,0.1); 
         }
         
@@ -61,7 +63,7 @@
         }
         
         .crest { width: 30px; height: 30px; object-fit: contain; }
-        .team-box { display: flex; align-items: center; gap: 12px; }
+        .team-box { display: flex; align-items: center; gap: 12px; font-size: 14px; }
         .team-box.home { justify-content: flex-end; text-align: right; }
 
         button, .btn-link { 
@@ -78,10 +80,12 @@
             <div class="nav-controls">
                 <button id="theme-btn" onclick="toggleTheme()">☀️</button>
                 <button id="lang-btn" onclick="toggleLang()">EN 🇬🇧</button>
-                <a href="/home" id="back-btn" class="btn-link">← VISSZA</a>
+                <a href="/" id="back-btn" class="btn-link">← VISSZA</a>
             </div>
         </nav>
+        
         <div id="date-selector" class="date-selector"></div>
+        
         <div id="app">Betöltés...</div>
     </div>
 
@@ -126,29 +130,42 @@
                 const data = await res.json();
                 allMatches = data.matches || [];
                 updateUI();
-            } catch (e) { document.getElementById("app").innerText = "Szerver hiba."; }
+            } catch (e) { 
+                document.getElementById("app").innerText = "Szerver hiba az adatok lekérésekor."; 
+            }
         }
 
         function renderAll() {
-            // Dátumválasztó
+            // --- Dátumválasztó generálása (Fix -4 és +4 nap) ---
             const selector = document.getElementById("date-selector");
             selector.innerHTML = "";
-            const todayStr = new Date().toLocaleDateString('sv');
-            const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
+            
+            const today = new Date();
+            const todayStr = today.toLocaleDateString('sv');
 
-            dates.forEach(date => {
-                const d = new Date(date);
-                const label = (date === todayStr) ? translations[currentLang].today : translations[currentLang].days[d.getDay()];
+            for (let i = -4; i <= 4; i++) {
+                const d = new Date();
+                d.setDate(today.getDate() + i);
+                const dateStr = d.toLocaleDateString('sv');
+
+                const label = (dateStr === todayStr) ? translations[currentLang].today : translations[currentLang].days[d.getDay()];
+                
                 const btn = document.createElement("button");
-                btn.className = `date-btn ${date === selectedDate ? 'active' : ''}`;
-                btn.innerHTML = `${label}<br><span>${d.getMonth()+1}.${d.getDate()}</span>`;
-                btn.onclick = () => { selectedDate = date; renderAll(); };
+                btn.className = `date-btn ${dateStr === selectedDate ? 'active' : ''}`;
+                btn.innerHTML = `${label}<br><span>${d.getMonth() + 1}.${d.getDate()}</span>`;
+                
+                btn.onclick = () => { 
+                    selectedDate = dateStr; 
+                    renderAll(); 
+                };
                 selector.appendChild(btn);
-            });
+            }
 
-            // Meccsek listája
+            // --- Meccsek listázása ---
             const app = document.getElementById("app");
             app.innerHTML = "";
+            
+            // Szűrés a kiválasztott napra
             const filtered = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
             
             if (filtered.length === 0) {
@@ -156,29 +173,46 @@
                 return;
             }
 
+            // Csoportosítás ligák szerint
             const leagues = {};
             filtered.forEach(m => {
-                if (!leagues[m.competition.id]) leagues[m.competition.id] = { name: m.competition.name, matches: [] };
+                if (!leagues[m.competition.id]) {
+                    leagues[m.competition.id] = { name: m.competition.name, matches: [] };
+                }
                 leagues[m.competition.id].matches.push(m);
             });
 
             Object.values(leagues).forEach(league => {
                 const div = document.createElement("div");
                 div.className = "league-section";
-                div.innerHTML = `<div class="league-header">${league.name}</div>` + 
-                league.matches.map(m => `
+                
+                let matchesHtml = league.matches.map(m => {
+                    const homeScore = m.score.fullTime.home ?? "-";
+                    const awayScore = m.score.fullTime.away ?? "-";
+                    
+                    return `
                     <div class="match-row">
-                        <div class="team-box home">${m.homeTeam.shortName || m.homeTeam.name} <img src="${m.homeTeam.crest}" class="crest"></div>
+                        <div class="team-box home">
+                            ${m.homeTeam.shortName || m.homeTeam.name} 
+                            <img src="${m.homeTeam.crest}" class="crest" onerror="this.style.display='none'">
+                        </div>
                         <div class="score-box">
-                            <div style="font-size:10px; opacity:0.6;">${m.status}</div>
-                            ${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}
+                            <div style="font-size:10px; opacity:0.6; margin-bottom:4px;">${m.status}</div>
+                            ${homeScore} : ${awayScore}
                             <button class="analyze-btn" onclick="location.href='/elemzes?id=${m.id}'">${translations[currentLang].analyze}</button>
                         </div>
-                        <div class="team-box away"><img src="${m.awayTeam.crest}" class="crest"> ${m.awayTeam.shortName || m.awayTeam.name}</div>
-                    </div>`).join('');
+                        <div class="team-box away">
+                            <img src="${m.awayTeam.crest}" class="crest" onerror="this.style.display='none'"> 
+                            ${m.awayTeam.shortName || m.awayTeam.name}
+                        </div>
+                    </div>`;
+                }).join('');
+
+                div.innerHTML = `<div class="league-header">${league.name}</div>` + matchesHtml;
                 app.appendChild(div);
             });
         }
+
         init();
     </script>
 </body>
