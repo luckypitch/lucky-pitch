@@ -39,27 +39,37 @@ app.get("/live-matches", async (req, res) => {
 
 // --- HTML ÚTVONALAK (NAGYBETŰS FÁJLOKHOZ IGAZÍTVA) ---
 
-app.get("/", (req, res) => {
-    // Itt most már nagy H-val keressük a Home.html-t
-    const filePath = path.join(__dirname, "Home.html");
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            console.error("Hiba a fájl küldésekor:", err.path);
-            res.status(404).send(`
-                <h1>Hiba: Fájl nem található</h1>
-                <p>A szerver nagybetűs <b>Home.html</b> fájlt keresett itt: <b>${err.path}</b></p>
-                <p>Ellenőrizd a GitHubon, hogy tényleg nagy <b>H</b>-val van-e!</p>
-            `);
-        }
+// --- HTML ÚTVONALAK (MINDENRE FELKÉSZÍTVE) ---
+
+// FŐOLDAL
+app.get(["/", "/home", "/Home"], (req, res) => {
+    // Megpróbálja a nagybetűset, ha nem találja, a kisbetűset
+    res.sendFile(path.join(__dirname, "Home.html"), (err) => {
+        if (err) res.sendFile(path.join(__dirname, "home.html"));
     });
 });
 
-// Itt is átírtam nagybetűsre a fájlneveket
-app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "Meccsek.html")));
-app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "Elemzes.html")));
+// MECCSEK OLDAL
+app.get(["/meccsek", "/Meccsek"], (req, res) => {
+    res.sendFile(path.join(__dirname, "Meccsek.html"), (err) => {
+        if (err) res.sendFile(path.join(__dirname, "meccsek.html"), (err2) => {
+            if (err2) res.status(404).send("Hiba: Sem Meccsek.html, sem meccsek.html nem található a GitHubon!");
+        });
+    });
+});
+
+// ELEMZÉS OLDAL
+app.get(["/elemzes", "/Elemzes"], (req, res) => {
+    res.sendFile(path.join(__dirname, "Elemzes.html"), (err) => {
+        if (err) res.sendFile(path.join(__dirname, "elemzes.html"), (err2) => {
+            if (err2) res.status(404).send("Hiba: Sem Elemzes.html, sem elemzes.html nem található!");
+        });
+    });
+});
 
 // --- SZERVER INDÍTÁS ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Szerver fut a ${PORT} porton.`);
 });
+
