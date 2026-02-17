@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuckyPitch</title>
+
+    <style>
+        /* =========================
+           THEME VARIABLES
+        ========================= */
+        :root{
+            --text: white;
+            --box-bg: rgba(0,0,0,0.7);
+            --btn-bg: #cde1e3;
+            --btn-text: black;
+        }
+
+        body.light{
+            --text: #111;
+            --box-bg: rgba(255,255,255,0.85);
+            --btn-bg: #111;
+            --btn-text: white;
+        }
+
+        /* =========================
+           BASE
+        ========================= */
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body{
+            min-height:100vh;
+            background: url("Foci.jpg") center/cover no-repeat fixed;
+            color:var(--text);
+            transition: 0.3s ease;
+        }
+
+        body.light {
+            background: url("Focivil.jpeg") center/cover no-repeat fixed;
+        }
+
+        /* =========================
+           NAVBAR
+        ========================= */
+        nav{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:25px 60px;
+        }
+
+        .logo{
+            font-size:20px;
+            font-weight:bold;
+        }
+
+        .nav-buttons{
+            display:flex;
+            gap:10px;
+            align-items: center;
+        }
+
+        button, .btn-link {
+            border:none;
+            padding:10px 18px;
+            border-radius:6px;
+            cursor:pointer;
+            font-weight:bold;
+            background:var(--btn-bg);
+            color:var(--btn-text);
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.2s;
+        }
+
+        /* =========================
+           HERO
+        ========================= */
+        .hero{
+            min-height:80vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            padding:20px;
+        }
+
+        .box{
+            border:2px solid var(--text);
+            padding:60px;
+            max-width:750px;
+            text-align:center;
+            background:var(--box-bg);
+            backdrop-filter: blur(6px);
+            border-radius:12px;
+        }
+
+        h1{
+            font-size:48px;
+            margin-bottom:20px;
+        }
+
+        .kiemelt{
+            font-weight:bold;
+        }
+
+        p{
+            line-height:1.7;
+            margin-bottom:20px;
+        }
+
+        .divider{
+            border-top:1px solid var(--text);
+            margin:25px 0;
+        }
+
+        .btn-main {
+            margin-top:20px;
+            padding:14px 40px;
+            font-size:18px;
+        }
+
+        .fb-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #4e7cff, #1b2c5a);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: 0.3s;
+        }
+
+        .fb-link:hover { transform: scale(1.1); }
+
+        @media (max-width:768px){
+            nav{ padding:20px; }
+            h1{ font-size:32px; }
+            .box{ padding:30px 20px; }
+        }
+    </style>
+</head>
+
+<body>
+
+<nav>
+    <div class="logo">LuckyPitch</div>
+
+    <div class="nav-buttons">
+        <button id="mod-btn" onclick="toggleTheme()">🌙</button>
+        <button id="lang-toggle-btn" onclick="toggleLang()">HU 🇭🇺</button>
+        <a href="https://www.facebook.com/profile.php?id=61588443053104" target="_blank" class="fb-link">
+            <img id="facebook-img" src="facebook-1.png" style="width:25px">
+        </a>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="box">
+        <h1 id="title">Let the wins Begin</h1>
+
+        <p id="kiemelt" class="kiemelt">
+            Where passion meets precision — and every decision counts.
+        </p>
+
+        <p id="text1">
+            At LuckyPitch, we believe winning isn’t just about luck — it’s about smart thinking, sharp strategy, and the courage to trust your instincts.
+        </p>
+
+        <div class="divider"></div>
+
+        <p id="text2">
+            This is where insight meets opportunity. This is where the game changes. Play smarter. Think sharper. Win bigger.
+        </p>
+
+        <a href="/meccsek" id="cta-link" class="btn-link btn-main">Matches</a>
+    </div>
+</section>
+
+<script>
+const translations = {
+    hu: {
+        title: "Kezdődjenek a Győzelmek",
+        kiemelt: "Ahol a szenvedély találkozik a precizitással — és minden döntés számít.",
+        text1: "A LuckyPitchnél hisszük, hogy a győzelem nem csupán szerencse kérdése — hanem okos gondolkodásé, éles stratégiáé és annak a bátorságáé, hogy bízz az ösztöneidben.",
+        text2: "Itt az éleslátás találkozik a lehetőséggel. Itt változik meg a játék. Játssz okosabban. Gondolkodj élesebben. Nyerj nagyobbat.",
+        cta: "Meccsek",
+        langBtn: "EN 🇬🇧"
+    },
+    en: {
+        title: "Let the Wins Begin",
+        kiemelt: "Where passion meets precision — and every decision counts.",
+        text1: "At LuckyPitch, we believe winning isn't just about luck — it's about smart thinking, sharp strategy, and the courage to trust your instincts.",
+        text2: "Insight meets opportunity. This is where the game changes. Play smarter. Think sharper. Win bigger.",
+        cta: "Matches",
+        langBtn: "HU 🇭🇺"
+    }
+};
+
+function updateUI() {
+    const lang = localStorage.getItem("lang") || "en";
+    const theme = localStorage.getItem("theme") || "dark";
+    const data = translations[lang];
+
+    document.getElementById("title").innerText = data.title;
+    document.getElementById("kiemelt").innerText = data.kiemelt;
+    document.getElementById("text1").innerText = data.text1;
+    document.getElementById("text2").innerText = data.text2;
+    document.getElementById("cta-link").innerText = data.cta;
+    document.getElementById("lang-toggle-btn").innerText = data.langBtn;
+
+    if (theme === "light") {
+        document.body.classList.add("light");
+        document.getElementById("mod-btn").innerText = "🌙";
+    } else {
+        document.body.classList.remove("light");
+        document.getElementById("mod-btn").innerText = "☀️";
+    }
+}
+
+function toggleLang() {
+    const currentLang = localStorage.getItem("lang") || "en";
+    localStorage.setItem("lang", (currentLang === "en") ? "hu" : "en");
+    updateUI();
+}
+
+function toggleTheme() {
+    const currentTheme = localStorage.getItem("theme") || "dark";
+    localStorage.setItem("theme", (currentTheme === "dark") ? "light" : "dark");
+    updateUI();
+}
+
+document.addEventListener("DOMContentLoaded", updateUI);
+</script>
+
+</body>
+</html>
