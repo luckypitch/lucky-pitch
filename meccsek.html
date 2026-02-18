@@ -3,39 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuckyPitch | Live & Table</title>
+    <title>LuckyPitch | Meccsek</title>
     <style>
         :root { 
             --primary: #00ff88; --text: #fff; --bg: #0d0d0d; 
-            --box: rgba(255,255,255,0.05); --live: #ff4444; --btn-bg: #cde1e3;
+            --box: rgba(255,255,255,0.07); --live: #ff4444; 
         }
-        body.light { 
-            --text: #111; --bg: #f4f7f6; --box: rgba(0,0,0,0.05); --btn-bg: #111; 
-        }
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+        body.light { --text: #111; --bg: #f4f7f6; --box: rgba(0,0,0,0.07); }
+        
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
         body { background: var(--bg); color: var(--text); transition: 0.3s; padding-bottom: 50px; }
+        
         .container { max-width: 900px; margin: 0 auto; padding: 20px; }
         
-        nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .nav-btns { display: flex; gap: 10px; align-items: center; }
-
-        .league-card { background: var(--box); border-radius: 20px; margin-bottom: 25px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
-        .league-header { padding: 15px 20px; background: rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; }
+        nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--box); padding-bottom: 15px; }
         
-        .match-row { display: grid; grid-template-columns: 1fr 140px 1fr; align-items: center; padding: 20px; border-top: 1px solid rgba(255,255,255,0.03); }
+        .league-card { background: var(--box); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+        .league-header { padding: 12px 20px; background: rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: var(--primary); }
+        
+        .match-row { display: grid; grid-template-columns: 1fr 140px 1fr; align-items: center; padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.03); }
+        
         .score-box { text-align: center; }
-        .score-num { font-size: 24px; color: var(--primary); font-weight: 800; }
+        .score-num { font-size: 24px; color: var(--primary); font-weight: 800; letter-spacing: 2px; }
+        .live-score { color: var(--live) !important; animation: scorePulse 1.5s infinite; }
         
-        /* VIBRÁLÓ PIROS ÉLŐ EREDMÉNY */
-        .live-score { color: var(--live) !important; animation: scorePulse 1.5s infinite; text-shadow: 0 0 10px rgba(255,68,68,0.4); }
         @keyframes scorePulse { 0% { opacity:1; transform:scale(1); } 50% { opacity:0.7; transform:scale(1.05); } 100% { opacity:1; transform:scale(1); } }
 
-        .status { font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; display: block; }
-        .status.live { color: var(--live); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%{opacity:1;} 50%{opacity:0.4;} 100%{opacity:1;} }
+        .status { font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; display: block; opacity: 0.8; }
+        .status.live { color: var(--live); opacity: 1; }
 
-        .btn-sm { background: var(--primary); color: #000; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 10px; font-weight: bold; }
-        .icon-btn { background: var(--box); color: var(--text); border: none; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; }
+        .btn-sm { background: var(--primary); color: #000; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; margin-top: 5px; }
+        
+        .crest { width: 28px; height: 28px; object-fit: contain; vertical-align: middle; }
+        .team-box { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+        .home { justify-content: flex-end; text-align: right; }
+        
+        .empty-msg { text-align: center; padding: 100px 20px; opacity: 0.6; font-style: italic; }
+        
+        /* Debug info */
+        #debug-log { font-size: 10px; color: gray; margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <h1 style="color: var(--primary);">LUCKYPITCH</h1>
+            <a href="/" style="color:var(--text); text-decoration:none; font-weight:bold;">← VISSZA</a>
+        </nav>
 
-        .table-container { display: none; padding: 20px; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.05); }
-        .standing-
+        <div id="content">
+            <div class="empty-msg">Adatok lekérése a szervertől...</div>
+        </div>
+
+        <div id="debug-log"></div>
+    </div>
+
+    <script>
+        let allMatches = [];
+
+        async function updateData() {
+            const log = document.getElementById("debug-log");
+            try {
+                log.innerText = "Frissítés: " + new Date().toLocaleTimeString();
+                const res = await fetch("/live-matches?t=" + Date.now());
+                
+                if (!res.ok) throw new Error("Szerver hiba: " + res.status);
+                
+                const data = await res.json();
+                
+                // Ellenőrizzük, hogy van-e adat
+                if (!data || !data.matches) {
+                    document.getElementById("content").innerHTML = "<div class='empty-msg'>Nincs elérhető adat az API-tól.</div>";
+                    return;
+                }
+
+                allMatches = data.matches;
+                render();
+            } catch (e) {
+                console.error(e);
+                document.getElementById("content").innerHTML = "<div class='empty-msg'>Hiba történt: " + e.message + "</div>";
+            }
+        }
+
+        function getMatchTime(m) {
+            if (m.status === "FINISHED") return "VÉGE";
+            if (m.status === "PAUSED") return "SZÜNET";
+            if (m.status === "IN_PLAY") {
+                const diff = Math.floor((new Date() - new Date(m.utcDate)) / 60000);
+                const corrected = diff > 60 ? diff - 15 : diff;
+                return (corrected > 0 ? corrected : 1) + "'";
+            }
+            // Ha még nem kezdődött el, a kezdési időt mutatjuk
+            return new Date(m.utcDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function render() {
+            const container = document.getElementById("content");
+            if (allMatches.length === 0) {
+                container.innerHTML = "<div class='empty-msg'>Jelenleg nincsenek mérkőzések a kiválasztott ligákban.</div>";
+                return;
+            }
+
+            const leagues = {};
+            allMatches.forEach(m => {
+                if (!leagues[m.competition.id]) {
+                    leagues[m.competition.id] = { name: m.competition.name, matches: [] };
+                }
+                leagues[m.competition.id].matches.push(m);
+            });
+
+            let html = "";
+            for (let id in leagues) {
+                html += `
+                <div class="league-card">
+                    <div class="league-header">
+                        <span>${leagues[id].name}</span>
+                    </div>
+                    ${leagues[id].matches.map(m => {
+                        const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
+                        const scoreHome = m.score.fullTime.home ?? 0;
+                        const scoreAway = m.score.fullTime.away ?? 0;
+                        
+                        return `
+                        <div class="match-row">
+                            <div class="team-box home">
+                                ${m.homeTeam.shortName || m.homeTeam.name} 
+                                <img src="${m.homeTeam.crest}" class="crest" onerror="this.style.display='none'">
+                            </div>
+                            <div class="score-box">
+                                <span class="status ${m.status === 'IN_PLAY' ? 'live' : ''}">${getMatchTime(m)}</span>
+                                <span class="score-num ${m.status === 'IN_PLAY' ? 'live-score' : ''}">${scoreHome}:${scoreAway}</span>
+                                <button class="btn-sm" onclick="location.href='/elemzes?id=${m.id}'">ELEMZÉS</button>
+                            </div>
+                            <div class="team-box away">
+                                <img src="${m.awayTeam.crest}" class="crest" onerror="this.style.display='none'"> 
+                                ${m.awayTeam.shortName || m.awayTeam.name}
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // Indítás
+        updateData();
+        // 30 másodpercenként frissít
+        setInterval(updateData, 30000);
+    </script>
+</body>
+</html>
