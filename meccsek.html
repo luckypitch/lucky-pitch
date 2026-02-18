@@ -38,7 +38,6 @@
         nav { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; }
         .nav-right { display: flex; gap: 12px; }
 
-        /* Dátum választó */
         .date-selector { 
             display: flex; gap: 10px; margin-bottom: 30px; padding: 15px; 
             background: var(--box-bg); border-radius: 16px; overflow-x: auto;
@@ -52,36 +51,45 @@
         }
         .date-btn.active { background: var(--btn-bg); color: var(--btn-text); border-color: var(--primary); font-weight: bold; }
 
-        /* Liga szekció */
         .league-section { background: var(--box-bg); border-radius: 20px; margin-bottom: 25px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
         .league-header { padding: 15px 20px; background: rgba(255,255,255,0.03); font-weight: bold; font-size: 14px; color: var(--primary); letter-spacing: 1px; }
         
-        /* Meccs sor */
         .match-row { 
             padding: 20px; display: grid; grid-template-columns: 1fr 140px 1fr; 
             align-items: center; border-top: 1px solid rgba(255,255,255,0.03);
-            transition: background 0.2s;
         }
-        .match-row:hover { background: rgba(255,255,255,0.02); }
         
         .score-box { text-align: center; }
+        
+        /* ALAP PONTSZÁM STÍLUS */
         .score-num { font-size: 24px; color: var(--primary); font-weight: 800; letter-spacing: 2px; }
+
+        /* ÉLŐ VIBRÁLÓ PONTSZÁM STÍLUS */
+        .live-score {
+            color: var(--live) !important;
+            animation: scorePulse 1.5s infinite;
+            text-shadow: 0 0 10px rgba(255, 68, 68, 0.4);
+        }
+
+        @keyframes scorePulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
 
         .status-tag { font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; display: block; }
         .status-tag.live { color: var(--live); animation: pulse 1.5s infinite; }
 
-        /* Gombok */
         .analyze-btn { 
             width: 100%; margin-top: 12px; padding: 8px; font-size: 11px; 
             background: var(--primary); color: #000; border: none; 
-            border-radius: 8px; cursor: pointer; font-weight: 800; transition: transform 0.2s;
+            border-radius: 8px; cursor: pointer; font-weight: 800;
         }
-        .analyze-btn:hover { transform: scale(1.05); }
         
         .icon-btn { 
             background: var(--box-bg); color: var(--text); border: none; 
             width: 40px; height: 40px; border-radius: 12px; cursor: pointer; 
-            font-size: 18px; display: flex; align-items: center; justify-content: center;
+            display: flex; align-items: center; justify-content: center;
         }
 
         .crest { width: 35px; height: 35px; object-fit: contain; }
@@ -110,8 +118,8 @@
 
     <script>
         const translations = {
-            hu: { back: "← VISSZA", analyze: "ELEMZÉS", ft: "VÉGE", ht: "SZÜNET", today: "MA", empty: "Nincs mérkőzés ezen a napon." },
-            en: { back: "← BACK", analyze: "ANALYZE", ft: "FT", ht: "HT", today: "TODAY", empty: "No matches for this day." }
+            hu: { back: "← VISSZA", analyze: "ELEMZÉS", ft: "VÉGE", ht: "SZÜNET", today: "MA", empty: "Nincs mérkőzés." },
+            en: { back: "← BACK", analyze: "ANALYZE", ft: "FT", ht: "HT", today: "TODAY", empty: "No matches." }
         };
 
         let currentLang = localStorage.getItem("lang") || "hu";
@@ -144,7 +152,6 @@
         }
 
         function renderUI() {
-            // Szövegek frissítése
             document.getElementById("lang-btn").innerText = currentLang.toUpperCase();
             document.getElementById("back-txt").innerText = translations[currentLang].back;
 
@@ -160,15 +167,6 @@
                     selector.appendChild(btn);
                 });
             }
-
-            // Gombok aktív állapotának frissítése
-            document.querySelectorAll('.date-btn').forEach(btn => {
-                const btnDate = allMatches.find(m => {
-                    const isToday = m.utcDate.split('T')[0] === new Date().toISOString().split('T')[0];
-                    return (isToday ? translations[currentLang].today : m.utcDate.substring(5, 10).replace('-', '.')) === btn.innerText;
-                });
-                btn.classList.toggle('active', btn.innerText.includes(selectedDate.substring(5).replace('-', '.')) || (btn.innerText === translations[currentLang].today && selectedDate === new Date().toISOString().split('T')[0]));
-            });
 
             const container = document.getElementById("app-content");
             const filtered = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
@@ -189,17 +187,19 @@
                 html += `
                 <div class="league-section">
                     <div class="league-header">${league.toUpperCase()}</div>
-                    ${leagueMap[league].map(m => `
+                    ${leagueMap[league].map(m => {
+                        const isLive = m.status === 'IN_PLAY';
+                        return `
                         <div class="match-row">
                             <div class="team-box home">${m.homeTeam.shortName || m.homeTeam.name} <img src="${m.homeTeam.crest}" class="crest"></div>
                             <div class="score-box">
-                                <span class="status-tag ${m.status === 'IN_PLAY' ? 'live' : ''}">${getMatchDisplayTime(m)}</span>
-                                <span class="score-num">${m.score.fullTime.home ?? 0}:${m.score.fullTime.away ?? 0}</span>
+                                <span class="status-tag ${isLive ? 'live' : ''}">${getMatchDisplayTime(m)}</span>
+                                <span class="score-num ${isLive ? 'live-score' : ''}">${m.score.fullTime.home ?? 0}:${m.score.fullTime.away ?? 0}</span>
                                 <button class="analyze-btn" onclick="location.href='/elemzes?id=${m.id}'">${translations[currentLang].analyze}</button>
                             </div>
                             <div class="team-box away"><img src="${m.awayTeam.crest}" class="crest"> ${m.awayTeam.shortName || m.awayTeam.name}</div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>`;
             }
             container.innerHTML = html;
@@ -218,9 +218,7 @@
             renderUI();
         }
 
-        // Alapértelmezett téma betöltése
         if (localStorage.getItem("theme") === "light") toggleTheme();
-
         fetchData();
         setInterval(fetchData, 20000);
     </script>
