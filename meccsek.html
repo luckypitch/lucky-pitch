@@ -5,132 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LuckyPitch | Live & Table</title>
     <style>
-        :root { --primary: #00ff88; --text: #fff; --bg: #0d0d0d; --box: rgba(255,255,255,0.05); --live: #ff4444; }
+        :root { 
+            --primary: #00ff88; --text: #fff; --bg: #0d0d0d; 
+            --box: rgba(255,255,255,0.05); --live: #ff4444; --btn-bg: #cde1e3;
+        }
+        body.light { 
+            --text: #111; --bg: #f4f7f6; --box: rgba(0,0,0,0.05); --btn-bg: #111; 
+        }
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
-        body { background: var(--bg); color: var(--text); padding-bottom: 50px; }
+        body { background: var(--bg); color: var(--text); transition: 0.3s; padding-bottom: 50px; }
         .container { max-width: 900px; margin: 0 auto; padding: 20px; }
         
-        nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .league-card { background: var(--box); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
-        .league-header { padding: 15px; background: rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .nav-btns { display: flex; gap: 10px; align-items: center; }
+
+        .league-card { background: var(--box); border-radius: 20px; margin-bottom: 25px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+        .league-header { padding: 15px 20px; background: rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; }
         
-        .match-row { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: center; padding: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .match-row { display: grid; grid-template-columns: 1fr 140px 1fr; align-items: center; padding: 20px; border-top: 1px solid rgba(255,255,255,0.03); }
         .score-box { text-align: center; }
-        .score-num { font-size: 22px; color: var(--primary); font-weight: 800; display: block; }
-        .score-num.live { color: var(--live); animation: blink 1.5s infinite; }
+        .score-num { font-size: 24px; color: var(--primary); font-weight: 800; }
         
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        /* VIBRÁLÓ PIROS ÉLŐ EREDMÉNY */
+        .live-score { color: var(--live) !important; animation: scorePulse 1.5s infinite; text-shadow: 0 0 10px rgba(255,68,68,0.4); }
+        @keyframes scorePulse { 0% { opacity:1; transform:scale(1); } 50% { opacity:0.7; transform:scale(1.05); } 100% { opacity:1; transform:scale(1); } }
 
-        .btn { background: var(--primary); color: #000; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: bold; }
-        .table-container { display: none; padding: 15px; background: #151515; font-size: 12px; }
-        .standing-table { width: 100%; border-collapse: collapse; }
-        .standing-table th { text-align: left; opacity: 0.6; padding-bottom: 10px; }
-        .standing-table td { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .status { font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .status.live { color: var(--live); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%{opacity:1;} 50%{opacity:0.4;} 100%{opacity:1;} }
 
-        .crest { width: 20px; height: 20px; vertical-align: middle; margin-right: 8px; }
-        .status { font-size: 10px; text-transform: uppercase; font-weight: bold; }
-        .status.live { color: var(--live); }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <nav>
-            <h1 style="color: var(--primary)">LUCKYPITCH</h1>
-            <a href="/" style="color:#fff; text-decoration:none">← VISSZA</a>
-        </nav>
-        <div id="content">Betöltés...</div>
-    </div>
+        .btn-sm { background: var(--primary); color: #000; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 10px; font-weight: bold; }
+        .icon-btn { background: var(--box); color: var(--text); border: none; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; }
 
-    <script>
-        let allMatches = [];
-
-        async function updateAll() {
-            try {
-                const res = await fetch("/live-matches");
-                const data = await res.json();
-                allMatches = data.matches || [];
-                render();
-            } catch (e) { console.error("Hiba az automata frissítésnél"); }
-        }
-
-        async function toggleTable(leagueId, containerId) {
-            const container = document.getElementById(containerId);
-            if (container.style.display === "block") {
-                container.style.display = "none";
-                return;
-            }
-
-            container.innerHTML = "Tabella betöltése...";
-            container.style.display = "block";
-
-            try {
-                const res = await fetch(`/standings/${leagueId}`);
-                const data = await res.json();
-                const table = data.standings[0].table;
-
-                let html = `<table class="standing-table">
-                    <tr><th>#</th><th>Csapat</th><th>M</th><th>P</th></tr>`;
-                table.forEach(t => {
-                    html += `<tr>
-                        <td>${t.position}</td>
-                        <td><img src="${t.team.crest}" class="crest">${t.team.shortName}</td>
-                        <td>${t.playedGames}</td>
-                        <td style="color:var(--primary)">${t.points}</td>
-                    </tr>`;
-                });
-                html += `</table>`;
-                container.innerHTML = html;
-            } catch (e) { container.innerHTML = "Hiba a betöltéskor."; }
-        }
-
-        function getMatchTime(m) {
-            if (m.status === "FINISHED") return "VÉGE";
-            if (m.status === "PAUSED") return "SZÜNET";
-            if (m.status === "IN_PLAY") {
-                const diff = Math.floor((new Date() - new Date(m.utcDate)) / 60000);
-                return (diff > 60 ? diff - 15 : diff) + "'";
-            }
-            return m.utcDate.split('T')[1].substring(0, 5);
-        }
-
-        function render() {
-            const container = document.getElementById("content");
-            const leagues = {};
-            
-            allMatches.forEach(m => {
-                if (!leagues[m.competition.id]) leagues[m.competition.id] = { name: m.competition.name, matches: [] };
-                leagues[m.competition.id].matches.push(m);
-            });
-
-            let html = "";
-            for (let id in leagues) {
-                const L = leagues[id];
-                html += `
-                <div class="league-card">
-                    <div class="league-header">
-                        <span>${L.name}</span>
-                        <button class="btn" onclick="toggleTable(${id}, 'table-${id}')">TABELLA</button>
-                    </div>
-                    <div id="table-${id}" class="table-container"></div>
-                    ${L.matches.map(m => `
-                        <div class="match-row">
-                            <div style="text-align:right">${m.homeTeam.shortName} <img src="${m.homeTeam.crest}" class="crest" style="margin:0 0 0 8px"></div>
-                            <div class="score-box">
-                                <div class="status ${m.status==='IN_PLAY'?'live':''}">${getMatchTime(m)}</div>
-                                <div class="score-num ${m.status==='IN_PLAY'?'live':''}">${m.score.fullTime.home??0}:${m.score.fullTime.away??0}</div>
-                            </div>
-                            <div><img src="${m.awayTeam.crest}" class="crest">${m.awayTeam.shortName}</div>
-                        </div>
-                    `).join('')}
-                </div>`;
-            }
-            container.innerHTML = html || "Nincs aktuális meccs.";
-        }
-
-        // Első hívás
-        updateAll();
-        // AUTOMATA FRISSÍTÉS: 30 másodpercenként meghívja a funkciót
-        setInterval(updateAll, 30000);
-    </script>
-</body>
-</html>
+        .table-container { display: none; padding: 20px; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.05); }
+        .standing-
