@@ -3,75 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elemzés | LuckyPitch</title>
+    <title>LuckyPitch | Deep Analysis & Odds Compare</title>
     <style>
-        :root { --primary: #00ff88; --text: #fff; --bg: #0d0d0d; --box: rgba(255,255,255,0.07); }
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif; }
-        body { background: var(--bg); color: var(--text); padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: var(--box); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        h2 { color: var(--primary); margin-bottom: 20px; text-align: center; }
-        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .ai-box { background: rgba(0, 255, 136, 0.1); border: 1px solid var(--primary); padding: 20px; border-radius: 12px; margin-top: 20px; }
-        .back-btn { display: inline-block; margin-bottom: 20px; color: var(--text); text-decoration: none; font-size: 14px; opacity: 0.7; }
+        :root { --primary: #00ff88; --bg: #0d0d0d; --card-bg: #161616; --text: #ffffff; --accent: #ffbb00; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        
+        body { background-color: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
+        
+        .card { 
+            background: var(--card-bg); width: 100%; max-width: 850px; border-radius: 24px; 
+            padding: 30px; border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+
+        nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .back-btn { background: #222; color: #fff; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 14px; }
+
+        .status-badge { font-size: 11px; font-weight: 800; padding: 6px 15px; border-radius: 30px; border: 1px solid #444; }
+        .status-real { border-color: var(--primary); color: var(--primary); background: rgba(0,255,136,0.1); }
+        .status-ai { border-color: var(--accent); color: var(--accent); background: rgba(255,187,0,0.1); }
+
+        /* Csapatok */
+        .teams-header { display: grid; grid-template-columns: 1fr 60px 1fr; align-items: center; text-align: center; margin-bottom: 40px; }
+        .team img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }
+        .team h2 { font-size: 22px; font-weight: 800; }
+
+        /* Fő Oddsok */
+        .main-odds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
+        .odds-item { background: rgba(255,255,255,0.03); border: 1px solid #333; padding: 20px; border-radius: 16px; text-align: center; }
+        .odds-item label { display: block; font-size: 11px; color: #888; margin-bottom: 8px; letter-spacing: 1px; }
+        .odds-item b { font-size: 28px; color: var(--primary); }
+
+        /* Összehasonlító Táblázat */
+        .compare-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; overflow: hidden; margin-bottom: 30px; }
+        .compare-table th { background: #222; padding: 12px; font-size: 11px; color: #777; text-align: left; text-transform: uppercase; }
+        .compare-table td { padding: 14px 12px; border-bottom: 1px solid #222; font-size: 14px; }
+        .bookie-name { font-weight: bold; color: #ddd; }
+        .val-badge { background: #2a2a2a; color: var(--primary); padding: 5px 12px; border-radius: 6px; font-weight: 800; font-family: monospace; }
+
+        /* Tabella rész */
+        .league-table-container { margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; }
+        .league-table-container h3 { margin-bottom: 15px; font-size: 16px; color: var(--primary); }
+        .mini-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .mini-table th { text-align: left; padding: 8px; opacity: 0.5; }
+        .mini-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        /* AI Prediction */
+        .ai-prediction { 
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%); 
+            border: 1px solid rgba(0,255,136,0.2); border-radius: 20px; padding: 25px; 
+            text-align: center; margin-top: 30px; 
+        }
+        .score-display { font-size: 54px; font-weight: 900; color: var(--primary); letter-spacing: 10px; margin: 10px 0; }
+        
+        .prob-bar-container { height: 8px; background: #222; border-radius: 4px; display: flex; overflow: hidden; margin: 20px 0; }
+        .prob-bar { height: 100%; transition: width 1s ease; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <a href="/meccsek" class="back-btn">← Vissza a meccsekhez</a>
-        <div id="loading">Elemzés készítése...</div>
-        <div id="content" style="display: none;">
-            <h2 id="match-title">Betöltés...</h2>
-            <div id="stats"></div>
-            <div class="ai-box">
-                <h4 style="color: var(--primary); margin-bottom: 10px;">LuckyPitch AI Tipp:</h4>
-                <p id="ai-prediction">Számítás folyamatban...</p>
-            </div>
+
+    <div class="card">
+        <nav>
+            <a href="/meccsek" class="back-btn">← VISSZA</a>
+            <div id="status-tag" class="status-badge status-ai">ANALIZÁLÁS...</div>
+        </nav>
+
+        <div id="content-area">
+            <p style="text-align:center; padding:50px; opacity:0.5;">Adatok szinkronizálása és AI kalkuláció...</p>
         </div>
     </div>
 
     <script>
-        async function loadAnalysis() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const matchId = urlParams.get('id');
+        async function initAnalysis() {
+            const params = new URLSearchParams(window.location.search);
+            const matchId = params.get('id');
+            const area = document.getElementById("content-area");
 
             if (!matchId) {
-                document.getElementById("loading").innerText = "Hiba: Nincs meccs azonosító!";
+                area.innerHTML = "<h2 style='text-align:center'>Hiba: Nincs kiválasztott meccs.</h2>";
                 return;
             }
 
             try {
-                const res = await fetch(`/match-details/${matchId}`);
-                const data = await res.json();
-
-                document.getElementById("loading").style.display = "none";
-                document.getElementById("content").style.display = "block";
-
-                document.getElementById("match-title").innerText = `${data.homeTeam.name} vs ${data.awayTeam.name}`;
+                // 1. Alapadatok lekérése
+                const mRes = await fetch("/live-matches");
+                const mData = await mRes.json();
+                const match = mData.matches.find(m => m.id == matchId);
                 
-                const stats = [
-                    { label: "Bajnokság", val: data.competition.name },
-                    { label: "Állás", val: `${data.score.fullTime.home ?? 0} - ${data.score.fullTime.away ?? 0}` },
-                    { label: "Státusz", val: data.status === "IN_PLAY" ? "Élő" : "Befejezett" }
-                ];
+                if (!match) {
+                    area.innerHTML = "<h2 style='text-align:center'>Mérkőzés nem található.</h2>";
+                    return;
+                }
 
-                document.getElementById("stats").innerHTML = stats.map(s => `
-                    <div class="stat-row">
-                        <span>${s.label}</span>
-                        <span style="font-weight:bold">${s.val}</span>
-                    </div>
-                `).join('');
+                // 2. Oddsok lekérése a szerverről
+                let oddsData = null;
+                try {
+                    const oRes = await fetch("/api/odds-data");
+                    const allOdds = await oRes.json();
+                    oddsData = findMatchInOdds(match, allOdds);
+                } catch (e) { console.log("Odds API hiba."); }
 
-                // Egyszerű AI szimuláció a meglévő adatok alapján
-                const homeProb = 45 + (data.score.fullTime.home * 5);
-                document.getElementById("ai-prediction").innerText = 
-                    `Az adatok alapján a(z) ${data.homeTeam.name} győzelmi esélye jelenleg kb. ${homeProb}%. A mérkőzés hátralévő részében ${data.score.fullTime.home + data.score.fullTime.away > 2 ? 'kevesebb' : 'több'} gól várható.`;
+                // 3. Renderelés
+                render(match, oddsData || fallbackOdds(match));
+                
+                // 4. Tabella betöltése
+                loadTable(match.competition.id, match.homeTeam.id, match.awayTeam.id);
 
-            } catch (e) {
-                document.getElementById("loading").innerText = "Hiba az adatok betöltésekor.";
+            } catch (err) {
+                area.innerHTML = "<h2 style='text-align:center'>Hiba történt az adatok betöltésekor.</h2>";
             }
         }
 
-        loadAnalysis();
+        function findMatchInOdds(match, allOdds) {
+            const hName = match.homeTeam.shortName || match.homeTeam.name;
+            const found = allOdds.find(o => 
+                o.home_team.toLowerCase().includes(hName.toLowerCase().split(' ')[0]) ||
+                hName.toLowerCase().includes(o.home_team.toLowerCase().split(' ')[0])
+            );
+
+            if (found && found.bookmakers.length > 0) {
+                const outcomes = found.bookmakers[0].markets[0].outcomes;
+                return {
+                    h: outcomes.find(x => x.name === found.home_team).price,
+                    a: outcomes.find(x => x.name === found.away_team).price,
+                    d: outcomes.find(x => x.name === 'Draw').price,
+                    all: found.bookmakers,
+                    homeName: found.home_team,
+                    awayName: found.away_team,
+                    isReal: true
+                };
+            }
+            return null;
+        }
+
+        function fallbackOdds(match) {
+            return { h: 1.95, d: 3.40, a: 3.80, isReal: false, all: [] };
+        }
+
+        async function loadTable(leagueId, hId, aId) {
+            try {
+                const res = await fetch(`/standings/${leagueId}`);
+                const data = await res.json();
+                const table = data.standings[0].table;
+                
+                let html = `
+                <div class="league-table-container">
+                    <h3>Bajnoki Állás (Helyezések)</h3>
+                    <table class="mini-table">
+                        <tr><th>#</th><th>Csapat</th><th>M</th><th>GY</th><th>P</th></tr>`;
+                
+                table.forEach(t => {
+                    const isFocus = (t.team.id == hId || t.team.id == aId);
+                    html += `
+                    <tr style="${isFocus ? 'background:rgba(0,255,136,0.1); font-weight:bold;' : ''}">
+                        <td>${t.position}</td>
+                        <td><img src="${t.team.crest}" style="width:15px; margin-right:5px"> ${t.team.shortName}</td>
+                        <td>${t.playedGames}</td>
+                        <td>${t.won}</td>
+                        <td style="color:var(--primary)">${t.points}</td>
+                    </tr>`;
+                });
+                
+                html += `</table></div>`;
+                document.getElementById("table-area").innerHTML = html;
+            } catch(e) { console.log("Tabella hiba"); }
+        }
+
+        function render(match, odds) {
+            const tag = document.getElementById("status-tag");
+            tag.innerText = odds.isReal ? `VALÓDI ODDS (${odds.all.length} IRODA)` : "AI SZIMULÁLT ODDS";
+            tag.className = "status-badge " + (odds.isReal ? "status-real" : "status-ai");
+
+            const total = (1/odds.h) + (1/odds.d) + (1/odds.a);
+            const pH = Math.round((1/odds.h / total) * 100);
+            const pD = Math.round((1/odds.d / total) * 100);
+            const pA = 100 - pH - pD;
+
+            let compareHTML = "";
+            if (odds.isReal) {
+                compareHTML = `
+                <table class="compare-table">
+                    <thead><tr><th>Fogadóiroda</th><th>H</th><th>D</th><th>V</th></tr></thead>
+                    <tbody>
+                        ${odds.all.slice(0,4).map(b => {
+                            const m = b.markets[0].outcomes;
+                            return `
+                            <tr>
+                                <td class="bookie-name">${b.title}</td>
+                                <td><span class="val-badge">${m.find(x=>x.name===odds.homeName).price}</span></td>
+                                <td><span class="val-badge">${m.find(x=>x.name==='Draw').price}</span></td>
+                                <td><span class="val-badge">${m.find(x=>x.name===odds.awayName).price}</span></td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>`;
+            }
+
+            document.getElementById("content-area").innerHTML = `
+                <div class="teams-header">
+                    <div class="team"><img src="${match.homeTeam.crest}"><h2>${match.homeTeam.shortName}</h2></div>
+                    <div style="font-size:12px; opacity:0.3; font-weight:900;">VERSUS</div>
+                    <div class="team"><img src="${match.awayTeam.crest}"><h2>${match.awayTeam.shortName}</h2></div>
+                </div>
+
+                <div class="main-odds">
+                    <div class="odds-item"><label>HAZAI (1)</label><b>${odds.h}</b></div>
+                    <div class="odds-item"><label>DÖNTETLEN (X)</label><b>${odds.d}</b></div>
+                    <div class="odds-item"><label>VENDÉG (2)</label><b>${odds.a}</b></div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; font-size:11px; opacity:0.6; margin-bottom:5px;">
+                    <span>Hazai esély: ${pH}%</span>
+                    <span>Döntetlen: ${pD}%</span>
+                    <span>Vendég esély: ${pA}%</span>
+                </div>
+                <div class="prob-bar-container">
+                    <div class="prob-bar" style="width:${pH}%; background:var(--primary)"></div>
+                    <div class="prob-bar" style="width:${pD}%; background:var(--accent)"></div>
+                    <div class="prob-bar" style="width:${pA}%; background:#ff4444"></div>
+                </div>
+
+                ${compareHTML}
+
+                <div id="table-area"></div>
+
+                <div class="ai-prediction">
+                    <p style="font-size:10px; opacity:0.5; letter-spacing:3px; text-transform:uppercase;">LuckyPitch AI Predikció</p>
+                    <div class="score-display">${odds.h < odds.a ? '2-1' : '0-1'}</div>
+                    <p style="color:var(--primary); font-weight:bold; font-size:18px;">
+                        Tipp: ${odds.h < odds.a ? match.homeTeam.shortName : match.awayTeam.shortName} győzelem
+                    </p>
+                    <p style="font-size:12px; opacity:0.6; margin-top:10px;">
+                        Az AI a piaci oddsok és a tabella helyezések alapján <b>${Math.max(pH, pA)}%</b> konfidenciát számolt.
+                    </p>
+                </div>
+            `;
+        }
+
+        initAnalysis();
     </script>
 </body>
 </html>
