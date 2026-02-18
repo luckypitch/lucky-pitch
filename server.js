@@ -1,64 +1,71 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const fs = require("fs");
 
-const fetch = (...args) =>
-  import("node-fetch").then(({ default: fetch }) => fetch(...args));
+// Ha régebbi Node.js-t használsz, ez kell a fetch-hez:
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const app = express();
 app.use(cors());
 app.use(express.static(__dirname));
 
-const API_KEY = "1f931344560e4ddc9103eff9281d435b";
+// --- API KULCSOK ---
+const ODDS_API_KEY = '17b18da5d210a284be65b75933b24f9e'; 
+const FOOTBALL_DATA_API_KEY = "1f931344560e4ddc9103eff9281d435b";
 
-// --- BIZTONSÁGOS FÁJL KISZOLGÁLÁS ---
-const sendFileSafe = (res, fileName) => {
-    // Megnézzük kisbetűvel és nagybetűvel is
-    const paths = [
-        path.join(__dirname, fileName),
-        path.join(__dirname, fileName.toLowerCase()),
-        path.join(__dirname, fileName.charAt(0).toUpperCase() + fileName.slice(1))
-    ];
-
-    for (let p of paths) {
-        if (fs.existsSync(p)) {
-            return res.sendFile(p);
-        }
-    }
-    res.status(404).send(`Hiba: ${fileName} nem található! Ellenőrizd a fájlnevet a mappádban.`);
-};
-
-// --- API ÉS CACHE ---
-let cache = { matches: null, lastFetch: 0 };
-
-app.get("/live-matches", async (req, res) => {
-    const now = Date.now();
-    if (cache.matches && (now - cache.lastFetch < 30000)) return res.json(cache.matches);
-
+// --- 1. VÉGPONT: Odds adatok lekérése ---
+app.get('/api/odds-data', async (req, res) => {
     try {
-        const response = await fetch("https://api.football-data.org/v4/matches", {
-            headers: { "X-Auth-Token": API_KEY }
-        });
-        cache.matches = await response.json();
-        cache.lastFetch = now;
-        res.json(cache.matches);
-    } catch (err) { res.status(500).json({ error: "API hiba" }); }
+        const response = await fetch(`https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h&bookmakers=unibet,betfair_ex,williamhill,888sport`);
+        const data = await response.json();
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: "Szerver hiba az oddsoknál" });
+    }
 });
 
+// --- 2. VÉGPONT: Meccslista lekérése ---
+app.get("/live-matches", async (req, res) => {
+    try {
+        const today = new Date();
+        const dFrom = new Date(today);
+        dFrom.setDate(today.getDate() - 4); 
+        const dTo = new Date(today);
+        dTo.setDate(today.getDate() + 4); 
+
+        const dateFrom = dFrom.toISOString().split('T')[0];
+        const dateTo = dTo.toISOString().split('T')[0];
+
+        const url = `https://api.football-data.org/v4/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`;
+        const response = await fetch(url, { headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY } });
+        const data = await response.json();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: "Hiba a meccsek lekérésekor" });
+    }
+});
+
+// --- 3. VÉGPONT: Tabella lekérése (Ez hiányzott!) ---
 app.get("/standings/:leagueId", async (req, res) => {
     try {
-        const response = await fetch(`https://api.football-data.org/v4/competitions/${req.params.leagueId}/standings`, {
-            headers: { "X-Auth-Token": API_KEY }
+        const leagueId = req.params.leagueId;
+        const response = await fetch(`https://api.football-data.org/v4/competitions/${leagueId}/standings`, {
+            headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY }
         });
-        res.json(await response.json());
-    } catch (err) { res.status(500).json({ error: "Hiba" }); }
+        const data = await response.json();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: "Hiba a tabella lekérésekor" });
+    }
 });
 
-// --- ÚTVONALAK ---
-app.get("/", (req, res) => sendFileSafe(res, "Home.html"));
-app.get("/meccsek", (req, res) => sendFileSafe(res, "Meccsek.html"));
-app.get("/elemzes", (req, res) => sendFileSafe(res, "Elemzes.html"));
+// --- HTML Útvonalak ---
+app.get(["/", "/home", "/Home"], (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
+app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
+app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
 
+// --- Indítás (JAVÍTVA: app.listen kell server.listen helyett) ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => console.log(`Szerver fut a ${PORT} porton`));
+app.listen(PORT, () => {
+    console.log(`🚀 LuckyPitch Szerver fut a ${PORT} porton`);
+});
