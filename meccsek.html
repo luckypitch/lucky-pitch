@@ -3,173 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <title>Live Matches</title>
-
 <style>
-body{
-  background:#0b0f1a;
-  color:white;
-  font-family:Arial;
-  padding:20px;
-}
-
-button{
-  margin:5px;
-  padding:8px 14px;
-  cursor:pointer;
-}
-
-.match{
-  background:#121a2b;
-  margin-bottom:15px;
-  padding:15px;
-  border-radius:10px;
-  transition:0.3s;
-}
-
-.goalFlash{
-  animation:flash 0.8s;
-}
-
-@keyframes flash{
-  0%{background:#00ffcc;}
-  100%{background:#121a2b;}
-}
-
-.bar{
-  width:100%;
-  height:8px;
-  background:#222;
-  border-radius:5px;
-  overflow:hidden;
-  margin-top:8px;
-}
-
-.progress{
-  height:100%;
-  background:#00ffcc;
-  width:0%;
-  transition:0.4s;
-}
+    body { background:#0b0f1a; color:white; font-family:'Segoe UI', Arial; padding:20px; max-width: 600px; margin: auto; }
+    h2 { color: #00ffcc; text-align: center; }
+    .controls { text-align: center; margin-bottom: 20px; }
+    button { background: #121a2b; color: white; border: 1px solid #00ffcc; padding:8px 14px; cursor:pointer; border-radius: 5px; }
+    button:hover { background: #00ffcc; color: #0b0f1a; }
+    .match { background:#121a2b; margin-bottom:15px; padding:15px; border-radius:10px; border-left: 4px solid #222; position: relative; }
+    .match.live-border { border-left-color: #ff4444; }
+    .goalFlash { animation: flash 1.5s; }
+    @keyframes flash { 0% { background:#00ffcc; } 100% { background:#121a2b; } }
+    .bar { width:100%; height:6px; background:#222; border-radius:5px; overflow:hidden; margin-top:10px; }
+    .progress { height:100%; background:#00ffcc; width:0%; transition:1s linear; }
+    .score { font-size: 24px; font-weight: bold; margin: 10px 0; letter-spacing: 5px; }
+    .status { font-size: 12px; color: #00ffcc; text-transform: uppercase; }
 </style>
 </head>
-
 <body>
 
 <h2 id="title">Live meccsek</h2>
-
-<button onclick="setLang('hu')">HU</button>
-<button onclick="setLang('en')">EN</button>
-
-<div id="date"></div>
-<br>
+<div class="controls">
+    <button onclick="setLang('hu')">HU</button>
+    <button onclick="setLang('en')">EN</button>
+    <p id="date" style="font-size: 12px; color: gray;"></p>
+</div>
 
 <div id="matches"></div>
 
 <script>
 let lang = "hu";
 let lastScores = {};
+let dataCache = null;
 
-function setLang(l){
-  lang=l;
-  render();
+function setLang(l) { lang = l; render(); }
+
+async function load() {
+    try {
+        const res = await fetch("/live-matches?" + Date.now());
+        dataCache = await res.json();
+        render();
+    } catch (e) { console.error("Hiba a betöltésnél"); }
 }
 
-function nowDate(){
-  const d=new Date();
-  return d.toLocaleString();
+function getMinute(match) {
+    if (match.status === "IN_PLAY") {
+        const start = new Date(match.utcDate);
+        const diff = Math.floor((Date.now() - start) / 60000);
+        return Math.min(Math.max(1, diff), 120);
+    }
+    return null;
 }
 
-function getMinute(match){
+function render() {
+    document.getElementById("title").innerText = lang === "hu" ? "Live meccsek" : "Live matches";
+    document.getElementById("date").innerText = new Date().toLocaleString();
+    const container = document.getElementById("matches");
+    container.innerHTML = "";
 
-  if(match.minute) return match.minute;
-
-  if(match.status==="IN_PLAY" || match.status==="PAUSED"){
-    const start=new Date(match.utcDate);
-    const diff=Math.floor((Date.now()-start)/60000);
-    return Math.max(0,diff);
-  }
-
-  return null;
-}
-
-function formatMinute(min){
-
-  if(min<=45) return min+"'";
-
-  if(min<=90) return "45+"+(min-45)+"'";
-
-  return "90+"+(min-90)+"'";
-}
-
-function playGoalSound(){
-  const ctx=new AudioContext();
-  const osc=ctx.createOscillator();
-  osc.connect(ctx.destination);
-  osc.start();
-  setTimeout(()=>osc.stop(),200);
-}
-
-let dataCache=null;
-
-async function load(){
-
-  const res=await fetch("/live-matches?"+Date.now());
-  dataCache=await res.json();
-  render();
-}
-
-function render(){
-
-  document.getElementById("title").innerText =
-    lang==="hu" ? "Live meccsek" : "Live matches";
-
-  document.getElementById("date").innerText =
-    nowDate();
-
-  const container=document.getElementById("matches");
-  container.innerHTML="";
-
-  if(!dataCache?.matches) return;
-
-  dataCache.matches.forEach(m=>{
-
-    const id=m.id;
-    const home=m.homeTeam.name;
-    const away=m.awayTeam.name;
-
-    const score =
-      (m.score.fullTime.home ?? 0)+"-"+(m.score.fullTime.away ?? 0);
-
-    if(lastScores[id] && lastScores[id]!==score){
-      playGoalSound();
+    if (!dataCache?.matches || dataCache.matches.length === 0) {
+        container.innerHTML = "<p style='text-align:center'>Nincs aktív meccs.</p>";
+        return;
     }
 
-    const div=document.createElement("div");
-    div.className="match";
+    dataCache.matches.forEach(m => {
+        const id = m.id;
+        const score = `${m.score.fullTime.home ?? 0}-${m.score.fullTime.away ?? 0}`;
+        const isGoal = lastScores[id] !== undefined && lastScores[id] !== score;
+        
+        const div = document.createElement("div");
+        div.className = "match" + (isGoal ? " goalFlash" : "") + (m.status === "IN_PLAY" ? " live-border" : "");
 
-    if(lastScores[id] && lastScores[id]!==score){
-      div.classList.add("goalFlash");
-    }
+        const minute = getMinute(m);
+        const percent = minute ? Math.min((minute / 90) * 100, 100) : 0;
 
-    lastScores[id]=score;
+        div.innerHTML = `
+            <div style="display:flex; justify-content: space-between; align-items: center;">
+                <span style="flex:1; text-align:right">${m.homeTeam.name}</span>
+                <span class="score">${score}</span>
+                <span style="flex:1; text-align:left">${m.awayTeam.name}</span>
+            </div>
+            <div style="text-align:center">
+                <span class="status">${m.status === 'IN_PLAY' ? minute + "'" : m.status}</span>
+            </div>
+            ${m.status === 'IN_PLAY' ? `<div class="bar"><div class="progress" style="width:${percent}%"></div></div>` : ""}
+        `;
 
-    const minute=getMinute(m);
-
-    const percent=minute
-      ? Math.min(minute/90*100,100)
-      : 0;
-
-    div.innerHTML=`
-      <b>${home} vs ${away}</b><br>
-      ${score}<br>
-      ${minute ? formatMinute(minute) : ""}
-      <div class="bar">
-        <div class="progress" style="width:${percent}%"></div>
-      </div>
-    `;
-
-    container.appendChild(div);
-  });
+        lastScores[id] = score;
+        container.appendChild(div);
+    });
 }
 
-loa
+// Első betöltés
+load();
+// Automata frissítés 15 másodpercenként
+setInterval(load, 15000);
+</script>
+</body>
+</html>
