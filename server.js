@@ -12,42 +12,53 @@ app.use(express.static(__dirname));
 
 const API_KEY = "1f931344560e4ddc9103eff9281d435b";
 
-// --- EGYSZERŰ GYORSÍTÓTÁR (CACHE) ---
-let cache = { matches: null, standings: {}, lastFetch: 0 };
+// --- BIZTONSÁGOS FÁJL KISZOLGÁLÁS ---
+const sendFileSafe = (res, fileName) => {
+    // Megnézzük kisbetűvel és nagybetűvel is
+    const paths = [
+        path.join(__dirname, fileName),
+        path.join(__dirname, fileName.toLowerCase()),
+        path.join(__dirname, fileName.charAt(0).toUpperCase() + fileName.slice(1))
+    ];
 
-// --- API HÍVÁSOK ---
+    for (let p of paths) {
+        if (fs.existsSync(p)) {
+            return res.sendFile(p);
+        }
+    }
+    res.status(404).send(`Hiba: ${fileName} nem található! Ellenőrizd a fájlnevet a mappádban.`);
+};
+
+// --- API ÉS CACHE ---
+let cache = { matches: null, lastFetch: 0 };
+
 app.get("/live-matches", async (req, res) => {
     const now = Date.now();
-    // Ha van friss adat (30 mp-en belüli), azt adjuk vissza
-    if (cache.matches && (now - cache.lastFetch < 30000)) {
-        return res.json(cache.matches);
-    }
+    if (cache.matches && (now - cache.lastFetch < 30000)) return res.json(cache.matches);
 
     try {
         const response = await fetch("https://api.football-data.org/v4/matches", {
             headers: { "X-Auth-Token": API_KEY }
         });
-        const data = await response.json();
-        cache.matches = data;
+        cache.matches = await response.json();
         cache.lastFetch = now;
-        res.json(data);
+        res.json(cache.matches);
     } catch (err) { res.status(500).json({ error: "API hiba" }); }
 });
 
-// ÚJ: Tabella végpont (Liga ID alapján, pl. PL = 2021)
 app.get("/standings/:leagueId", async (req, res) => {
-    const id = req.params.leagueId;
     try {
-        const response = await fetch(`https://api.football-data.org/v4/competitions/${id}/standings`, {
+        const response = await fetch(`https://api.football-data.org/v4/competitions/${req.params.leagueId}/standings`, {
             headers: { "X-Auth-Token": API_KEY }
         });
-        const data = await response.json();
-        res.json(data);
-    } catch (err) { res.status(500).json({ error: "Hiba a tabella lekérésekor" }); }
+        res.json(await response.json());
+    } catch (err) { res.status(500).json({ error: "Hiba" }); }
 });
 
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
-app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "Meccsek.html")));
+// --- ÚTVONALAK ---
+app.get("/", (req, res) => sendFileSafe(res, "Home.html"));
+app.get("/meccsek", (req, res) => sendFileSafe(res, "Meccsek.html"));
+app.get("/elemzes", (req, res) => sendFileSafe(res, "Elemzes.html"));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => console.log(`Fut: ${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`Szerver fut a ${PORT} porton`));
