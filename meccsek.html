@@ -5,7 +5,7 @@
 <title>LuckyPitch | Matches</title>
 
 <style>
-:root {
+:root{
     --primary:#00ff88;
     --text:white;
     --box-bg:rgba(0,0,0,0.7);
@@ -13,7 +13,7 @@
     --btn-text:black;
 }
 
-body.light {
+body.light{
     --text:#111;
     --box-bg:rgba(255,255,255,0.85);
     --btn-bg:#111;
@@ -29,33 +29,58 @@ body{
     transition:.3s;
     padding-bottom:50px;
 }
-
 body.light{background:url("meccsekfocivil.jpg") center/cover fixed;}
 
 .container{max-width:900px;margin:0 auto;padding:0 20px;}
 
-nav{display:flex;justify-content:space-between;align-items:center;padding:25px 0;}
+nav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:25px 0;
+}
 .nav-controls{display:flex;gap:10px;}
 
 .date-selector{
-    display:flex;justify-content:center;flex-wrap:wrap;gap:10px;
-    margin-bottom:30px;padding:15px;background:var(--box-bg);
-    border-radius:12px;border:1px solid var(--text);
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:30px;
+    padding:15px;
+    background:var(--box-bg);
+    border-radius:12px;
+    border:1px solid var(--text);
 }
 
 .date-btn{
-    background:transparent;border:1px solid var(--text);
-    color:var(--text);padding:10px;border-radius:8px;cursor:pointer;
+    background:transparent;
+    border:1px solid var(--text);
+    color:var(--text);
+    padding:10px;
+    border-radius:8px;
+    cursor:pointer;
+    min-width:75px;
+    text-align:center;
 }
-.date-btn.active{background:var(--btn-bg);color:var(--btn-text);}
+.date-btn.active{
+    background:var(--btn-bg);
+    color:var(--btn-text);
+}
 
 .league-section{
     background:var(--box-bg);
-    border-radius:12px;margin-bottom:25px;
-    overflow:hidden;border:1px solid var(--text);
+    border-radius:12px;
+    margin-bottom:25px;
+    overflow:hidden;
+    border:1px solid var(--text);
 }
 
-.league-header{padding:15px;background:rgba(255,255,255,0.1);font-weight:bold;}
+.league-header{
+    padding:15px;
+    background:rgba(255,255,255,0.1);
+    font-weight:bold;
+}
 
 .match-row{
     padding:15px;
@@ -67,16 +92,17 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:25px 0
 
 .score-box{
     background:rgba(0,0,0,0.5);
-    padding:10px;border-radius:8px;
-    text-align:center;font-weight:bold;
+    padding:10px;
+    border-radius:8px;
+    text-align:center;
+    font-weight:bold;
     border:1px solid var(--text);
     position:relative;
 }
 
 .goal-flash{
-    animation:goalFlash 0.6s ease 4;
+    animation:goalFlash .6s ease 4;
 }
-
 @keyframes goalFlash{
     0%{background:#00ff88;}
     50%{background:#ffffff;}
@@ -88,7 +114,6 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:25px 0
     font-weight:bold;
     animation:blink 1s infinite;
 }
-
 @keyframes blink{
     0%{opacity:1}
     50%{opacity:.2}
@@ -102,18 +127,22 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:25px 0
     margin-top:6px;
     overflow:hidden;
 }
-
 .progress-fill{
     height:100%;
     background:#00ff88;
 }
 
 .analyze-btn{
-    width:100%;margin-top:6px;
-    padding:6px;font-size:10px;
+    width:100%;
+    margin-top:6px;
+    padding:6px;
+    font-size:10px;
     background:var(--primary);
-    color:black;border:none;border-radius:4px;
-    cursor:pointer;font-weight:bold;
+    color:black;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+    font-weight:bold;
 }
 
 .crest{width:30px;height:30px;object-fit:contain;}
@@ -121,10 +150,14 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:25px 0
 .team-box.home{justify-content:flex-end;text-align:right;}
 
 button,.btn-link{
-    padding:10px 15px;border-radius:6px;
-    cursor:pointer;font-weight:bold;
-    background:var(--btn-bg);color:var(--btn-text);
-    text-decoration:none;border:none;
+    padding:10px 15px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+    background:var(--btn-bg);
+    color:var(--btn-text);
+    text-decoration:none;
+    border:none;
 }
 </style>
 </head>
@@ -135,15 +168,15 @@ button,.btn-link{
 <nav>
 <div style="font-size:24px;font-weight:bold;">LuckyPitch</div>
 <div class="nav-controls">
-<button onclick="toggleTheme()">☀️</button>
-<a href="/home" class="btn-link">← VISSZA</a>
+<button id="theme-btn" onclick="toggleTheme()">☀️</button>
+<button id="lang-btn" onclick="toggleLang()">EN 🇬🇧</button>
+<a href="/home" id="back-btn" class="btn-link">← VISSZA</a>
 </div>
 </nav>
 
 <div id="date-selector" class="date-selector"></div>
 <div id="app">Betöltés...</div>
 
-<!-- GOAL SOUND -->
 <audio id="goalSound">
 <source src="https://actions.google.com/sounds/v1/sports/crowd_cheer.ogg">
 </audio>
@@ -152,18 +185,57 @@ button,.btn-link{
 
 <script>
 
+/* ================= TRANSLATIONS ================= */
+
+const translations={
+hu:{
+today:"MA",
+back:"← VISSZA",
+analyze:"ELEMZÉS",
+days:["Vas","Hét","Ked","Sze","Csüt","Pén","Szo"],
+empty:"Nincs meccs ezen a napon."
+},
+en:{
+today:"TODAY",
+back:"← BACK",
+analyze:"ANALYZE",
+days:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+empty:"No matches for this day."
+}
+};
+
+let currentLang=localStorage.getItem("lang")||"hu";
+
+/* ================= STATE ================= */
+
 let allMatches=[];
 let selectedDate=new Date().toLocaleDateString('sv');
 let prevScores={};
 
-/* ================= */
+/* ================= UI ================= */
 
 function toggleTheme(){
 const t=document.body.classList.contains("light")?"dark":"light";
 document.body.className=t;
 }
 
-/* ================= */
+function toggleLang(){
+currentLang=currentLang==="hu"?"en":"hu";
+localStorage.setItem("lang",currentLang);
+updateUI();
+}
+
+function updateUI(){
+document.getElementById("lang-btn").innerText=
+currentLang==="hu"?"EN 🇬🇧":"HU 🇭🇺";
+
+document.getElementById("back-btn").innerText=
+translations[currentLang].back;
+
+renderAll();
+}
+
+/* ================= LIVE HELPERS ================= */
 
 function playGoalSound(){
 document.getElementById("goalSound").play();
@@ -177,30 +249,26 @@ if(prevScores[id]!==undefined && total>prevScores[id]){
 playGoalSound();
 return true;
 }
-
 prevScores[id]=total;
 return false;
 }
 
-/* ================= */
-
 function isLive(status){
-return ["IN_PLAY","LIVE","PAUSED"].includes(status);
+return["IN_PLAY","LIVE","PAUSED"].includes(status);
 }
 
 function formatMinute(min,inj){
 if(!min) return "";
-if(inj && inj>0) return `${min}+${inj}'`;
+if(inj>0) return `${min}+${inj}'`;
 return `${min}'`;
 }
 
 function getProgress(min){
 if(!min) return 0;
-const max=90;
-return Math.min(100,(min/max)*100);
+return Math.min(100,(min/90)*100);
 }
 
-/* ================= */
+/* ================= FETCH ================= */
 
 async function loadMatches(){
 try{
@@ -213,7 +281,7 @@ document.getElementById("app").innerText="Szerver hiba.";
 }
 }
 
-/* ================= */
+/* ================= RENDER ================= */
 
 function renderAll(){
 
@@ -225,9 +293,19 @@ const dates=[...new Set(allMatches.map(m=>m.utcDate.split('T')[0]))].sort();
 
 dates.forEach(date=>{
 const d=new Date(date);
+
+const label=(date===todayStr)
+?translations[currentLang].today
+:translations[currentLang].days[d.getDay()];
+
 const btn=document.createElement("button");
 btn.className=`date-btn ${date===selectedDate?'active':''}`;
-btn.innerHTML=`${date===todayStr?'MA':d.toLocaleDateString('hu',{weekday:'short'})}`;
+
+btn.innerHTML=`
+${label}<br>
+<span>${d.getMonth()+1}.${d.getDate()}</span>
+`;
+
 btn.onclick=()=>{selectedDate=date;renderAll();}
 selector.appendChild(btn);
 });
@@ -236,6 +314,13 @@ const app=document.getElementById("app");
 app.innerHTML="";
 
 const filtered=allMatches.filter(m=>m.utcDate.startsWith(selectedDate));
+
+if(!filtered.length){
+app.innerHTML=`<p style="text-align:center;padding:20px;">
+${translations[currentLang].empty}
+</p>`;
+return;
+}
 
 const leagues={};
 filtered.forEach(m=>{
@@ -258,10 +343,9 @@ const minute=m.minute||m.elapsed||0;
 const injury=m.injuryTime||m.stoppage||0;
 const minuteText=formatMinute(minute,injury);
 const progress=getProgress(minute);
-
 const goalFlash=detectGoal(m)?"goal-flash":"";
 
-return `
+return`
 <div class="match-row">
 
 <div class="team-box home">
@@ -271,7 +355,9 @@ ${m.homeTeam.shortName||m.homeTeam.name}
 
 <div class="score-box ${goalFlash}">
 
-${live?`<div class="live-indicator">LIVE ${minuteText}</div>`:`<div style="font-size:10px;opacity:.6">${m.status}</div>`}
+${live
+?`<div class="live-indicator">LIVE ${minuteText}</div>`
+:`<div style="font-size:10px;opacity:.6">${m.status}</div>`}
 
 ${m.score.fullTime.home??0} : ${m.score.fullTime.away??0}
 
@@ -282,7 +368,7 @@ ${live?`
 
 <button class="analyze-btn"
 onclick="location.href='/elemzes?id=${m.id}'">
-ELEMZÉS
+${translations[currentLang].analyze}
 </button>
 
 </div>
@@ -294,16 +380,16 @@ ${m.awayTeam.shortName||m.awayTeam.name}
 
 </div>
 `;
-
 }).join('');
 
 app.appendChild(div);
 });
 }
 
-/* ================= */
+/* ================= INIT ================= */
 
 async function init(){
+updateUI();
 await loadMatches();
 setInterval(loadMatches,30000);
 }
