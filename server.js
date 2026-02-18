@@ -1,100 +1,87 @@
-// --- 2. VÉGPONT: SMART LIVE MATCH CACHE ---
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
+
+const app = express();
+
+app.use(cors());
+app.use(express.static(__dirname));
+
+const FOOTBALL_DATA_API_KEY = "IDE_A_KULCSOD";
+
+// cache
+let cache = {
+  data: null,
+  time: 0
+};
+
+const NORMAL_CACHE = 5 * 60 * 1000;   // 5 perc
+const LIVE_CACHE = 20 * 1000;         // 20 mp
+
+function hasLiveMatch(matches) {
+  return matches.some(m =>
+    m.status === "IN_PLAY" ||
+    m.status === "PAUSED"
+  );
+}
+
 app.get("/live-matches", async (req, res) => {
 
-    const now = Date.now();
+  const now = Date.now();
 
-    // ha van cache
-    if (cache.matches.data) {
+  if (cache.data) {
 
-        const matches = cache.matches.data.matches || [];
+    const live = hasLiveMatch(cache.data.matches || []);
+    const duration = live ? LIVE_CACHE : NORMAL_CACHE;
 
-        const hasLiveMatch = matches.some(m =>
-            ["IN_PLAY", "PAUSED", "LIVE"].includes(m.status)
-        );
-
-        // ha live meccs van → 15 mp cache
-        const liveCacheTime = 15000;
-
-        // ha nincs live → 5 perc cache
-        const normalCacheTime = CACHE_DURATION;
-
-        const maxAge = hasLiveMatch ? liveCacheTime : normalCacheTime;
-
-        if (now - cache.matches.time < maxAge) {
-            console.log("Meccsek cache-ből (smart)...");
-            return res.json(cache.matches.data);
-        }
+    if (now - cache.time < duration) {
+      console.log("Cache serve");
+      return res.json(cache.data);
     }
+  }
 
-    // ========================
-    // API FRISSÍTÉS
-    // ========================
+  try {
 
-    try {
+    const today = new Date();
 
-        const today = new Date();
+    const dFrom = new Date(today);
+    dFrom.setDate(today.getDate() - 2);
 
-        const dFrom = new Date(today);
-        dFrom.setDate(today.getDate() - 4);
+    const dTo = new Date(today);
+    dTo.setDate(today.getDate() + 2);
 
-        const dTo = new Date(today);
-        dTo.setDate(today.getDate() + 4);
+    const dateFrom = dFrom.toISOString().split("T")[0];
+    const dateTo = dTo.toISOString().split("T")[0];
 
-        const dateFrom = dFrom.toISOString().split('T')[0];
-        const dateTo = dTo.toISOString().split('T')[0];
+    const url =
+      `https://api.football-data.org/v4/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`;
 
-        const url = `https://api.football-data.org/v4/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`;
+    const response = await fetch(url, {
+      headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY }
+    });
 
-        const response = await fetch(url, {
-            headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY }
-        });
+    const data = await response.json();
 
-        const data = await response.json();
+    cache.data = data;
+    cache.time = now;
 
-        if (data.matches) {
+    console.log("API refreshed:", data.matches?.length);
 
-            // ===== SCORE VÁLTOZÁS DETEKT =====
+    res.json(data);
 
-            let changed = false;
+  } catch (err) {
+    res.status(500).json({ error: "API error" });
+  }
+});
 
-            if (cache.matches.data) {
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "meccsek.html"));
+});
 
-                const oldMatches = cache.matches.data.matches || [];
-
-                for (const newMatch of data.matches) {
-
-                    const old = oldMatches.find(m => m.id === newMatch.id);
-                    if (!old) continue;
-
-                    const oldScore =
-                        (old.score.fullTime.home || 0) +
-                        (old.score.fullTime.away || 0);
-
-                    const newScore =
-                        (newMatch.score.fullTime.home || 0) +
-                        (newMatch.score.fullTime.away || 0);
-
-                    if (oldScore !== newScore) {
-                        changed = true;
-                        console.log("⚽ GÓL VÁLTOZÁS DETEKTÁLVA!");
-                        break;
-                    }
-                }
-            }
-
-            cache.matches.data = data;
-            cache.matches.time = now;
-
-            console.log(
-                changed
-                    ? "CACHE FRISSÍTVE (score változás)"
-                    : "CACHE FRISSÍTVE (idő lejárt)"
-            );
-        }
-
-        res.json(data);
-
-    } catch (err) {
-        res.status(500).json({ error: "Hiba a meccsek lekérésekor" });
-    }
+const PORT = 3000;
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("Server fut:", PORT);
 });
