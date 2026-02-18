@@ -3,109 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuckyPitch | Meccsek</title>
+    <title>LuckyPitch | Live & Table</title>
     <style>
-        :root { --primary: #00ff88; --text: #fff; --bg: #0d0d0d; --box: rgba(255,255,255,0.07); --live: #ff4444; }
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif; }
-        body { background: var(--bg); color: var(--text); padding-bottom: 50px; }
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
-        
-        nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .league-card { background: var(--box); border-radius: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
-        .league-header { padding: 12px 20px; background: rgba(255,255,255,0.03); color: var(--primary); font-weight: bold; }
-        
-        /* FIXÁLT ELRENDEZÉS */
-        .match-row { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); 
+        :root { 
+            --primary: #00ff88; --text: #fff; --bg: #0d0d0d; 
+            --box: rgba(255,255,255,0.07); --live: #ff4444; --btn-bg: rgba(255,255,255,0.1);
+        }
+        body.light { 
+            --text: #111; --bg: #f4f7f6; --box: rgba(0,0,0,0.07); --btn-bg: rgba(0,0,0,0.1);
         }
         
-        .team-side { flex: 1; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif; }
+        
+        body { background: var(--bg); color: var(--text); transition: 0.3s; padding-bottom: 50px; }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        
+        nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .nav-right { display: flex; gap: 10px; align-items: center; }
+
+        /* Dátumválasztó sor */
+        .date-selector { 
+            display: flex; gap: 10px; margin-bottom: 25px; padding: 10px; 
+            overflow-x: auto; white-space: nowrap; 
+        }
+        .date-btn { 
+            background: var(--btn-bg); color: var(--text); border: 1px solid transparent;
+            padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 13px; transition: 0.2s;
+        }
+        .date-btn.active { border-color: var(--primary); background: var(--primary); color: #000; font-weight: bold; }
+
+        .league-card { background: var(--box); border-radius: 20px; margin-bottom: 25px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+        .league-header { padding: 15px 20px; background: rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; }
+        
+        .match-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 20px; border-top: 1px solid rgba(255,255,255,0.03); 
+        }
+        
+        .team-side { flex: 1; display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 15px; }
         .home { justify-content: flex-end; text-align: right; }
         .away { justify-content: flex-start; text-align: left; }
 
-        .center-info { 
-            width: 140px; display: flex; flex-direction: column; align-items: center; gap: 5px; 
-        }
+        .center-info { width: 150px; display: flex; flex-direction: column; align-items: center; }
         
-        .score-num { font-size: 26px; color: var(--primary); font-weight: 800; letter-spacing: 2px; line-height: 1; }
-        .live-score { color: var(--live); animation: scorePulse 1.5s infinite; }
+        .score-num { font-size: 26px; color: var(--primary); font-weight: 800; letter-spacing: 2px; }
+        .live-score { color: var(--live) !important; animation: scorePulse 1.5s infinite; }
         
-        .status { font-size: 10px; font-weight: 900; text-transform: uppercase; opacity: 0.8; }
-        .status.live { color: var(--live); }
+        @keyframes scorePulse { 0% { opacity:1; transform:scale(1); } 50% { opacity:0.7; transform:scale(1.05); } 100% { opacity:1; transform:scale(1); } }
 
-        .btn-sm { 
-            background: var(--primary); color: #000; border: none; padding: 6px 15px; 
-            border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: 900; 
-            margin-top: 8px; transition: 0.2s; width: 100%;
-        }
-        .btn-sm:hover { transform: scale(1.05); background: #00dd77; }
+        .status { font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .status.live { color: var(--live); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%{opacity:1;} 50%{opacity:0.4;} 100%{opacity:1;} }
+
+        .btn-sm { background: var(--primary); color: #000; border: none; padding: 7px 15px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold; margin-top: 8px; width: 100%; }
+        .icon-btn { background: var(--box); color: var(--text); border: none; width: 38px; height: 38px; border-radius: 10px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
 
         .crest { width: 32px; height: 32px; object-fit: contain; }
-        
-        @keyframes scorePulse { 0% { opacity:1; transform:scale(1); } 50% { opacity:0.7; transform:scale(1.03); } 100% { opacity:1; transform:scale(1); } }
     </style>
 </head>
 <body>
     <div class="container">
         <nav>
-            <h1 style="color: var(--primary); cursor:pointer" onclick="location.href='/'">LUCKYPITCH</h1>
-            <a href="/" style="color:#fff; text-decoration:none; font-weight:bold;">← VISSZA</a>
+            <h1 style="color: var(--primary); letter-spacing: 1px; font-size: 24px;">LUCKYPITCH</h1>
+            <div class="nav-right">
+                <button class="icon-btn" onclick="toggleTheme()" id="theme-icon">☀️</button>
+                <button class="icon-btn" onclick="toggleLang()" id="lang-btn" style="font-size: 12px; font-weight: bold;">HU</button>
+                <a href="/" style="color:var(--text); text-decoration:none; font-weight:bold; margin-left:10px; font-size: 14px;" id="back-txt">← VISSZA</a>
+            </div>
         </nav>
+
+        <div id="date-selector" class="date-selector"></div>
+
         <div id="content"></div>
     </div>
 
     <script>
-        async function updateData() {
+        const translations = {
+            hu: { back: "← VISSZA", analyze: "ELEMZÉS", ft: "VÉGE", ht: "SZÜNET", today: "MA", empty: "Nincs mérkőzés ezen a napon." },
+            en: { back: "← BACK", analyze: "ANALYZE", ft: "FT", ht: "HT", today: "TODAY", empty: "No matches for this day." }
+        };
+
+        let currentLang = localStorage.getItem("lang") || "hu";
+        let selectedDate = new Date().toISOString().split('T')[0];
+        let allMatches = [];
+
+        async function fetchData() {
             try {
                 const res = await fetch("/live-matches?t=" + Date.now());
                 const data = await res.json();
-                render(data.matches || []);
-            } catch (e) { console.error(e); }
+                allMatches = data.matches || [];
+                renderUI();
+            } catch (err) { console.error("Hiba:", err); }
         }
 
-        function getMatchTime(m) {
-            if (m.status === "FINISHED") return "VÉGE";
-            if (m.status === "PAUSED") return "SZÜNET";
+        function getMatchDisplayTime(m) {
+            if (m.status === "FINISHED") return translations[currentLang].ft;
+            if (m.status === "PAUSED") return translations[currentLang].ht;
             if (m.status === "IN_PLAY") {
-                const diff = Math.floor((new Date() - new Date(m.utcDate)) / 60000);
-                const corrected = diff > 60 ? diff - 15 : diff;
+                const start = new Date(m.utcDate);
+                const diffMin = Math.floor((new Date() - start) / 60000);
+                if (diffMin >= 45 && diffMin < 60) return translations[currentLang].ht;
+                const corrected = diffMin >= 60 ? diffMin - 15 : diffMin;
                 return (corrected > 0 ? corrected : 1) + "'";
             }
-            return m.utcDate.split('T')[1].substring(0, 5);
+            return new Date(m.utcDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
-        function render(matches) {
+        function renderUI() {
+            // Felület fordítása
+            document.getElementById("lang-btn").innerText = currentLang.toUpperCase();
+            document.getElementById("back-txt").innerText = translations[currentLang].back;
+
+            // Dátumválasztó generálása (csak egyszer, vagy ha változik)
+            const selector = document.getElementById("date-selector");
+            if (selector.innerHTML === "") {
+                const dates = [];
+                for(let i = -1; i < 4; i++) {
+                    const d = new Date();
+                    d.setDate(d.getDate() + i);
+                    dates.push(d.toISOString().split('T')[0]);
+                }
+                
+                dates.forEach(d => {
+                    const btn = document.createElement("button");
+                    btn.className = `date-btn ${d === selectedDate ? 'active' : ''}`;
+                    const isToday = d === new Date().toISOString().split('T')[0];
+                    btn.innerText = isToday ? translations[currentLang].today : d.substring(5).replace('-', '.');
+                    btn.onclick = () => {
+                        selectedDate = d;
+                        document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        renderUI();
+                    };
+                    selector.appendChild(btn);
+                });
+            }
+
             const container = document.getElementById("content");
-            const leagues = {};
-            matches.forEach(m => {
-                if (!leagues[m.competition.id]) leagues[m.competition.id] = { name: m.competition.name, matches: [] };
-                leagues[m.competition.id].matches.push(m);
+            const filtered = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:100px; opacity:0.5;">${translations[currentLang].empty}</div>`;
+                return;
+            }
+
+            const leagueMap = {};
+            filtered.forEach(m => {
+                if (!leagueMap[m.competition.name]) leagueMap[m.competition.name] = [];
+                leagueMap[m.competition.name].push(m);
             });
 
             let html = "";
-            for (let id in leagues) {
-                html += `<div class="league-card"><div class="league-header">${leagues[id].name}</div>`;
-                leagues[id].matches.forEach(m => {
-                    const isLive = m.status === 'IN_PLAY';
-                    html += `
-                    <div class="match-row">
-                        <div class="team-side home">${m.homeTeam.shortName} <img src="${m.homeTeam.crest}" class="crest"></div>
-                        <div class="center-info">
-                            <span class="status ${isLive ? 'live' : ''}">${getMatchTime(m)}</span>
-                            <span class="score-num ${isLive ? 'live-score' : ''}">${m.score.fullTime.home??0}:${m.score.fullTime.away??0}</span>
-                            <button class="btn-sm" onclick="location.href='/elemzes?id=${m.id}'">ELEMZÉS</button>
-                        </div>
-                        <div class="team-side away"><img src="${m.awayTeam.crest}" class="crest"> ${m.awayTeam.shortName}</div>
-                    </div>`;
-                });
-                html += `</div>`;
+            for (const league in leagueMap) {
+                html += `
+                <div class="league-card">
+                    <div class="league-header"><span style="color:var(--primary); font-weight:bold;">${league.toUpperCase()}</span></div>
+                    ${leagueMap[league].map(m => {
+                        const isLive = m.status === 'IN_PLAY';
+                        return `
+                        <div class="match-row">
+                            <div class="team-side home">${m.homeTeam.shortName} <img src="${m.homeTeam.crest}" class="crest"></div>
+                            <div class="center-info">
+                                <span class="status ${isLive ? 'live' : ''}">${getMatchDisplayTime(m)}</span>
+                                <span class="score-num ${isLive ? 'live-score' : ''}">${m.score.fullTime.home??0}:${m.score.fullTime.away??0}</span>
+                                <button class="btn-sm" onclick="location.href='/elemzes?id=${m.id}'">${translations[currentLang].analyze}</button>
+                            </div>
+                            <div class="team-side away"><img src="${m.awayTeam.crest}" class="crest"> ${m.awayTeam.shortName}</div>
+                        </div>`;
+                    }).join('')}
+                </div>`;
             }
-            container.innerHTML = html || "<div style='text-align:center; opacity:0.5; padding:50px;'>Nincs aktív mérkőzés.</div>";
+            container.innerHTML = html;
         }
 
-        updateData();
-        setInterval(updateData, 30000);
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light');
+            document.getElementById("theme-icon").innerText = isLight ? "🌙" : "☀️";
+            localStorage.setItem("theme", isLight ? "light" : "dark");
+        }
+
+        function toggleLang() {
+            currentLang = currentLang === "hu" ? "en" : "hu";
+            localStorage.setItem("lang", currentLang);
+            document.getElementById("date-selector").innerHTML = ""; 
+            renderUI();
+        }
+
+        if (localStorage.getItem("theme") === "light") toggleTheme();
+        fetchData();
+        setInterval(fetchData, 30000);
     </script>
 </body>
 </html>
