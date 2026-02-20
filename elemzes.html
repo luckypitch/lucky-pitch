@@ -4,71 +4,78 @@
     <meta charset="UTF-8">
     <title>LuckyPitch | Elemzés</title>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --primary: #00ff88; --text: #f8fafc; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .match-header { background: var(--card); padding: 30px; border-radius: 20px; display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px; text-align: center; }
-        .team-big img { width: 80px; height: 80px; }
-        .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .info-card { background: var(--card); padding: 20px; border-radius: 15px; }
-        .back-btn { text-decoration: none; color: var(--primary); font-weight: bold; display: inline-block; margin-bottom: 20px; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; }
+        :root { --primary: #00ff88; --text: white; --box-bg: rgba(0,0,0,0.8); }
+        body { background: #0f172a; color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .match-card { background: var(--box-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--primary); display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px; text-align: center; }
+        .team-box img { width: 60px; height: 60px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .back-btn { display: inline-block; margin-bottom: 20px; color: var(--primary); text-decoration: none; font-weight: bold; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
         td, th { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .highlight { background: rgba(0, 255, 136, 0.1); font-weight: bold; }
+        .highlight { background: rgba(0, 255, 136, 0.1); color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
-<div class="container">
-    <a href="/meccsek" class="back-btn">← VISSZA A MECCSEKHEZ</a>
-    <div id="match-display">Betöltés...</div>
-    <div class="analysis-grid">
-        <div class="info-card"><h3>Tabella</h3><div id="standings-table">...</div></div>
-        <div class="info-card"><h3>Odds</h3><div id="odds-display">...</div></div>
+    <div class="container">
+        <a href="/meccsek" class="back-btn">← VISSZA A MECCSEKHEZ</a>
+        
+        <div id="header">Betöltés...</div>
+
+        <div class="grid">
+            <div class="card">
+                <h3 style="color:var(--primary); margin-bottom:15px;">Tabella</h3>
+                <div id="standings">...</div>
+            </div>
+            <div class="card">
+                <h3 style="color:var(--primary); margin-bottom:15px;">Esélyek (Odds)</h3>
+                <div id="odds">...</div>
+            </div>
+        </div>
     </div>
-</div>
 
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const matchId = urlParams.get('id');
+    <script>
+        const matchId = new URLSearchParams(window.location.search).get('id');
 
-    async function loadAnalysis() {
-        const resMatches = await fetch('/live-matches');
-        const data = await resMatches.json();
-        const match = data.matches.find(m => m.id == matchId);
-        if (!match) return;
+        async function init() {
+            const res = await fetch('/live-matches');
+            const data = await res.json();
+            const match = data.matches.find(m => m.id == matchId);
+            if(!match) return;
 
-        renderHeader(match);
-        renderStandings(match.competition.code, match.homeTeam.name, match.awayTeam.name);
-        renderOdds(match.homeTeam.name, match.awayTeam.name);
-    }
+            document.getElementById('header').innerHTML = `
+                <div class="match-card">
+                    <div class="team-box"><img src="${match.homeTeam.crest}"><h3>${match.homeTeam.name}</h3></div>
+                    <div style="font-size:40px; font-weight:bold; color:var(--primary)">${match.score.fullTime.home ?? 0} : ${match.score.fullTime.away ?? 0}</div>
+                    <div class="team-box"><img src="${match.awayTeam.crest}"><h3>${match.awayTeam.name}</h3></div>
+                </div>`;
 
-    function renderHeader(m) {
-        document.getElementById('match-display').innerHTML = `
-            <div class="match-header">
-                <div class="team-big"><img src="${m.homeTeam.crest}"><h2>${m.homeTeam.name}</h2></div>
-                <div style="font-size:3rem">${m.score.fullTime.home ?? 0}:${m.score.fullTime.away ?? 0}</div>
-                <div class="team-big"><img src="${m.awayTeam.crest}"><h2>${m.awayTeam.name}</h2></div>
-            </div>`;
-    }
+            loadStandings(match.competition.code, match.homeTeam.name, match.awayTeam.name);
+            loadOdds(match.homeTeam.name, match.awayTeam.name);
+        }
 
-    async function renderStandings(code, home, away) {
-        const res = await fetch(`/api/standings/${code}`);
-        const data = await res.json();
-        if(!data.standings) return;
-        const table = data.standings[0].table;
-        document.getElementById('standings-table').innerHTML = `<table>` + 
-            table.map(r => `<tr class="${(r.team.name==home||r.team.name==away)?'highlight':''}"><td>${r.position}</td><td>${r.team.name}</td><td>${r.points}p</td></tr>`).join('') + `</table>`;
-    }
+        async function loadStandings(code, home, away) {
+            try {
+                const res = await fetch(`/api/standings/${code}`);
+                const data = await res.json();
+                const table = data.standings[0].table;
+                document.getElementById('standings').innerHTML = `<table>` + 
+                    table.map(r => `<tr class="${(r.team.name==home || r.team.name==away)?'highlight':''}"><td>${r.position}.</td><td>${r.team.name}</td><td>${r.points}p</td></tr>`).join('') + `</table>`;
+            } catch(e) { document.getElementById('standings').innerText = "Tabella nem elérhető."; }
+        }
 
-    async function renderOdds(home, away) {
-        const res = await fetch('/api/odds-data');
-        const data = await res.json();
-        const mOdds = data.find(o => o.home_team.includes(home.split(' ')[0]));
-        if(!mOdds) return;
-        const outcomes = mOdds.bookmakers[0].markets[0].outcomes;
-        document.getElementById('odds-display').innerHTML = `<p>H: ${outcomes[0].price} | D: ${outcomes[1].price} | V: ${outcomes[2].price}</p>`;
-    }
-    loadAnalysis();
-</script>
+        async function loadOdds(home, away) {
+            try {
+                const res = await fetch('/api/odds-data');
+                const data = await res.json();
+                const mOdds = data.find(o => o.home_team.includes(home.split(' ')[0]) || o.away_team.includes(away.split(' ')[0]));
+                if(!mOdds) throw new Error();
+                const o = mOdds.bookmakers[0].markets[0].outcomes;
+                document.getElementById('odds').innerHTML = `<p>H: <b>${o[0].price}</b> | D: <b>${o[1].price}</b> | V: <b>${o[2].price}</b></p>`;
+            } catch(e) { document.getElementById('odds').innerText = "Oddsok nem elérhetők ehhez a meccshez."; }
+        }
+        init();
+    </script>
 </body>
 </html>
