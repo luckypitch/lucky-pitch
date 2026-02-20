@@ -7,11 +7,10 @@
         :root { --primary: #00ff88; --text: white; --box-bg: rgba(0,0,0,0.7); --btn-bg: #cde1e3; --btn-text: black; }
         body.light { --text: #111; --box-bg: rgba(255,255,255,0.85); --btn-bg: #111; --btn-text: white; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { min-height: 100vh; background: url("meccsekfoci.jpg") center/cover no-repeat fixed; color: var(--text); padding-bottom: 50px; }
+        body { min-height: 100vh; background: url("meccsekfoci.jpg") center/cover no-repeat fixed; color: var(--text); padding-bottom: 50px; transition: 0.3s; }
         body.light { background: url("meccsekfocivil.jpg") center/cover no-repeat fixed; }
         .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
         nav { display: flex; justify-content: space-between; align-items: center; padding: 25px 0; }
-        .nav-controls { display: flex; gap: 10px; align-items: center; }
         .date-selector { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; padding: 15px; background: var(--box-bg); border-radius: 12px; border: 1px solid var(--text); }
         .date-btn { background: transparent; border: 1px solid var(--text); color: var(--text); padding: 10px; border-radius: 8px; cursor: pointer; min-width: 75px; text-align: center; }
         .date-btn.active { background: var(--btn-bg); color: var(--btn-text); }
@@ -30,10 +29,9 @@
     <div class="container">
         <nav>
             <div style="font-size: 24px; font-weight: bold;">LuckyPitch</div>
-            <div class="nav-controls">
-                <button id="theme-btn" onclick="toggleTheme()">☀️</button>
-                <button id="lang-btn" onclick="toggleLang()">EN 🇬🇧</button>
-                <a href="/home" id="back-btn" class="btn-link">← VISSZA</a>
+            <div>
+                <button onclick="toggleTheme()">☀️/🌙</button>
+                <a href="/home" class="btn-link">← VISSZA</a>
             </div>
         </nav>
         <div id="date-selector" class="date-selector"></div>
@@ -42,47 +40,25 @@
 
     <script>
         const translations = {
-            hu: { today: "MA", back: "← VISSZA", analyze: "ELEMZÉS", days: ["Vas", "Hét", "Ked", "Sze", "Csüt", "Pén", "Szo"], empty: "Nincs meccs ezen a napon." },
-            en: { today: "TODAY", back: "← BACK", analyze: "ANALYZE", days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], empty: "No matches for this day." }
+            hu: { today: "MA", analyze: "ELEMZÉS", days: ["Vas", "Hét", "Ked", "Sze", "Csüt", "Pén", "Szo"], empty: "Nincs meccs ezen a napon." },
+            en: { today: "TODAY", analyze: "ANALYZE", days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], empty: "No matches." }
         };
 
         let allMatches = [];
-        let selectedDate = new Date().toLocaleDateString('sv');
-        let currentLang = localStorage.getItem("lang") || "hu";
-
-        function applyTheme() {
-            const theme = localStorage.getItem("theme") || "dark";
-            document.body.className = theme;
-            document.getElementById("theme-btn").innerText = theme === "dark" ? "☀️" : "🌙";
-        }
+        // Megnézi, van-e elmentett dátum, ha nincs, akkor a mai nap
+        let selectedDate = sessionStorage.getItem('selectedDate') || new Date().toLocaleDateString('sv');
+        let currentLang = "hu";
 
         function toggleTheme() {
-            const newTheme = document.body.classList.contains('light') ? 'dark' : 'light';
-            localStorage.setItem("theme", newTheme);
-            applyTheme();
-        }
-
-        function toggleLang() {
-            currentLang = currentLang === "hu" ? "en" : "hu";
-            localStorage.setItem("lang", currentLang);
-            updateUI();
-        }
-
-        function updateUI() {
-            const langBtn = document.getElementById("lang-btn");
-            if(langBtn) langBtn.innerText = currentLang === "hu" ? "EN 🇬🇧" : "HU 🇭🇺";
-            const backBtn = document.getElementById("back-btn");
-            if(backBtn) backBtn.innerText = translations[currentLang].back;
-            renderAll();
+            document.body.classList.toggle('light');
         }
 
         async function init() {
-            applyTheme();
             try {
                 const res = await fetch("/live-matches");
                 const data = await res.json();
                 allMatches = data.matches || [];
-                updateUI();
+                renderAll();
             } catch (e) { document.getElementById("app").innerText = "Szerver hiba."; }
         }
 
@@ -90,8 +66,6 @@
             const selector = document.getElementById("date-selector");
             selector.innerHTML = "";
             const todayStr = new Date().toLocaleDateString('sv');
-            
-            // Dátumok kinyerése és rendezése
             const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
 
             dates.forEach(date => {
@@ -100,18 +74,17 @@
                 const btn = document.createElement("button");
                 btn.className = `date-btn ${date === selectedDate ? 'active' : ''}`;
                 btn.innerHTML = `${label}<br><span>${d.getMonth()+1}.${d.getDate()}</span>`;
-                btn.onclick = () => { selectedDate = date; renderAll(); };
+                btn.onclick = () => { 
+                    selectedDate = date; 
+                    sessionStorage.setItem('selectedDate', date); // ELMENTJÜK A DÁTUMOT
+                    renderAll(); 
+                };
                 selector.appendChild(btn);
             });
 
             const app = document.getElementById("app");
-            app.innerHTML = "";
             const filtered = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
-            
-            if (filtered.length === 0) {
-                app.innerHTML = `<p style="text-align:center; padding:20px;">${translations[currentLang].empty}</p>`;
-                return;
-            }
+            if (filtered.length === 0) { app.innerHTML = `<p>${translations[currentLang].empty}</p>`; return; }
 
             const leagues = {};
             filtered.forEach(m => {
@@ -119,22 +92,20 @@
                 leagues[m.competition.id].matches.push(m);
             });
 
-            Object.values(leagues).forEach(league => {
-                const div = document.createElement("div");
-                div.className = "league-section";
-                div.innerHTML = `<div class="league-header">${league.name}</div>` + 
-                league.matches.map(m => `
-                    <div class="match-row">
-                        <div class="team-box home">${m.homeTeam.shortName || m.homeTeam.name} <img src="${m.homeTeam.crest}" class="crest"></div>
-                        <div class="score-box">
-                            <div style="font-size:10px; opacity:0.6;">${m.status}</div>
-                            ${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}
-                            <button class="analyze-btn" onclick="location.href='/elemzes?id=${m.id}'">${translations[currentLang].analyze}</button>
-                        </div>
-                        <div class="team-box away"><img src="${m.awayTeam.crest}" class="crest"> ${m.awayTeam.shortName || m.awayTeam.name}</div>
-                    </div>`).join('');
-                app.appendChild(div);
-            });
+            app.innerHTML = Object.values(leagues).map(league => `
+                <div class="league-section">
+                    <div class="league-header">${league.name}</div>
+                    ${league.matches.map(m => `
+                        <div class="match-row">
+                            <div class="team-box home">${m.homeTeam.shortName || m.homeTeam.name} <img src="${m.homeTeam.crest}" class="crest"></div>
+                            <div class="score-box">
+                                <div style="font-size:10px; opacity:0.6;">${m.status}</div>
+                                ${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}
+                                <button class="analyze-btn" onclick="location.href='/elemzes?id=${m.id}'">${translations[currentLang].analyze}</button>
+                            </div>
+                            <div class="team-box away"><img src="${m.awayTeam.crest}" class="crest"> ${m.awayTeam.shortName || m.awayTeam.name}</div>
+                        </div>`).join('')}
+                </div>`).join('');
         }
         init();
     </script>
