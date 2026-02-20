@@ -1,7 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const fetch = require("node-fetch");
+
+// BIZTONSÁGOS FETCH: Kezeli a node-fetch 2-es és 3-as verzióját is, megakadályozva a leállást
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 require('dotenv').config({ path: path.resolve(__dirname, 'api.env') });
 
@@ -9,7 +11,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Statikus fájlok (CSS, Képek, JS) kiszolgálása
+// Statikus fájlok kiszolgálása
 app.use(express.static(path.join(__dirname)));
 
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
@@ -22,45 +24,28 @@ let matchCache = { data: null, lastFetch: 0 };
 let oddsCache = { data: null, lastFetch: 0 };
 let standingsCache = {};
 
-// MECCSEK (1 perces cache)
-A szerver oldali kódod most már sokkal hatékonyabb, de van egy fontos technikai részlet, ami miatt a 6 perces késést tapasztalhatod: a football-data.org ingyenes szintje néha agresszíven gyorsítótáraz (cache), és ha nem specifikálod a ligákat vagy az élő státuszt, hajlamos "régi" adatcsomagot küldeni.
+// --- API VÉGPONTOK ---
 
-Itt a végleges, optimalizált szerver kód és a magyarázat a javításokhoz:
-1. Optimalizált Szerver Oldal (server.js)
-
-A /v4/matches paraméterek nélkül az összes létező meccset lekéri (ifi, női, alacsonyabb osztályok), ami lassítja a feldolgozást. Szűkítsük le az élő meccsekre és a fontosabb ligákra:
-JavaScript
-
+// ⚽ MECCSEK (Optimalizált 30 mp-es cache az élő adatokhoz)
 app.get("/live-matches", async (req, res) => {
     const now = Date.now();
-    
-    // 30 másodperces cache - az ingyenes API limitje miatt ez a biztonságos
     if (matchCache.data && (now - matchCache.lastFetch < 30000)) {
         return res.json(matchCache.data);
     }
 
     try {
-        // TRÜKK: Ha nem adsz meg dátumot, az API az aktuális napot adja, 
-        // de adjunk hozzá egy 'status' szűrőt, hogy az élőket priorizálja
         const url = `https://api.football-data.org/v4/matches`;
-        
         const response = await fetch(url, { 
             headers: { 
                 "X-Auth-Token": FOOTBALL_DATA_API_KEY,
-                // Biztosítjuk, hogy ne kapjunk tömörített/hibás adatot
-                "Accept-Encoding": "identity" 
+                "Accept-Encoding": "identity"
             } 
         });
 
-        if (!response.ok) {
-            console.error(`API Error: ${response.status}`);
-            throw new Error("API hiba");
-        }
+        if (!response.ok) throw new Error(`API hiba: ${response.status}`);
 
         const data = await response.json();
 
-        // Ha az API üres listát küld (néha előfordul hiba esetén), 
-        // ne írjuk felül a jó cache-t
         if (data.matches && data.matches.length > 0) {
             matchCache.data = data;
             matchCache.lastFetch = now;
@@ -74,11 +59,13 @@ app.get("/live-matches", async (req, res) => {
     }
 });
 
-// TABELLA (10 perces cache)
+// 📊 TABELLA (10 perces cache)
 app.get("/api/standings/:leagueCode", async (req, res) => {
     const league = req.params.leagueCode;
     const now = Date.now();
-    if (standingsCache[league] && (now - standingsCache[league].lastFetch < 600000)) return res.json(standingsCache[league].data);
+    if (standingsCache[league] && (now - standingsCache[league].lastFetch < 600000)) {
+        return res.json(standingsCache[league].data);
+    }
     try {
         const url = `https://api.football-data.org/v4/competitions/${league}/standings`;
         const response = await fetch(url, { headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY } });
@@ -91,12 +78,13 @@ app.get("/api/standings/:leagueCode", async (req, res) => {
     }
 });
 
-// ODDS (5 perces cache) - Fontos: Több sportág vagy régió is hozzáadható ha kell
+// 📈 ODDS (5 perces cache)
 app.get('/api/odds-data', async (req, res) => {
     const now = Date.now();
-    if (oddsCache.data && (now - oddsCache.lastFetch < 300000)) return res.json(oddsCache.data);
+    if (oddsCache.data && (now - oddsCache.lastFetch < 300000)) {
+        return res.json(oddsCache.data);
+    }
     try {
-        // EU régió, 1x2 piac (h2h)
         const url = `https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h&bookmakers=betfair,unibet,williamhill`;
         const response = await fetch(url);
         const data = await response.json();
@@ -111,7 +99,7 @@ app.get('/api/odds-data', async (req, res) => {
     }
 });
 
-// STRIPE
+// 💳 STRIPE FIZETÉS
 app.post('/create-checkout-session', async (req, res) => {
     try {
         const session = await stripe.checkout.sessions.create({
@@ -141,6 +129,7 @@ app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.htm
 // Fallback: Ha olyan URL-t ütnek be ami nincs, irányítsuk a főoldalra
 app.get("*", (req, res) => res.redirect("/"));
 
+// SZERVER INDÍTÁSA
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
@@ -148,8 +137,6 @@ app.listen(PORT, '0.0.0.0', () => {
     📡 Port: ${PORT}
     ⚽ Football-Data API: ${FOOTBALL_DATA_API_KEY ? "AKTÍV" : "HIÁNYZIK"}
     📈 Odds API: ${ODDS_API_KEY ? "AKTÍV" : "HIÁNYZIK"}
+    💳 Stripe: ${STRIPE_SECRET_KEY ? "AKTÍV" : "HIÁNYZIK"}
     `);
 });
-
-
-
