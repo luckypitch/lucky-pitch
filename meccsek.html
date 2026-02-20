@@ -2,84 +2,141 @@
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
-    <title>LuckyPitch | Meccsek</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuckyPitch | Matches</title>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --primary: #00ff88; --text: #f8fafc; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .date-bar { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; overflow-x: auto; padding: 10px; }
-        .date-btn { background: var(--card); border: 1px solid #334155; color: white; padding: 10px; border-radius: 8px; cursor: pointer; min-width: 80px; }
-        .date-btn.active { border-color: var(--primary); color: var(--primary); }
-        .match-card { background: var(--card); padding: 15px; border-radius: 12px; display: flex; align-items: center; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); }
-        .team { flex: 1; text-align: center; font-weight: bold; }
-        .score { flex: 1; text-align: center; font-size: 1.5rem; color: var(--primary); font-weight: bold; }
-        .info { text-align: center; opacity: 0.6; margin-top: 30px; }
+        :root { --primary: #00ff88; --text: white; --box-bg: rgba(0,0,0,0.7); --btn-bg: #cde1e3; --btn-text: black; }
+        body.light { --text: #111; --box-bg: rgba(255,255,255,0.85); --btn-bg: #111; --btn-text: white; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { min-height: 100vh; background: url("meccsekfoci.jpg") center/cover no-repeat fixed; color: var(--text); padding-bottom: 50px; }
+        body.light { background: url("meccsekfocivil.jpg") center/cover no-repeat fixed; }
+        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 25px 0; }
+        .nav-controls { display: flex; gap: 10px; align-items: center; }
+        .date-selector { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; padding: 15px; background: var(--box-bg); border-radius: 12px; border: 1px solid var(--text); }
+        .date-btn { background: transparent; border: 1px solid var(--text); color: var(--text); padding: 10px; border-radius: 8px; cursor: pointer; min-width: 75px; text-align: center; }
+        .date-btn.active { background: var(--btn-bg); color: var(--btn-text); }
+        .league-section { background: var(--box-bg); border-radius: 12px; margin-bottom: 25px; overflow: hidden; border: 1px solid var(--text); }
+        .league-header { padding: 15px; background: rgba(255,255,255,0.1); font-weight: bold; }
+        .match-row { padding: 15px; display: grid; grid-template-columns: 1fr 120px 1fr; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
+        .score-box { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; border: 1px solid var(--text); }
+        .analyze-btn { width: 100%; margin-top: 8px; padding: 6px; font-size: 10px; background: var(--primary); color: black; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .crest { width: 30px; height: 30px; object-fit: contain; }
+        .team-box { display: flex; align-items: center; gap: 12px; }
+        .team-box.home { justify-content: flex-end; text-align: right; }
+        button, .btn-link { padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; background: var(--btn-bg); color: var(--btn-text); text-decoration: none; border: none; }
     </style>
 </head>
-<body>
+<body class="dark">
+    <div class="container">
+        <nav>
+            <div style="font-size: 24px; font-weight: bold;">LuckyPitch</div>
+            <div class="nav-controls">
+                <button id="theme-btn" onclick="toggleTheme()">☀️</button>
+                <button id="lang-btn" onclick="toggleLang()">EN 🇬🇧</button>
+                <a href="/home" id="back-btn" class="btn-link">← VISSZA</a>
+            </div>
+        </nav>
+        <div id="date-selector" class="date-selector"></div>
+        <div id="app">Betöltés...</div>
+    </div>
 
-<div class="container">
-    <h1 style="text-align:center; color:var(--primary);">Mérkőzések</h1>
-    <div class="date-bar" id="date-bar"></div>
-    <div id="match-list"></div>
-</div>
+    <script>
+        const translations = {
+            hu: { today: "MA", back: "← VISSZA", analyze: "ELEMZÉS", days: ["Vas", "Hét", "Ked", "Sze", "Csüt", "Pén", "Szo"], empty: "Nincs meccs ezen a napon." },
+            en: { today: "TODAY", back: "← BACK", analyze: "ANALYZE", days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], empty: "No matches for this day." }
+        };
 
-<script>
-    let selectedDate = new Date().toISOString().split('T')[0];
+        let allMatches = [];
+        let selectedDate = new Date().toLocaleDateString('sv');
+        let currentLang = localStorage.getItem("lang") || "hu";
 
-    function renderDates() {
-        const bar = document.getElementById('date-bar');
-        bar.innerHTML = '';
-        for (let i = -1; i <= 3; i++) {
-            const d = new Date();
-            d.setDate(d.getDate() + i);
-            const iso = d.toISOString().split('T')[0];
-            const btn = document.createElement('button');
-            btn.className = `date-btn ${iso === selectedDate ? 'active' : ''}`;
-            btn.innerText = i === 0 ? "MA" : d.toLocaleDateString('hu-HU', {day:'numeric', month:'short'});
-            btn.onclick = () => { selectedDate = iso; renderDates(); fetchMatches(); };
-            bar.appendChild(btn);
+        function applyTheme() {
+            const theme = localStorage.getItem("theme") || "dark";
+            document.body.className = theme;
+            document.getElementById("theme-btn").innerText = theme === "dark" ? "☀️" : "🌙";
         }
-    }
 
-    async function fetchMatches() {
-        const list = document.getElementById('match-list');
-        list.innerHTML = '<p style="text-align:center;">Lekérés...</p>';
+        function toggleTheme() {
+            const newTheme = document.body.classList.contains('light') ? 'dark' : 'light';
+            localStorage.setItem("theme", newTheme);
+            applyTheme();
+        }
 
-        try {
-            const res = await fetch(`/live-matches?date=${selectedDate}`);
-            const data = await res.json();
+        function toggleLang() {
+            currentLang = currentLang === "hu" ? "en" : "hu";
+            localStorage.setItem("lang", currentLang);
+            updateUI();
+        }
 
-            if (data.errorCode === 429) {
-                alert("Túl sok frissítés! Várj egy percet, az API korlátoz.");
-                list.innerHTML = '<p class="info">Várj kicsit, túl sokszor kérted le az adatokat.</p>';
+        function updateUI() {
+            const langBtn = document.getElementById("lang-btn");
+            if(langBtn) langBtn.innerText = currentLang === "hu" ? "EN 🇬🇧" : "HU 🇭🇺";
+            const backBtn = document.getElementById("back-btn");
+            if(backBtn) backBtn.innerText = translations[currentLang].back;
+            renderAll();
+        }
+
+        async function init() {
+            applyTheme();
+            try {
+                const res = await fetch("/live-matches");
+                const data = await res.json();
+                allMatches = data.matches || [];
+                updateUI();
+            } catch (e) { document.getElementById("app").innerText = "Szerver hiba."; }
+        }
+
+        function renderAll() {
+            const selector = document.getElementById("date-selector");
+            selector.innerHTML = "";
+            const todayStr = new Date().toLocaleDateString('sv');
+            
+            // Dátumok kinyerése és rendezése
+            const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
+
+            dates.forEach(date => {
+                const d = new Date(date);
+                const label = (date === todayStr) ? translations[currentLang].today : translations[currentLang].days[d.getDay()];
+                const btn = document.createElement("button");
+                btn.className = `date-btn ${date === selectedDate ? 'active' : ''}`;
+                btn.innerHTML = `${label}<br><span>${d.getMonth()+1}.${d.getDate()}</span>`;
+                btn.onclick = () => { selectedDate = date; renderAll(); };
+                selector.appendChild(btn);
+            });
+
+            const app = document.getElementById("app");
+            app.innerHTML = "";
+            const filtered = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
+            
+            if (filtered.length === 0) {
+                app.innerHTML = `<p style="text-align:center; padding:20px;">${translations[currentLang].empty}</p>`;
                 return;
             }
 
-            if (!data.matches || data.matches.length === 0) {
-                list.innerHTML = `
-                    <div class="info">
-                        <p>Ezen a napon (${selectedDate}) nincs elérhető meccs.</p>
-                        <p><strong>Péntek dél van, próbáld a holnapi SZOMBATOT!</strong></p>
-                    </div>`;
-                return;
-            }
+            const leagues = {};
+            filtered.forEach(m => {
+                if (!leagues[m.competition.id]) leagues[m.competition.id] = { name: m.competition.name, matches: [] };
+                leagues[m.competition.id].matches.push(m);
+            });
 
-            list.innerHTML = data.matches.map(m => `
-                <div class="match-card">
-                    <div class="team">${m.homeTeam.name}</div>
-                    <div class="score">${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}</div>
-                    <div class="team">${m.awayTeam.name}</div>
-                </div>
-            `).join('');
-        } catch (e) {
-            list.innerHTML = '<p style="text-align:center; color:red;">Szerver hiba.</p>';
+            Object.values(leagues).forEach(league => {
+                const div = document.createElement("div");
+                div.className = "league-section";
+                div.innerHTML = `<div class="league-header">${league.name}</div>` + 
+                league.matches.map(m => `
+                    <div class="match-row">
+                        <div class="team-box home">${m.homeTeam.shortName || m.homeTeam.name} <img src="${m.homeTeam.crest}" class="crest"></div>
+                        <div class="score-box">
+                            <div style="font-size:10px; opacity:0.6;">${m.status}</div>
+                            ${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}
+                            <button class="analyze-btn" onclick="location.href='/elemzes?id=${m.id}'">${translations[currentLang].analyze}</button>
+                        </div>
+                        <div class="team-box away"><img src="${m.awayTeam.crest}" class="crest"> ${m.awayTeam.shortName || m.awayTeam.name}</div>
+                    </div>`).join('');
+                app.appendChild(div);
+            });
         }
-    }
-
-    renderDates();
-    fetchMatches();
-</script>
+        init();
+    </script>
 </body>
 </html>
