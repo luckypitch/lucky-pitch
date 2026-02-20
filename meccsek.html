@@ -115,11 +115,6 @@
         }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-        .match-card::after {
-            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%); pointer-events: none;
-        }
-
         .team { display: flex; flex-direction: column; align-items: center; gap: 15px; z-index: 1; }
         .team img { width: 55px; height: 55px; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); }
         .team span { font-weight: 700; font-size: 15px; letter-spacing: 0.5px; }
@@ -149,11 +144,9 @@
         }
         .analyze-link:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 255, 136, 0.4); }
 
-        /* --- SKELETON LOADER --- */
         .skeleton { background: linear-gradient(90deg, var(--border) 25%, rgba(255,255,255,0.05) 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite linear; }
         @keyframes shimmer { to { background-position: -200% 0; } }
 
-        /* MOBIL */
         @media (max-width: 900px) {
             .sidebar { width: 80px; }
             .sidebar span, .sidebar-header, .league-badge { display: none; }
@@ -162,7 +155,6 @@
         @media (max-width: 600px) {
             .match-card { grid-template-columns: 1fr; gap: 25px; padding: 20px; }
             .score-center { order: -1; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
-            .content-area { padding: 20px; }
         }
     </style>
 </head>
@@ -180,23 +172,18 @@
     <div class="main-wrapper">
         <aside class="sidebar" id="sidebar-leagues">
             <div class="sidebar-header">Bajnokságok</div>
-            </aside>
+        </aside>
 
         <main class="content-area">
             <div id="date-strip" class="date-strip"></div>
-            <div id="match-container">
-                <div style="text-align: center; margin-top: 100px; opacity: 0.4;">
-                    <svg width="60" height="60" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-                    <p style="font-family: 'Orbitron'; margin-top: 20px;">VÁLASSZ EGY LIGÁT A KEZDÉSHEZ</p>
-                </div>
-            </div>
+            <div id="match-container"></div>
         </main>
     </div>
 
     <script>
         const translations = {
-            hu: { today: "MA", back: "VISSZA", analyze: "ELEMZÉS", days: ["VAS", "HÉTFŐ", "KEDD", "SZE", "CSÜT", "PÉN", "SZO"] },
-            en: { today: "TODAY", back: "BACK", analyze: "ANALYZE", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] }
+            hu: { today: "MA", back: "VISSZA", analyze: "ELEMZÉS", days: ["VAS", "HÉTFŐ", "KEDD", "SZE", "CSÜT", "PÉN", "SZO"], empty: "Nincs mérkőzés ebben a ligában." },
+            en: { today: "TODAY", back: "BACK", analyze: "ANALYZE", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"], empty: "No matches in this league." }
         };
 
         let allMatches = [];
@@ -207,22 +194,30 @@
         async function init() {
             showSkeletons();
             try {
-                // Szimulált vagy valós Fetch
                 const res = await fetch("/live-matches");
                 const data = await res.json();
                 allMatches = data.matches || [];
+                
                 renderDateStrip();
-                renderLeagues();
+                autoSelectFirstLeague(); // <--- Ez az új funkció
             } catch (e) {
-                document.getElementById("match-container").innerHTML = "<p>Szerver hiba. Próbáld később.</p>";
+                document.getElementById("match-container").innerHTML = "<p>Szerver hiba.</p>";
             }
+        }
+
+        function autoSelectFirstLeague() {
+            const filtered = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
+            if (filtered.length > 0) {
+                // Kivesszük az első meccs bajnokság azonosítóját
+                selectedLeagueId = filtered[0].competition.id;
+            }
+            renderLeagues();
+            renderMatches();
         }
 
         function showSkeletons() {
             const container = document.getElementById("match-container");
-            container.innerHTML = Array(3).fill(0).map(() => `
-                <div class="match-card skeleton" style="height: 180px; opacity: 0.1;"></div>
-            `).join('');
+            container.innerHTML = Array(3).fill(0).map(() => `<div class="match-card skeleton" style="height: 180px; opacity: 0.1;"></div>`).join('');
         }
 
         function renderDateStrip() {
@@ -244,6 +239,11 @@
             selectedDate = date;
             sessionStorage.setItem('lp_selected_date', date);
             renderDateStrip();
+            
+            // Dátumváltáskor is keressük meg az új nap első bajnokságát
+            const filtered = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
+            selectedLeagueId = filtered.length > 0 ? filtered[0].competition.id : null;
+            
             renderLeagues();
             renderMatches();
         }
@@ -253,17 +253,16 @@
             sidebar.innerHTML = '<div class="sidebar-header">Bajnokságok</div>';
             
             const filtered = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
-            const leagues = {};
+            const leaguesMap = new Map();
 
             filtered.forEach(m => {
-                if (!leagues[m.competition.id]) {
-                    leagues[m.competition.id] = { name: m.competition.name, count: 0, emblem: m.competition.emblem };
+                if (!leaguesMap.has(m.competition.id)) {
+                    leaguesMap.set(m.competition.id, { name: m.competition.name, count: 0, emblem: m.competition.emblem });
                 }
-                leagues[m.competition.id].count++;
+                leaguesMap.get(m.competition.id).count++;
             });
 
-            Object.keys(leagues).forEach(id => {
-                const l = leagues[id];
+            leaguesMap.forEach((l, id) => {
                 const div = document.createElement("div");
                 div.className = `league-item ${selectedLeagueId == id ? 'active' : ''}`;
                 div.onclick = () => { selectedLeagueId = id; renderLeagues(); renderMatches(); };
@@ -281,7 +280,7 @@
             const matches = allMatches.filter(m => m.utcDate.startsWith(selectedDate) && m.competition.id == selectedLeagueId);
 
             if (matches.length === 0) {
-                container.innerHTML = `<div class="empty-state" style="text-align:center; padding:50px; opacity:0.5;">Nincs mérkőzés ebben a ligában.</div>`;
+                container.innerHTML = `<div style="text-align:center; padding:50px; opacity:0.5; font-family:'Orbitron'">${translations[currentLang].empty}</div>`;
                 return;
             }
 
@@ -323,9 +322,7 @@
             renderMatches();
         }
 
-        // Téma betöltése indításkor
         if(localStorage.getItem("theme") === "light") toggleTheme();
-        
         init();
     </script>
 </body>
