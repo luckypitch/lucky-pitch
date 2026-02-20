@@ -22,15 +22,22 @@
             --rel: #ff3e3e;
         }
 
-        body { background: radial-gradient(circle at center, #0f172a 0%, #020617 100%); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+        body { 
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%); 
+            color: var(--text); 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            overflow-x: hidden; 
+        }
+
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
 
-        /* --- VISSZA GOMB --- */
+        /* --- NAVIGATION --- */
         .back-btn {
             position: absolute; top: 20px; left: 20px; display: flex; align-items: center; gap: 10px;
             text-decoration: none; color: var(--neon-blue); font-family: 'Orbitron'; font-size: 11px;
             padding: 10px 18px; background: rgba(14, 165, 233, 0.1); border: 1px solid var(--neon-blue);
-            border-radius: 50px; transition: 0.3s; z-index: 100;
+            border-radius: 50px; transition: 0.3s; z-index: 100; font-weight: bold;
         }
         .back-btn:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 20px var(--neon-blue); transform: translateX(-5px); }
 
@@ -39,61 +46,86 @@
         .ticker-item { margin-right: 60px; font-size: 11px; font-family: 'Orbitron'; color: var(--neon-blue); }
         @keyframes ticker-scroll { 0% { transform: translateX(50%); } 100% { transform: translateX(-100%); } }
 
+        /* --- HERO --- */
         .hero-card {
             background: var(--glass); backdrop-filter: blur(25px); border-radius: 30px; border: 1px solid var(--border);
             padding: 50px 40px; display: flex; justify-content: space-around; align-items: center;
             margin-bottom: 30px; box-shadow: 0 0 50px rgba(0,0,0,0.6);
         }
-        .score-display { font-family: 'Orbitron'; font-size: clamp(3rem, 8vw, 5.5rem); font-weight: 900; color: var(--neon-green); text-shadow: 0 0 25px rgba(0,255,136,0.6); }
+        .score-display { font-family: 'Orbitron'; font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 900; color: var(--neon-green); text-shadow: 0 0 25px rgba(0,255,136,0.6); }
         .team-box { flex: 1; text-align: center; }
-        .team-box img { width: 100px; height: 100px; }
+        .team-box img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 15px; }
+        .team-box h2 { font-family: 'Orbitron'; font-size: 1.2rem; margin: 0; }
 
+        /* --- LAYOUT --- */
         .grid-layout { display: grid; grid-template-columns: 2.5fr 1fr; gap: 30px; }
-        @media (max-width: 1100px) { .grid-layout { grid-template-columns: 1fr; } .back-btn { position: fixed; top: 10px; left: 10px; } }
+        @media (max-width: 1100px) { 
+            .grid-layout { grid-template-columns: 1fr; } 
+            .back-btn { position: fixed; top: 10px; left: 10px; padding: 8px 15px; font-size: 10px; }
+        }
         .glass-panel { background: var(--glass); border: 1px solid var(--border); padding: 30px; border-radius: 28px; backdrop-filter: blur(15px); overflow-x: auto; }
 
         /* --- MOMENTUM --- */
-        .momentum-wrap { height: 12px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 20px 0; overflow: hidden; border: 1px solid var(--border); }
-        .momentum-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-green)); transition: 1.5s ease; box-shadow: 0 0 15px var(--neon-blue); }
+        .momentum-wrap { height: 10px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 20px 0; overflow: hidden; border: 1px solid var(--border); }
+        .momentum-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-green)); transition: 1.5s ease; }
 
         /* --- TABELLA ÉS ZÓNÁK --- */
         table { width: 100%; border-collapse: separate; border-spacing: 0 8px; min-width: 800px; }
+        th { font-family: 'Orbitron'; font-size: 10px; color: #64748b; padding-bottom: 10px; }
         td { padding: 12px; background: rgba(255,255,255,0.02); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
         .pos-col { border-left-width: 4px !important; border-left-style: solid !important; }
-        .zone-tag { font-size: 8px; font-family: 'Orbitron'; display: block; margin-bottom: 4px; font-weight: 900; letter-spacing: 1px; }
-        .pos-num-box { width: 30px; height: 30px; line-height: 30px; margin: 0 auto; background: #000; border-radius: 8px; font-weight: bold; font-family: 'Orbitron'; font-size: 12px; border: 1px solid transparent; }
+        .zone-tag { font-size: 8px; font-family: 'Orbitron'; display: block; margin-bottom: 4px; font-weight: 900; }
+        .pos-num-box { width: 28px; height: 28px; line-height: 28px; margin: 0 auto; background: #000; border-radius: 6px; font-weight: bold; font-family: 'Orbitron'; font-size: 11px; }
         .highlight td { background: rgba(0, 255, 136, 0.08) !important; border-color: var(--neon-green) !important; }
-        .pts-bold { color: var(--neon-green); font-family: 'Orbitron'; font-weight: bold; font-size: 16px; }
+        .pts-bold { color: var(--neon-green); font-family: 'Orbitron'; font-weight: bold; }
 
-        /* --- ODDS --- */
-        .bookmaker-badge { font-family: 'Orbitron'; font-size: 9px; color: var(--neon-blue); background: rgba(14,165,233,0.1); padding: 4px 10px; border-radius: 4px; margin-bottom: 10px; display: inline-block; border: 1px solid var(--neon-blue); }
-        .odds-card { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-family: 'Orbitron'; }
-        .chart-container { position: relative; height: 250px; margin: 20px 0; }
+        /* --- MARKET / ODDS --- */
+        .bookmaker-badge { font-family: 'Orbitron'; font-size: 9px; color: var(--neon-blue); background: rgba(14,165,233,0.1); padding: 4px 10px; border-radius: 4px; margin-bottom: 15px; display: inline-block; border: 1px solid var(--neon-blue); }
+        .odds-card { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-family: 'Orbitron'; font-size: 13px; }
+        .odds-card b { color: var(--neon-green); font-size: 16px; }
+        .chart-container { position: relative; height: 220px; margin-bottom: 20px; }
+        
+        #no-data-msg { text-align: center; padding: 40px 20px; font-family: 'Orbitron'; color: var(--neon-red); }
     </style>
 </head>
 <body>
 
 <a href="meccsek.html" class="back-btn">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-    VISSZA A MECCSEKHEZ
+    BACK TO MECCSEK
 </a>
 
-<div class="ticker-wrap"><div class="ticker"><span class="ticker-item">⚡ LIVE MARKET SYNC ACTIVE</span><span class="ticker-item">📊 AI PROBABILITY CALCULATED FROM REAL-TIME ODDS</span></div></div>
+<div class="ticker-wrap">
+    <div class="ticker">
+        <span class="ticker-item">⚡ LIVE DATA FEED ACTIVE</span>
+        <span class="ticker-item">📊 MULTI-BOOKMAKER MARKET ANALYSIS RUNNING</span>
+        <span class="ticker-item">🤖 AI PROBABILITY UPDATING EVERY 60S</span>
+    </div>
+</div>
 
 <div class="container">
     <div id="hero-target" class="hero-card"></div>
+    
     <div class="grid-layout">
         <div class="glass-panel">
-            <h3 id="momentum-title" style="font-family:'Orbitron'; color:var(--neon-blue); margin:0;">MATCH MOMENTUM</h3>
+            <h3 id="momentum-title" style="font-family:'Orbitron'; color:var(--neon-blue); margin:0; font-size: 14px;">MATCH MOMENTUM</h3>
             <div class="momentum-wrap"><div class="momentum-fill" id="momentum-bar"></div></div>
-            <h3 style="font-family:'Orbitron'; margin-top:40px;">LIVE STANDINGS</h3>
-            <div id="standings-target">Adatok betöltése...</div>
+            
+            <h3 style="font-family:'Orbitron'; margin-top:40px; font-size: 14px;">LIVE LEAGUE TABLE</h3>
+            <div id="standings-target">Adatok lekérése...</div>
         </div>
-        <div class="right-col">
-            <div class="glass-panel">
-                <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:12px; margin:0;">WIN PROBABILITY (BY MARKET)</h3>
+
+        <div class="glass-panel">
+            <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:12px; margin:0; margin-bottom:20px;">MARKET WIN PROBABILITY</h3>
+            
+            <div id="market-container">
                 <div class="chart-container"><canvas id="aiChart"></canvas></div>
                 <div id="odds-target"></div>
+            </div>
+
+            <div id="no-data-msg" style="display:none;">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:10px; opacity:0.6;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                <p style="font-size:11px; letter-spacing:1px;">NO LIVE ODDS DATA AVAILABLE</p>
             </div>
         </div>
     </div>
@@ -133,9 +165,15 @@
             if (!match) return;
 
             document.getElementById('hero-target').innerHTML = `
-                <div class="team-box"><img src="${match.homeTeam.crest}"><h2>${match.homeTeam.name}</h2></div>
-                <div class="score-display">${match.score.fullTime.home ?? 0}:${match.score.fullTime.away ?? 0}</div>
-                <div class="team-box"><img src="${match.awayTeam.crest}"><h2>${match.awayTeam.name}</h2></div>`;
+                <div class="team-box">
+                    <img src="${match.homeTeam.crest}" onerror="this.src='https://via.placeholder.com/80?text=Home'">
+                    <h2>${match.homeTeam.name}</h2>
+                </div>
+                <div class="score-display">${match.score.fullTime.home ?? 0} : ${match.score.fullTime.away ?? 0}</div>
+                <div class="team-box">
+                    <img src="${match.awayTeam.crest}" onerror="this.src='https://via.placeholder.com/80?text=Away'">
+                    <h2>${match.awayTeam.name}</h2>
+                </div>`;
 
             updateMomentum(match.status, match.utcDate);
             loadStandings(match.competition.code, match.homeTeam.name, match.awayTeam.name);
@@ -153,36 +191,53 @@
             bar.style.width = (mins / 90 * 100) + '%';
             title.innerText = `MATCH TIME: ${mins}'`;
         } else if (status === 'FINISHED') {
-            bar.style.width = '100%'; title.innerText = `MATCH TIME: FULL TIME`;
+            bar.style.width = '100%'; title.innerText = `MATCH TIME: FT (FINISHED)`;
         } else {
-            bar.style.width = '0%'; title.innerText = `MATCH TIME: 0'`;
+            bar.style.width = '0%'; title.innerText = `MATCH TIME: NOT STARTED`;
         }
     }
 
     async function loadOdds(home, away) {
+        const marketContainer = document.getElementById('market-container');
+        const noDataMsg = document.getElementById('no-data-msg');
+        const oddsTarget = document.getElementById('odds-target');
+
         try {
             const res = await fetch('/api/odds-data');
             const data = await res.json();
-            const homeKey = home.split(' ')[0];
-            const market = data.find(o => o.home_team.includes(homeKey) || o.away_team.includes(homeKey));
             
-            if (market && market.bookmakers[0]) {
-                const bookie = market.bookmakers[0];
-                const outcomes = bookie.markets[0].outcomes;
-                const hO = outcomes.find(x => x.name === market.home_team).price;
-                const aO = outcomes.find(x => x.name === market.away_team).price;
-                const dO = outcomes.find(x => x.name === 'Draw').price;
+            const homeKey = home.split(' ')[0].toLowerCase();
+            const matchOdds = data.find(o => o.home_team.toLowerCase().includes(homeKey) || o.away_team.toLowerCase().includes(homeKey));
 
-                const total = (1/hO) + (1/aO) + (1/dO);
-                updateChart(Math.round((1/hO)/total*100), Math.round((1/dO)/total*100), Math.round((1/aO)/total*100));
+            if (matchOdds && matchOdds.bookmakers && matchOdds.bookmakers.length > 0) {
+                // Megpróbáljuk a Betfair-t vagy az Unibetet keresni, különben az elsőt vesszük
+                const bookie = matchOdds.bookmakers.find(b => b.key === 'betfair' || b.key === 'unibet') || matchOdds.bookmakers[0];
+                const market = bookie.markets.find(m => m.key === 'h2h');
 
-                document.getElementById('odds-target').innerHTML = `
-                    <div class="bookmaker-badge">OFFER BY: ${bookie.title.toUpperCase()}</div>
-                    <div class="odds-card"><span>HOME (1)</span> <b>${hO}</b></div>
-                    <div class="odds-card"><span>DRAW (X)</span> <b>${dO}</b></div>
-                    <div class="odds-card"><span>AWAY (2)</span> <b>${aO}</b></div>`;
+                if (market) {
+                    const hO = market.outcomes.find(x => x.name === matchOdds.home_team).price;
+                    const aO = market.outcomes.find(x => x.name === matchOdds.away_team).price;
+                    const dO = market.outcomes.find(x => x.name === 'Draw').price;
+
+                    const total = (1/hO) + (1/aO) + (1/dO);
+                    updateChart(Math.round((1/hO)/total*100), Math.round((1/dO)/total*100), Math.round((1/aO)/total*100));
+
+                    marketContainer.style.display = 'block';
+                    noDataMsg.style.display = 'none';
+                    oddsTarget.innerHTML = `
+                        <div class="bookmaker-badge">LIVE SOURCE: ${bookie.title.toUpperCase()}</div>
+                        <div class="odds-card"><span>HOME (1)</span> <b>${hO.toFixed(2)}</b></div>
+                        <div class="odds-card"><span>DRAW (X)</span> <b>${dO.toFixed(2)}</b></div>
+                        <div class="odds-card"><span>AWAY (2)</span> <b>${aO.toFixed(2)}</b></div>
+                    `;
+                    return;
+                }
             }
-        } catch (e) {}
+            throw new Error("No odds");
+        } catch (e) {
+            marketContainer.style.display = 'none';
+            noDataMsg.style.display = 'block';
+        }
     }
 
     function updateChart(h, d, a) {
@@ -190,7 +245,10 @@
         if (aiChart) aiChart.destroy();
         aiChart = new Chart(ctx, {
             type: 'doughnut',
-            data: { labels: [`Home ${h}%`, `Draw ${d}%`, `Away ${a}%`], datasets: [{ data: [h, d, a], backgroundColor: ['#00ff88', '#0ea5e9', '#ff3e3e'], borderColor: '#020617', borderWidth: 4 }] },
+            data: { 
+                labels: [`Home ${h}%`, `Draw ${d}%`, `Away ${a}%`], 
+                datasets: [{ data: [h, d, a], backgroundColor: ['#00ff88', '#0ea5e9', '#ff3e3e'], borderColor: '#020617', borderWidth: 4 }] 
+            },
             options: { cutout: '80%', maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#fff', font: { family: 'Orbitron', size: 10 } } } } }
         });
     }
@@ -202,7 +260,7 @@
             const tableData = data.standings.find(s => s.type === 'TOTAL').table;
             const total = tableData.length;
 
-            let html = `<table><thead><tr><th>#</th><th style="text-align:left">CSAPAT</th><th>MP</th><th>GY</th><th>D</th><th>V</th><th>G</th><th>GK</th><th class="pts-bold">P</th></tr></thead><tbody>`;
+            let html = `<table><thead><tr><th>#</th><th style="text-align:left">TEAM</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GK</th><th class="pts-bold">P</th></tr></thead><tbody>`;
 
             tableData.forEach(r => {
                 let status = r.description || "";
@@ -215,30 +273,26 @@
                         else if (pos === 5) status = "Europa League Group Stage";
                         else if (pos === 6) status = "Conference League Qualifiers";
                         else if (pos >= total - 2) status = "Relegation";
-                    }
-                    else if (code === 'BL1') {
+                    } else if (code === 'BL1') {
                         if (pos <= 4) status = "Champions League Group Stage";
                         else if (pos === 5) status = "Europa League Group Stage";
                         else if (pos === 16) status = "Osztályozó";
                         else if (pos >= 17) status = "Relegation";
-                    }
-                    else if (code === 'DED') { 
+                    } else if (code === 'DED') { 
                         if (pos <= 2) status = "Champions League Group Stage";
                         else if (pos === 3) status = "Champions League Qualifiers";
                         else if (pos === 4) status = "Europa League Qualifiers";
                         else if (pos >= 5 && pos <= 8) status = "Conference League Play-offs";
                         else if (pos === 16) status = "Osztályozó";
                         else if (pos >= 17) status = "Relegation";
-                    }
-                    else if (code === 'PPL') {
+                    } else if (code === 'PPL') {
                         if (pos === 1) status = "Champions League Group Stage";
                         else if (pos === 2) status = "Champions League Qualifiers";
                         else if (pos === 3) status = "Europa League Qualifiers";
                         else if (pos === 4) status = "Conference League Qualifiers";
                         else if (pos === 16) status = "Osztályozó";
                         else if (pos >= 17) status = "Relegation";
-                    }
-                    else if (code === 'FL1') {
+                    } else if (code === 'FL1') {
                         if (pos <= 3) status = "Champions League Group Stage";
                         else if (pos === 4) status = "Champions League Qualifiers";
                         else if (pos === 5) status = "Europa League Group Stage";
@@ -256,13 +310,15 @@
                         <div class="pos-num-box" style="background:${color!=='transparent'?color:'#000'}; color:${color!=='transparent'?'#000':'var(--neon-blue)'}; border-color:${color!=='transparent'?'rgba(255,255,255,0.2)':'var(--neon-blue)'}">${pos}</div>
                     </td>
                     <td style="text-align:left; font-weight:800;"><img src="${r.team.crest}" width="20" style="margin-right:8px; vertical-align:middle;"> ${r.team.name}</td>
-                    <td>${r.playedGames}</td><td>${r.won}</td><td>${r.draw}</td><td>${r.lost}</td><td>${r.goalsFor}:${r.goalsAgainst}</td>
-                    <td style="color:${r.goalDifference >= 0 ? 'var(--neon-green)' : 'var(--neon-red)'}">${r.goalDifference > 0 ? '+'+r.goalDifference : r.goalDifference}</td>
+                    <td>${r.playedGames}</td><td>${r.won}</td><td>${r.draw}</td><td>${r.lost}</td>
+                    <td style="color:${r.goalDifference >= 0 ? 'var(--neon-green)' : 'var(--neon-red)'}">${r.goalDifference}</td>
                     <td class="pts-bold">${r.points}</td>
                 </tr>`;
             });
             document.getElementById('standings-target').innerHTML = html + "</tbody></table>";
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            document.getElementById('standings-target').innerHTML = "Standings data unavailable.";
+        }
     }
 
     init();
