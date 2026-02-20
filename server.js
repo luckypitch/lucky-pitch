@@ -15,33 +15,48 @@ app.use(express.static(__dirname));
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
 const ODDS_API_KEY = process.env.ODDS_API_KEY;
 
-// --- MECCSEK DÁTUM SZERINT ---
+// --- MECCSEK LEKÉRÉSE ---
 app.get("/live-matches", async (req, res) => {
     try {
-        const leagueIds = "PL,PD,BL1,SA1,FL1,CL,EL";
-        // A kliens küldi a dátumot, ha nem, akkor a mai nap az alapértelmezett
+        // Ingyenesen elérhető ligák kódjai (ezek a legbiztosabbak)
+        // PL (Angol), PD (Spanyol), BL1 (Német), SA1 (Olasz), FL1 (Francia), CL (BL), EC (EB/VB)
+        const leagueIds = "PL,PD,BL1,SA1,FL1,CL,EL,DED,PPL"; 
+        
         const date = req.query.date || new Date().toISOString().split('T')[0];
         
-        const url = `https://api.football-data.org/v4/matches?competitions=${leagueIds}&dateFrom=${date}&dateTo=${date}`;
+        // Fontos: Ha túl sok ligát kérsz egyszerre, az ingyenes API néha elutasítja.
+        // Itt egy stabilabb URL-t használunk:
+        const url = `https://api.football-data.org/v4/matches?dateFrom=${date}&dateTo=${date}&competitions=${leagueIds}`;
         
+        console.log(`Lekérés indítása: ${url}`); // Látni fogod a Render logban
+
         const response = await fetch(url, { 
             headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY } 
         });
+
         const data = await response.json();
+
+        // Ha az API hibát dob (pl. 403 Forbidden vagy 429 Too Many Requests)
+        if (data.errorCode) {
+            console.error("API Hibaüzenet:", data.message);
+            return res.status(data.errorCode === 403 ? 403 : 500).json(data);
+        }
+
         res.json(data);
     } catch (err) {
-        res.status(500).json({ error: "Szerver hiba a meccseknél" });
+        console.error("Szerver hiba:", err);
+        res.status(500).json({ error: "Szerver hiba" });
     }
 });
 
-// --- ODDS ADATOK AZ ELEMZÉSHEZ ---
+// --- ELEMZÉS (ODDS) ---
 app.get('/api/odds-data', ClerkExpressRequireAuth(), async (req, res) => {
     try {
         const response = await fetch(`https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h`);
         const data = await response.json();
         res.json(data);
     } catch (error) {
-        res.status(500).json({ error: "Szerver hiba az oddsoknál" });
+        res.status(500).json({ error: "Odds hiba" });
     }
 });
 
@@ -73,4 +88,4 @@ app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.htm
 app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Szerver fut: ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 LuckyPitch Szerver fut a ${PORT} porton`));
