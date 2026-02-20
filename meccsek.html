@@ -2,46 +2,31 @@
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
+    <title>LuckyPitch | Meccsek</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuckyPitch | Mérkőzések</title>
-    <script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_YWxsb3dlZC1pbnNlY3QtOTguY2xlcmsuYWNjb3VudHMuZGV2JA" src="https://allowed-insect-98.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --primary: #00ff88; --text: #f8fafc; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 0; }
-        nav { display: flex; justify-content: space-between; padding: 1rem 5%; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
         .date-bar { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; overflow-x: auto; padding: 10px; }
-        .date-btn { background: var(--card); border: 1px solid #334155; color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+        .date-btn { background: var(--card); border: 1px solid #334155; color: white; padding: 10px; border-radius: 8px; cursor: pointer; min-width: 80px; }
         .date-btn.active { border-color: var(--primary); color: var(--primary); }
-        .match-card { background: var(--card); padding: 1rem; border-radius: 12px; display: flex; align-items: center; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); }
+        .match-card { background: var(--card); padding: 15px; border-radius: 12px; display: flex; align-items: center; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); }
         .team { flex: 1; text-align: center; font-weight: bold; }
-        .score-info { flex: 1; text-align: center; }
-        .score { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
-        .status-msg { text-align: center; margin-top: 50px; opacity: 0.6; }
+        .score { flex: 1; text-align: center; font-size: 1.5rem; color: var(--primary); font-weight: bold; }
+        .info { text-align: center; opacity: 0.6; margin-top: 30px; }
     </style>
 </head>
 <body>
 
-<nav>
-    <a href="/" style="color:var(--primary); text-decoration:none; font-size:1.5rem; font-weight:bold;">LuckyPitch</a>
-    <div id="user-button"></div>
-</nav>
-
 <div class="container">
-    <h2 style="text-align:center;">Mérkőzések</h2>
+    <h1 style="text-align:center; color:var(--primary);">Mérkőzések</h1>
     <div class="date-bar" id="date-bar"></div>
     <div id="match-list"></div>
 </div>
 
 <script>
     let selectedDate = new Date().toISOString().split('T')[0];
-
-    async function init() {
-        await Clerk.load();
-        if (Clerk.user) Clerk.mountUserButton(document.getElementById('user-button'));
-        renderDates();
-        fetchMatches();
-    }
 
     function renderDates() {
         const bar = document.getElementById('date-bar');
@@ -52,7 +37,7 @@
             const iso = d.toISOString().split('T')[0];
             const btn = document.createElement('button');
             btn.className = `date-btn ${iso === selectedDate ? 'active' : ''}`;
-            btn.innerText = i === 0 ? "Ma" : d.toLocaleDateString('hu-HU', {day:'numeric', month:'short'});
+            btn.innerText = i === 0 ? "MA" : d.toLocaleDateString('hu-HU', {day:'numeric', month:'short'});
             btn.onclick = () => { selectedDate = iso; renderDates(); fetchMatches(); };
             bar.appendChild(btn);
         }
@@ -60,53 +45,41 @@
 
     async function fetchMatches() {
         const list = document.getElementById('match-list');
-        list.innerHTML = '<p class="status-msg">Betöltés...</p>';
+        list.innerHTML = '<p style="text-align:center;">Lekérés...</p>';
 
         try {
-            console.log("Lekérés indítása dátumra:", selectedDate);
             const res = await fetch(`/live-matches?date=${selectedDate}`);
-            
-            // Hibakeresés: Megnézzük a nyers választ
-            if (!res.ok) {
-                const errorText = await res.text();
-                alert("Szerver hiba! Kód: " + res.status + "\nÜzenet: " + errorText);
+            const data = await res.json();
+
+            if (data.errorCode === 429) {
+                alert("Túl sok frissítés! Várj egy percet, az API korlátoz.");
+                list.innerHTML = '<p class="info">Várj kicsit, túl sokszor kérted le az adatokat.</p>';
                 return;
             }
 
-            const data = await res.json();
-            console.log("API válasz:", data);
-
-            // FELUGRÓ ABLAK A TESZTHEZ
-            if (data.matches && data.matches.length > 0) {
-                alert("Siker! " + data.matches.length + " meccset találtam.");
-            } else {
-                alert("Az API válaszolt, de 0 meccset küldött erre a napra.");
-            }
-
             if (!data.matches || data.matches.length === 0) {
-                list.innerHTML = '<p class="status-msg">Nincs meccs ezen a napon az ingyenes ligákban.</p>';
+                list.innerHTML = `
+                    <div class="info">
+                        <p>Ezen a napon (${selectedDate}) nincs elérhető meccs.</p>
+                        <p><strong>Péntek dél van, próbáld a holnapi SZOMBATOT!</strong></p>
+                    </div>`;
                 return;
             }
 
             list.innerHTML = data.matches.map(m => `
                 <div class="match-card">
                     <div class="team">${m.homeTeam.name}</div>
-                    <div class="score-info">
-                        <div class="score">${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}</div>
-                        <a href="/elemzes" style="color:var(--primary); font-size:0.8rem;">ELEMZÉS</a>
-                    </div>
+                    <div class="score">${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}</div>
                     <div class="team">${m.awayTeam.name}</div>
                 </div>
             `).join('');
-
         } catch (e) {
-            console.error("Hiba történt:", e);
-            alert("Hiba a lekérés során: " + e.message);
-            list.innerHTML = '<p class="status-msg" style="color:red;">Hiba a kapcsolódáskor.</p>';
+            list.innerHTML = '<p style="text-align:center; color:red;">Szerver hiba.</p>';
         }
     }
 
-    window.onload = init;
+    renderDates();
+    fetchMatches();
 </script>
 </body>
 </html>
