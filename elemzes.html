@@ -234,33 +234,70 @@
                 let status = r.description || "";
                 const pos = r.position;
 
-                // --- MANUÁLIS KIEGÉSZÍTÉS (Ha az API nem adja meg) ---
-                if (!status) {
-                    if (code === 'ELC') { // Championship
-                        if (pos <= 2) status = "Promotion - Premier League";
-                        else if (pos >= 3 && pos <= 6) status = "Championship (Play Off: Semi-finals)";
-                        else if (pos >= total - 2) status = "Relegation - League One";
-                    } 
-                    else if (code === 'DED') { // Holland Eredivisie
-                        if (pos === 1) status = "Champions League (Group Stage)";
-                        else if (pos === 2) status = "Champions League (Qualifiers)";
-                        else if (pos === 3) status = "Europa League (Qualifiers)";
-                        else if (pos >= 4 && pos <= 7) status = "Conference League (Play-offs)";
-                        else if (pos === 16) status = "Eredivisie (Osztályozó)";
-                        else if (pos >= 17) status = "Kiesés - Eerste Divisie";
-                    }
-                    else if (code === 'FL1') { // Francia Ligue 1
-                        if (pos <= 3) status = "Champions League (Group Stage)";
-                        else if (pos === 4) status = "Champions League (Qualifiers)";
-                        else if (pos === 16) status = "Ligue 1 (Osztályozó - Play Offs)";
-                        else if (pos >= 17) status = "Kiesés - Ligue 2";
-                    }
-                    else if (['PL', 'PD', 'SA', 'BL1'].includes(code)) { // Top ligák
-                        if (pos <= 4) status = "Champions League (Group Stage)";
-                        else if (pos === 5) status = "Europa League (Group Stage)";
-                        else if (pos >= total - 2) status = "Relegation";
-                    }
-                }
+              // --- DINAMIKUS ÉS MANUÁLIS LIGA LOGIKA ---
+// Ha az API nem küld státuszt, vagy felül akarjuk írni a biztonság kedvéért
+if (!status || status === "") {
+    
+    // 1. ANGLIA (PL), SPANYOL (PD), OLASZ (SA) - Hasonló szabályok
+    if (['PL', 'PD', 'SA'].includes(code)) {
+        if (pos <= 4) status = "Champions League Group Stage";
+        else if (pos === 5) status = "Europa League Group Stage";
+        else if (pos === 6) status = "Conference League Qualifiers";
+        else if (pos >= total - 2) status = "Relegation";
+    }
+    
+    // 2. NÉMETORSZÁG (BL1)
+    else if (code === 'BL1') {
+        if (pos <= 4) status = "Champions League Group Stage";
+        else if (pos === 5) status = "Europa League Group Stage";
+        else if (pos === 6) status = "Conference League Qualifiers";
+        else if (pos === 16) status = "Bundesliga Osztályozó";
+        else if (pos >= 17) status = "Kiesés - 2. Bundesliga";
+    }
+
+    // 3. HOLLANDIA (DED)
+    else if (code === 'DED') {
+        if (pos <= 2) status = "Champions League Group Stage";
+        else if (pos === 3) status = "Champions League Qualifiers";
+        else if (pos === 4) status = "Europa League Qualifiers";
+        else if (pos >= 5 && pos <= 8) status = "Conference League Play-offs";
+        else if (pos === 16) status = "Eredivisie Osztályozó";
+        else if (pos >= 17) status = "Kiesés - Eerste Divisie";
+    }
+
+    // 4. FRANCIAORSZÁG (FL1)
+    else if (code === 'FL1') {
+        if (pos <= 3) status = "Champions League Group Stage";
+        else if (pos === 4) status = "Champions League Qualifiers";
+        else if (pos === 5) status = "Europa League Group Stage";
+        else if (pos === 6) status = "Conference League Qualifiers";
+        else if (pos === 16) status = "Ligue 1 Osztályozó";
+        else if (pos >= 17) status = "Kiesés - Ligue 2";
+    }
+
+    // 5. ANGOL MÁSODOSZTÁLY (ELC - Championship)
+    else if (code === 'ELC') {
+        if (pos <= 2) status = "Promotion - Premier League";
+        else if (pos >= 3 && pos <= 6) status = "Championship (Play Off: Semi-finals)";
+        else if (pos >= total - 2) status = "Relegation - League One";
+    }
+
+    // 6. PORTUGÁLIA (PPL)
+    else if (code === 'PPL') {
+        if (pos === 1) status = "Champions League Group Stage";
+        else if (pos === 2) status = "Champions League Qualifiers";
+        else if (pos === 3) status = "Europa League Qualifiers";
+        else if (pos >= 4 && pos <= 5) status = "Conference League Qualifiers";
+        else if (pos === 16) status = "Osztályozó";
+        else if (pos >= 17) status = "Kiesés";
+    }
+    
+    // 7. MINDEN MÁS LIGA (Alapértelmezett fallback)
+    else {
+        if (pos === 1) status = "Bajnok / Feljutó";
+        else if (pos >= total - 2) status = "Kieső zóna";
+    }
+}
 
                 const color = getStatusColor(status);
                 // Intelligens név-összehasonlítás
@@ -321,3 +358,4 @@
 
 </body>
 </html>
+
