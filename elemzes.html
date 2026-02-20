@@ -82,6 +82,42 @@
         .momentum-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-green)); transition: 1.5s ease; }
 
         .chart-container { position: relative; height: 200px; margin-bottom: 20px; }
+
+        /* Jelmagyarázat stílusa */
+.legend-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-family: 'Orbitron', sans-serif;
+    color: #94a3b8;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    box-shadow: 0 0 5px rgba(255,255,255,0.1);
+}
+
+/* Színek a jelmagyarázathoz (szinkronban a táblázattal) */
+.bg-cl { background-color: var(--cl-gs); box-shadow: 0 0 8px var(--cl-gs); }
+.bg-el { background-color: var(--el-gs); box-shadow: 0 0 8px var(--el-gs); }
+.bg-ecl { background-color: var(--ecl-q); box-shadow: 0 0 8px var(--ecl-q); }
+.bg-po { background-color: var(--po); box-shadow: 0 0 8px var(--po); }
+.bg-rel { background-color: var(--rel); box-shadow: 0 0 8px var(--rel); }
+        
     </style>
 </head>
 <body>
@@ -111,7 +147,30 @@
             
             <h3 style="font-family:'Orbitron'; margin-top:30px; font-size: 13px; border-left: 3px solid var(--neon-green); padding-left: 10px;">LIVE LEAGUE TABLE</h3>
             <div class="table-responsive" id="standings-target">Adatok betöltése...</div>
-        </div>
+        </div><div class="table-responsive" id="standings-target"></div>
+
+<div class="legend-container">
+    <div class="legend-item">
+        <div class="legend-color bg-cl"></div>
+        <span>Bajnokok Ligája</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color bg-el"></div>
+        <span>Európa Liga</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color bg-ecl"></div>
+        <span>Konferencia Liga</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color bg-po"></div>
+        <span>Osztályozó / Rájátszás</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color bg-rel"></div>
+        <span>Kieső zóna</span>
+    </div>
+</div>
 
         <div class="glass-panel">
             <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:12px; margin:0; margin-bottom:20px;">WIN PROBABILITY</h3>
@@ -290,3 +349,4 @@
 </script>
 </body>
 </html>
+
