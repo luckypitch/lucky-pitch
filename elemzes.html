@@ -61,63 +61,46 @@
 
         .glass-panel { background: var(--glass); border: 1px solid var(--border); padding: 20px; border-radius: 24px; backdrop-filter: blur(15px); }
 
-        /* --- TABLES & ZONES --- */
+        /* --- INTEGRÁLT PANEL --- */
+        .table-container-block {
+            background: var(--glass); border: 1px solid var(--border); border-radius: 24px; 
+            backdrop-filter: blur(15px); overflow: hidden; display: flex; flex-direction: column;
+        }
+
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: separate; border-spacing: 0 6px; min-width: 700px; }
-        th { font-family: 'Orbitron'; font-size: 9px; color: #64748b; padding-bottom: 10px; text-transform: uppercase; }
-        td { padding: 12px 8px; background: rgba(255,255,255,0.02); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 13px; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 4px; min-width: 600px; }
+        th { font-family: 'Orbitron'; font-size: 9px; color: #64748b; padding: 10px; text-transform: uppercase; }
+        td { padding: 10px 8px; background: rgba(255,255,255,0.02); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 13px; }
         
         .pos-col { border-left-width: 4px !important; border-left-style: solid !important; }
-        .zone-tag { font-size: 8px; font-family: 'Orbitron'; display: block; margin-bottom: 4px; font-weight: 900; letter-spacing: 0.5px; }
-        .pos-num-box { width: 26px; height: 26px; line-height: 26px; margin: 0 auto; background: #000; border-radius: 6px; font-weight: bold; font-family: 'Orbitron'; font-size: 10px; }
+        .zone-tag { font-size: 7px; font-family: 'Orbitron'; display: block; margin-bottom: 2px; font-weight: 900; }
+        .pos-num-box { width: 24px; height: 24px; line-height: 24px; margin: 0 auto; background: #000; border-radius: 4px; font-weight: bold; font-family: 'Orbitron'; font-size: 10px; }
         
         .highlight td { background: rgba(0, 255, 136, 0.08) !important; border-color: var(--neon-green) !important; }
         .pts-bold { color: var(--neon-green); font-family: 'Orbitron'; font-weight: bold; }
+
+        /* --- KOMPAKT JELMAGYARÁZAT --- */
+        .legend-container {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+            padding: 12px; background: rgba(0, 0, 0, 0.3); border-top: 1px solid var(--border);
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; font-size: 9px; font-family: 'Orbitron'; color: #94a3b8; }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        .bg-cl { background: var(--cl-gs); box-shadow: 0 0 5px var(--cl-gs); }
+        .bg-el { background: var(--el-gs); box-shadow: 0 0 5px var(--el-gs); }
+        .bg-ecl { background: var(--ecl-q); box-shadow: 0 0 5px var(--ecl-q); }
+        .bg-po { background: var(--po); box-shadow: 0 0 5px var(--po); }
+        .bg-rel { background: var(--rel); box-shadow: 0 0 5px var(--rel); }
 
         /* --- ODDS --- */
         .market-table { min-width: 100%; }
         .odd-val { color: var(--neon-green); font-weight: bold; background: rgba(0,255,136,0.05); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(0,255,136,0.2); font-family: 'Orbitron'; font-size: 11px; }
 
-        .momentum-wrap { height: 10px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 20px 0; overflow: hidden; border: 1px solid var(--border); }
+        .momentum-wrap { height: 10px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 15px 0; overflow: hidden; border: 1px solid var(--border); }
         .momentum-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-green)); transition: 1.5s ease; }
 
         .chart-container { position: relative; height: 200px; margin-bottom: 20px; }
-
-        /* Jelmagyarázat stílusa */
-.legend-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-top: 20px;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
-    border: 1px solid var(--border);
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    font-family: 'Orbitron', sans-serif;
-    color: #94a3b8;
-}
-
-.legend-color {
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
-    box-shadow: 0 0 5px rgba(255,255,255,0.1);
-}
-
-/* Színek a jelmagyarázathoz (szinkronban a táblázattal) */
-.bg-cl { background-color: var(--cl-gs); box-shadow: 0 0 8px var(--cl-gs); }
-.bg-el { background-color: var(--el-gs); box-shadow: 0 0 8px var(--el-gs); }
-.bg-ecl { background-color: var(--ecl-q); box-shadow: 0 0 8px var(--ecl-q); }
-.bg-po { background-color: var(--po); box-shadow: 0 0 8px var(--po); }
-.bg-rel { background-color: var(--rel); box-shadow: 0 0 8px var(--rel); }
-        
     </style>
 </head>
 <body>
@@ -141,41 +124,31 @@
     <div id="hero-target" class="hero-card"></div>
     
     <div class="grid-layout">
-        <div class="glass-panel">
-            <h3 id="momentum-title" style="font-family:'Orbitron'; color:var(--neon-blue); margin:0; font-size: 13px;">MATCH MOMENTUM</h3>
-            <div class="momentum-wrap"><div class="momentum-fill" id="momentum-bar"></div></div>
-            
-            <h3 style="font-family:'Orbitron'; margin-top:30px; font-size: 13px; border-left: 3px solid var(--neon-green); padding-left: 10px;">LIVE LEAGUE TABLE</h3>
-        </div><div class="table-responsive" id="standings-target">Adatok betöltése...</div>
+        <div class="table-container-block">
+            <div style="padding: 20px 20px 0 20px;">
+                <h3 id="momentum-title" style="font-family:'Orbitron'; color:var(--neon-blue); margin:0; font-size: 13px;">MATCH MOMENTUM</h3>
+                <div class="momentum-wrap"><div class="momentum-fill" id="momentum-bar"></div></div>
+                
+                <h3 style="font-family:'Orbitron'; margin-top:20px; font-size: 13px; border-left: 3px solid var(--neon-green); padding-left: 10px; margin-bottom: 10px;">LIVE LEAGUE TABLE</h3>
+            </div>
 
-<div class="legend-container">
-    <div class="legend-item">
-        <div class="legend-color bg-cl"></div>
-        <span>Bajnokok Ligája</span>
-    </div>
-    <div class="legend-item">
-        <div class="legend-color bg-el"></div>
-        <span>Európa Liga</span>
-    </div>
-    <div class="legend-item">
-        <div class="legend-color bg-ecl"></div>
-        <span>Konferencia Liga</span>
-    </div>
-    <div class="legend-item">
-        <div class="legend-color bg-po"></div>
-        <span>Osztályozó / Rájátszás</span>
-    </div>
-    <div class="legend-item">
-        <div class="legend-color bg-rel"></div>
-        <span>Kieső zóna</span>
-    </div>
-</div>
+            <div class="table-responsive" id="standings-target">
+                <p style="padding: 20px; text-align: center; opacity: 0.5;">Adatok betöltése...</p>
+            </div>
+
+            <div class="legend-container">
+                <div class="legend-item"><div class="legend-dot bg-cl"></div><span>BL</span></div>
+                <div class="legend-item"><div class="legend-dot bg-el"></div><span>EL</span></div>
+                <div class="legend-item"><div class="legend-dot bg-ecl"></div><span>KL</span></div>
+                <div class="legend-item"><div class="legend-dot bg-po"></div><span>P.OFF</span></div>
+                <div class="legend-item"><div class="legend-dot bg-rel"></div><span>KIESŐ</span></div>
+            </div>
+        </div>
 
         <div class="glass-panel">
             <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:12px; margin:0; margin-bottom:20px;">WIN PROBABILITY</h3>
             <div id="market-container">
                 <div class="chart-container"><canvas id="aiChart"></canvas></div>
-                
                 <h3 style="font-family:'Orbitron'; color:var(--neon-blue); font-size:11px; margin-top:30px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">BOOKMAKERS</h3>
                 <div class="table-responsive" id="odds-list-target"></div>
             </div>
@@ -304,7 +277,6 @@
                 let status = r.description || "";
                 const pos = r.position;
 
-                // MANUÁLIS LIGA LOGIKA (MINDEN LIGA)
                 if (!status || status === "") {
                     if (['PL', 'PD', 'SA'].includes(code)) {
                         if (pos <= 4) status = "Champions League Group Stage";
@@ -316,13 +288,33 @@
                         else if (pos === 5) status = "Europa League Group Stage";
                         else if (pos === 16) status = "Osztályozó";
                         else if (pos >= 17) status = "Relegation";
+                    } else if (code === 'DED') { 
+                        if (pos <= 2) status = "Champions League Group Stage";
+                        else if (pos === 3) status = "Champions League Qualifiers";
+                        else if (pos === 4) status = "Europa League Qualifiers";
+                        else if (pos >= 5 && pos <= 8) status = "Conference League Play-offs";
+                        else if (pos === 16) status = "Osztályozó";
+                        else if (pos >= 17) status = "Relegation";
+                    } else if (code === 'PPL') {
+                        if (pos === 1) status = "Champions League Group Stage";
+                        else if (pos === 2) status = "Champions League Qualifiers";
+                        else if (pos === 3) status = "Europa League Qualifiers";
+                        else if (pos === 4) status = "Conference League Qualifiers";
+                        else if (pos === 16) status = "Osztályozó";
+                        else if (pos >= 17) status = "Relegation";
+                    } else if (code === 'FL1') {
+                        if (pos <= 3) status = "Champions League Group Stage";
+                        else if (pos === 4) status = "Champions League Qualifiers";
+                        else if (pos === 5) status = "Europa League Group Stage";
+                        else if (pos === 16) status = "Osztályozó";
+                        else if (pos >= 17) status = "Relegation";
                     } else if (code === 'ELC') {
                         if (pos <= 2) status = "Feljutás - Premier League";
                         else if (pos <= 6) status = "Play-off (Championship)";
                         else if (pos >= total - 2) status = "Relegation";
                     } else {
                         if (pos === 1) status = "Bajnok / Feljutó";
-                        else if (pos >= total - 2) status = "Kieső zóna";
+                        else if (pos >= total - 2) status = "Relegation";
                     }
                 }
 
@@ -348,5 +340,3 @@
 </script>
 </body>
 </html>
-
-
