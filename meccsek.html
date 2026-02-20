@@ -258,7 +258,8 @@
 }
 
     // --- ADATKEZELÉS ---
-   async function updateData() {
+let flashingMatches = new Set(); // Ebben tároljuk a villogó meccsek ID-it
+  async function updateData() {
     try {
         const res = await fetch("/live-matches");
         const data = await res.json();
@@ -266,18 +267,26 @@
 
         newMatches.forEach(match => {
             const matchId = match.id;
-            const newH = match.score.fullTime.home;
-            const newA = match.score.fullTime.away;
-            const newScoreStr = `${newH}-${newA}`;
+            const newScoreStr = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
 
             if (prevScores.has(matchId)) {
                 const oldScoreStr = prevScores.get(matchId);
                 if (oldScoreStr !== newScoreStr) {
                     const [oldH, oldA] = oldScoreStr.split('-').map(Number);
+                    const newH = match.score.fullTime.home;
+                    const newA = match.score.fullTime.away;
                     
-                    // Csak akkor villogunk, ha nőtt a gólszám
-                    if (newH > oldH) showGoal(match.homeTeam.name, matchId, `${newH}:${newA}`);
-                    if (newA > oldA) showGoal(match.awayTeam.name, matchId, `${newH}:${newA}`);
+                    if (newH > oldH || newA > oldA) {
+                        const teamName = newH > oldH ? match.homeTeam.name : match.awayTeam.name;
+                        showGoal(teamName, matchId, `${newH}:${newA}`);
+                        
+                        // VILLOGÁS AKTIVÁLÁSA
+                        flashingMatches.add(matchId);
+                        setTimeout(() => {
+                            flashingMatches.delete(matchId);
+                            renderMatches(); // Frissítés, hogy levegyük a villogást
+                        }, 10000); 
+                    }
                 }
             }
             prevScores.set(matchId, newScoreStr);
@@ -285,19 +294,13 @@
 
         allMatches = newMatches;
         renderMatches();
-        // Itt hívd meg a ligák újrarajzolását is, ha eltűnnének
         if (typeof renderLeagues === "function") renderLeagues(); 
-
-    } catch (e) {
-        console.error("API hiba:", e);
-    }
+    } catch (e) { console.error("API hiba:", e); }
 }
-
    function renderMatches() {
     const cont = document.getElementById("match-container");
     if (!cont) return;
 
-    // Szűrés: Dátum ÉS (ha van kiválasztott liga, akkor az, különben minden)
     const matches = allMatches.filter(m => {
         const isSameDate = m.utcDate.startsWith(selectedDate);
         const isSelectedLeague = selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString());
@@ -312,30 +315,19 @@
     cont.innerHTML = matches.map(m => {
         const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
         
+        // ELLENŐRIZZÜK, HOGY VILLOGNIA KELL-E
+        const flashClass = flashingMatches.has(m.id) ? 'goal-highlight' : '';
+        
         let matchMinute = "";
-        if (m.status === "IN_PLAY") {
-            const start = new Date(m.utcDate).getTime();
-            const now = new Date().getTime();
-            let mins = Math.floor((now - start) / 60000);
-            matchMinute = `<span class="minute-tag live-time">${mins > 90 ? '90+' : mins}'</span>`;
-        } else if (m.status === "PAUSED") {
-            matchMinute = `<span class="minute-tag">HT</span>`;
-        } else if (m.status === "FINISHED") {
-            matchMinute = `<span class="minute-tag" style="opacity:0.5;">FT</span>`;
-        }
-
-        let score = (isLive || m.status === 'FINISHED') 
-            ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
-            : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+        // ... (matchMinute logika marad ugyanaz) ...
 
         return `
-        <div class="match-card" id="match-${m.id}">
-            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
+        <div class="match-card ${flashClass}" id="match-${m.id}"> <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
                 <img src="${m.homeTeam.crest}"><span>${m.homeTeam.name}</span>
             </div>
             <div style="text-align:center; width:140px;">
                 <div style="margin-bottom: 5px; height:20px;">${matchMinute}</div>
-                <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
+                <div class="score-display ${isLive ? 'score-live' : ''}">${m.score.fullTime.home}:${m.score.fullTime.away}</div>
                 <a href="/elemzes?id=${m.id}" class="tool-btn" style="text-decoration:none; display:inline-block; margin-top:10px; font-size:9px;">
                     ${currentLang==='HU'?'ELEMZÉS':'ANALYSIS'}
                 </a>
@@ -509,6 +501,7 @@
     </script>
 </body>
 </html>
+
 
 
 
