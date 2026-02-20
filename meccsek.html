@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LuckyPitch | Live Match Universe</title>
+    <title>LuckyPitch | Ultimate Live Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -27,46 +27,26 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        body { 
-            background: var(--bg);
-            color: var(--text); 
-            font-family: 'Inter', sans-serif; 
-            height: 100vh; 
-            overflow: hidden;
-            position: relative;
-        }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; position: relative; transition: background 0.5s; }
 
-        /* --- LÁVALÁMPA ANIMÁCIÓ --- */
-        .bg-animation {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; overflow: hidden; filter: blur(100px); opacity: 0.5;
-        }
-        .blob {
-            position: absolute; width: 600px; height: 600px; border-radius: 50%;
-            mix-blend-mode: screen;
-            animation: move 25s infinite alternate ease-in-out;
-        }
-        .blob-1 { background: var(--cl-gs); top: -100px; left: -100px; }
-        .blob-2 { background: var(--neon-green); bottom: -100px; right: -100px; animation-delay: -5s; }
-        .blob-3 { background: var(--el-gs); top: 40%; left: 30%; animation-delay: -10s; }
-        
-        @keyframes move {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(15vw, 15vh) scale(1.2); }
-        }
+        /* --- LÁVALÁMPA HÁTTÉR --- */
+        .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; filter: blur(100px); opacity: 0.5; }
+        .blob { position: absolute; width: 600px; height: 600px; border-radius: 50%; mix-blend-mode: screen; animation: move 25s infinite alternate ease-in-out; }
+        .blob-1 { background: var(--cl-gs); top: -10%; left: -10%; }
+        .blob-2 { background: var(--neon-green); bottom: -10%; right: -10%; animation-delay: -5s; }
+        .blob-3 { background: var(--el-gs); top: 30%; left: 30%; animation-delay: -10s; }
+        @keyframes move { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10vw, 10vh) scale(1.2); } }
 
         /* --- GOAL BANNER --- */
         #goal-banner {
-            position: fixed; top: -100px; left: 0; right: 0; height: 60px;
-            background: var(--neon-green); color: #000;
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'Orbitron'; font-weight: 900; font-size: 1.5rem;
-            z-index: 2000; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 0 40px var(--neon-green);
+            position: fixed; top: -100px; left: 0; right: 0; height: 65px;
+            background: var(--neon-green); color: #000; display: flex; align-items: center; justify-content: center;
+            font-family: 'Orbitron'; font-weight: 900; font-size: 1.6rem; z-index: 2000; 
+            transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 0 50px rgba(0,255,136,0.6);
         }
         #goal-banner.show { top: 75px; }
 
-        /* --- NAV & LAYOUT --- */
+        /* --- NAV --- */
         nav { 
             position: fixed; top: 0; left: 0; right: 0; height: 75px; 
             display: flex; justify-content: space-between; align-items: center; 
@@ -75,57 +55,67 @@
         }
         .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 3px; }
 
-        .nav-tools { display: flex; gap: 12px; }
+        .nav-tools { display: flex; gap: 10px; }
         .tool-btn { 
             background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            color: var(--text); padding: 8px 15px; border-radius: 12px;
-            cursor: pointer; font-family: 'Orbitron'; font-size: 10px;
+            color: var(--text); padding: 8px 14px; border-radius: 10px;
+            cursor: pointer; font-family: 'Orbitron'; font-size: 10px; transition: 0.3s;
         }
+        .tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.2); }
 
+        /* --- LAYOUT --- */
         .main-wrapper { display: flex; height: 100vh; padding-top: 75px; }
         .sidebar, .standings-sidebar { background: var(--glass); backdrop-filter: blur(25px); overflow-y: auto; border: 1px solid var(--border); }
         .sidebar { width: 300px; }
-        .standings-sidebar { width: 420px; padding: 20px; }
+        .standings-sidebar { width: 430px; padding: 20px; }
 
-        .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); }
+        .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
 
-        /* --- MATCH CARDS --- */
         .content-area { flex: 1; overflow-y: auto; padding: 25px; scrollbar-width: none; }
+        
+        /* --- MECCS KÁRTYÁK & FORGÓ LOGÓK --- */
         .match-card {
             background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 24px;
-            padding: 20px; margin-bottom: 15px; display: flex; align-items: center; transition: 0.3s;
+            padding: 20px; margin-bottom: 15px; display: flex; align-items: center; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .match-card:hover { border-color: var(--neon-blue); transform: translateY(-3px); }
+        .match-card:hover { border-color: var(--neon-blue); background: rgba(30, 41, 59, 0.6); transform: translateY(-4px); }
 
         .team-link { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
-        .team-link img { width: 50px; height: 50px; object-fit: contain; }
-        .team-link span { font-weight: 700; font-family: 'Orbitron'; font-size: 11px; text-align: center; }
+        .team-link img { width: 55px; height: 55px; object-fit: contain; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .team-link:hover img { transform: rotate(15deg) scale(1.2); filter: drop-shadow(0 0 12px var(--neon-blue)); }
+        .team-link span { font-weight: 800; font-family: 'Orbitron'; font-size: 11px; text-align: center; }
 
-        .score-display { font-family: 'Orbitron'; font-size: 2rem; font-weight: 900; color: var(--neon-green); }
-        .score-live { color: var(--neon-red); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .score-display { font-family: 'Orbitron'; font-size: 2.2rem; font-weight: 900; color: var(--neon-green); }
+        .score-live { color: var(--neon-red); animation: pulse 1s infinite; text-shadow: 0 0 15px var(--neon-red); }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* --- TABELLA (PRECIZ SZÍNEZÉS) --- */
+        /* --- TABELLA # SZÍNEZÉS --- */
         .standings-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
-        .standings-table td { padding: 12px 8px; background: rgba(255,255,255,0.03); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 12px; }
+        .standings-table td { padding: 14px 8px; background: rgba(255,255,255,0.03); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 12px; }
         .pos-col { border-left-width: 5px !important; border-left-style: solid !important; }
-        .pos-num-box { width: 28px; height: 28px; line-height: 28px; margin: 0 auto; border-radius: 6px; font-weight: bold; font-family: 'Orbitron'; font-size: 11px; }
-        .zone-tag { font-size: 7px; font-family: 'Orbitron'; display: block; margin-bottom: 3px; font-weight: 900; }
-        .highlight td { background: rgba(0, 255, 136, 0.12) !important; border-color: var(--neon-green) !important; }
+        
+        .pos-num-box { 
+            width: 34px; height: 34px; line-height: 34px; margin: 0 auto; 
+            border-radius: 8px; font-weight: 900; font-family: 'Orbitron'; font-size: 12px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .zone-tag { font-size: 8px; font-family: 'Orbitron'; display: block; margin-bottom: 4px; font-weight: 900; }
+        .highlight td { background: rgba(0, 255, 136, 0.15) !important; border-color: var(--neon-green) !important; }
 
-        .league-item { margin: 8px 15px; padding: 12px 15px; border-radius: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.3s; }
-        .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); border: 1px solid; }
+        .league-item { margin: 8px 15px; padding: 12px 15px; border-radius: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.3s; border: 1px solid transparent; }
+        .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); }
 
-        .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); }
+        .date-strip { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; scrollbar-width: none; }
+        .date-pill { flex: 0 0 auto; padding: 10px 18px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); cursor: pointer; font-family: 'Orbitron'; font-size: 10px; }
+        .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0,255,136,0.05); }
+
+        .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
         @media (max-width: 1100px) {
             .sidebar, .standings-sidebar { position: fixed; top: 75px; bottom: 70px; width: 85%; z-index: 1050; transform: translateX(-105%); background: var(--bg); }
             .standings-sidebar { right: 0; transform: translateX(105%); }
             .sidebar.open, .standings-sidebar.open { transform: translateX(0); }
             .mobile-nav { display: flex; }
         }
-        .date-strip { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; scrollbar-width: none; }
-        .date-pill { flex: 0 0 auto; padding: 10px 18px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); cursor: pointer; font-family: 'Orbitron'; font-size: 10px; }
-        .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); }
     </style>
 </head>
 <body>
@@ -171,40 +161,44 @@
     </div>
 
     <script>
-        let currentLang = 'HU';
+        // --- MEMÓRIA (STATE MANAGEMENT) ---
+        let currentLang = localStorage.getItem('lp_lang') || 'HU';
+        let selectedDate = localStorage.getItem('lp_selectedDate') || new Date().toLocaleDateString('sv');
+        let savedLeagues = localStorage.getItem('lp_selectedLeagues');
+        let selectedLeagues = savedLeagues ? new Set(JSON.parse(savedLeagues)) : new Set();
         let allMatches = [];
         let prevScores = new Map();
-        let selectedDate = new Date().toLocaleDateString('sv');
-        let selectedLeagues = new Set();
 
-        function toggleTheme() { document.body.classList.toggle('light'); }
+        function saveState() {
+            localStorage.setItem('lp_selectedDate', selectedDate);
+            localStorage.setItem('lp_selectedLeagues', JSON.stringify([...selectedLeagues]));
+            localStorage.setItem('lp_lang', currentLang);
+        }
+
+        // --- UI FUNKCIÓK ---
+        function toggleTheme() { 
+            document.body.classList.toggle('light'); 
+            localStorage.setItem('lp_theme', document.body.classList.contains('light'));
+        }
+        if(localStorage.getItem('lp_theme') === 'true') document.body.classList.add('light');
+
         function toggleLang() {
             currentLang = currentLang === 'HU' ? 'EN' : 'HU';
-            document.getElementById('lang-btn').innerText = currentLang;
+            updateStaticTexts();
+            saveState();
             renderMatches();
         }
+
+        function updateStaticTexts() {
+            document.getElementById('lang-btn').innerText = currentLang;
+            document.getElementById('h-leagues').innerText = currentLang === 'HU' ? '🏆 Bajnokságok' : '🏆 Leagues';
+            document.getElementById('h-table').innerText = currentLang === 'HU' ? '📊 Élő Tabella' : '📊 Live Standings';
+        }
+
         function toggleM(id) { closeM(); document.getElementById(id).classList.add('open'); }
         function closeM() { document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => s.classList.remove('open')); }
 
-        function getStatusColor(text) {
-            if (!text) return "transparent";
-            text = text.toLowerCase();
-            if (text.includes("champions league")) return "var(--cl-gs)";
-            if (text.includes("europa league")) return "var(--el-gs)";
-            if (text.includes("conference league")) return "var(--ecl-q)";
-            if (text.includes("relegation") || text.includes("kiesés")) return "var(--rel)";
-            if (text.includes("play-off") || text.includes("promotion") || text.includes("osztályozó") || text.includes("feljutás")) return "var(--po)";
-            return "transparent";
-        }
-
-        function translateStatus(text) {
-            if (!text) return "";
-            if (text.includes("Champions League")) return "BL";
-            if (text.includes("Europa League")) return "EL";
-            if (text.includes("Conference League")) return "KL";
-            return "ZÓNA";
-        }
-
+        // --- GOAL NOTIFICATION ---
         function showGoal(teamName) {
             const banner = document.getElementById('goal-banner');
             document.getElementById('goal-team').innerText = teamName.toUpperCase();
@@ -212,6 +206,7 @@
             setTimeout(() => banner.classList.remove('show'), 5000);
         }
 
+        // --- API & DATA ---
         async function updateData() {
             try {
                 const res = await fetch("/live-matches");
@@ -222,11 +217,9 @@
                 newMatches.forEach(match => {
                     const matchId = match.id;
                     const newScore = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
-                    
                     if (prevScores.has(matchId) && prevScores.get(matchId) !== newScore) {
                         const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
                         const [newH, newA] = newScore.split('-').map(Number);
-                        
                         if (newH > oldH) showGoal(match.homeTeam.name);
                         if (newA > oldA) showGoal(match.awayTeam.name);
                     }
@@ -234,14 +227,40 @@
                 });
 
                 allMatches = newMatches;
+                renderDateStrip();
                 renderLeagues();
                 renderMatches();
             } catch (e) { console.error("Update error", e); }
         }
 
+        // --- STANDINGS LOGIC (AZ ÖSSZES SZABÁLLYAL) ---
+        function getStatusColor(text) {
+            if (!text) return "transparent";
+            text = text.toLowerCase();
+            if (text.includes("champions league")) return "var(--cl-gs)";
+            if (text.includes("europa league")) return "var(--el-gs)";
+            if (text.includes("conference league")) return "var(--ecl-q)";
+            if (text.includes("relegation") || text.includes("kiesés")) return "var(--rel)";
+            if (text.includes("play-off") || text.includes("promotion") || text.includes("osztályozó") || text.includes("feljutás") || text.includes("bajnok")) return "var(--po)";
+            return "transparent";
+        }
+
+        function translateStatus(text) {
+            if (!text) return "";
+            if (text.includes("Champions League")) return "BL";
+            if (text.includes("Europa League")) return "EL";
+            if (text.includes("Conference League")) return "KL";
+            if (text.includes("Relegation")) return "KIESŐ";
+            if (text.includes("Osztályozó")) return "OSZT.";
+            if (text.includes("Feljutás")) return "FELJ.";
+            return "ZÓNA";
+        }
+
         async function showStandings(leagueId, teamId, code) {
             if(window.innerWidth <= 1100) toggleM('sidebar-standings');
             const target = document.getElementById("standings-target");
+            target.innerHTML = `<p style="text-align:center; padding:50px; font-family:'Orbitron'; font-size:10px;">LOADING...</p>`;
+            
             try {
                 const res = await fetch(`/api/standings/${code || leagueId}`);
                 const data = await res.json();
@@ -249,15 +268,39 @@
                 const total = tableData.length;
 
                 let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">CSAPAT</th><th>P</th></tr></thead><tbody>`;
+                
                 tableData.forEach(r => {
                     let status = r.description || "";
                     let pos = r.position;
-                    
-                    // Bajnoki logika fallback
-                    if (!status) {
-                        if (['PL','PD','SA'].includes(code)) {
+
+                    // Komplett bajnoki logika beépítve
+                    if (!status || status === "") {
+                        if (['PL', 'PD', 'SA'].includes(code)) {
                             if (pos <= 4) status = "Champions League";
                             else if (pos === 5) status = "Europa League";
+                            else if (pos === 6) status = "Conference League";
+                            else if (pos >= total - 2) status = "Relegation";
+                        } else if (code === 'BL1') {
+                            if (pos <= 4) status = "Champions League";
+                            else if (pos === 5) status = "Europa League";
+                            else if (pos === 16) status = "Osztályozó";
+                            else if (pos >= 17) status = "Relegation";
+                        } else if (code === 'DED') { 
+                            if (pos <= 2) status = "Champions League";
+                            else if (pos === 3) status = "Champions League Q";
+                            else if (pos === 4) status = "Europa League Q";
+                            else if (pos >= 5 && pos <= 8) status = "Conference Play-offs";
+                            else if (pos === 16) status = "Osztályozó";
+                            else if (pos >= 17) status = "Relegation";
+                        } else if (code === 'PPL') {
+                            if (pos === 1) status = "Champions League";
+                            else if (pos === 2) status = "Champions League Q";
+                            else if (pos === 3) status = "Europa League Q";
+                            else if (pos === 16) status = "Osztályozó";
+                            else if (pos >= 17) status = "Relegation";
+                        } else if (code === 'ELC') {
+                            if (pos <= 2) status = "Feljutás";
+                            else if (pos <= 6) status = "Play-off";
                             else if (pos >= total - 2) status = "Relegation";
                         }
                     }
@@ -273,20 +316,21 @@
                             <div class="pos-num-box" style="background:${boxBg}; color:${boxText};">${pos}</div>
                         </td>
                         <td style="text-align:left; font-weight:800;">
-                            <img src="${r.team.crest}" width="20" style="vertical-align:middle; margin-right:8px;">
+                            <img src="${r.team.crest}" width="24" style="vertical-align:middle; margin-right:10px;">
                             ${r.team.shortName || r.team.name}
                         </td>
-                        <td style="font-weight:bold; color:var(--neon-green); font-family:'Orbitron';">${r.points}</td>
+                        <td style="font-weight:bold; color:var(--neon-green); font-family:'Orbitron'; font-size:14px;">${r.points}</td>
                     </tr>`;
                 });
                 target.innerHTML = html + "</tbody></table>";
-            } catch (e) { target.innerHTML = "HIBA"; }
+            } catch (e) { target.innerHTML = "Error loading standings."; }
         }
 
+        // --- RENDERING ---
         function renderDateStrip() {
             const strip = document.getElementById("date-strip");
             const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
-            strip.innerHTML = dates.map(d => `<div class="date-pill ${d === selectedDate ? 'active' : ''}" onclick="selectedDate='${d}';renderMatches();renderLeagues();renderDateStrip();">${d.split('-')[1]+'.'+d.split('-')[2]}</div>`).join('');
+            strip.innerHTML = dates.map(d => `<div class="date-pill ${d === selectedDate ? 'active' : ''}" onclick="selectedDate='${d}';saveState();renderMatches();renderLeagues();renderDateStrip();">${d.split('-')[1]+'.'+d.split('-')[2]}</div>`).join('');
         }
 
         function renderLeagues() {
@@ -299,7 +343,7 @@
                 div.className = `league-item ${selectedLeagues.has(id.toString()) ? 'active' : ''}`;
                 div.onclick = () => {
                     selectedLeagues.has(id.toString()) ? selectedLeagues.delete(id.toString()) : selectedLeagues.add(id.toString());
-                    renderLeagues(); renderMatches();
+                    saveState(); renderLeagues(); renderMatches();
                 };
                 div.innerHTML = `<img src="${l.emblem}" width="25"> <span>${l.name}</span>`;
                 cont.appendChild(div);
@@ -317,20 +361,23 @@
                     <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
                         <img src="${m.homeTeam.crest}"><span>${m.homeTeam.name}</span>
                     </div>
-                    <div style="text-align:center; width:130px;">
+                    <div style="text-align:center; width:140px;">
                         <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
-                        <a href="/elemzes?id=${m.id}" style="text-decoration:none; color:var(--neon-green); font-family:'Orbitron'; font-size:9px; font-weight:800;">${currentLang==='HU'?'ELEMZÉS':'ANALYSIS'}</a>
+                        <a href="/elemzes?id=${m.id}" style="text-decoration:none; display:inline-block; margin-top:8px; background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding:4px 12px; border-radius:8px; color:var(--neon-green); font-family:'Orbitron'; font-size:9px; font-weight:800; transition:0.3s;">
+                            ${currentLang==='HU'?'ELEMZÉS':'ANALYSIS'}
+                        </a>
                     </div>
                     <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
                         <img src="${m.awayTeam.crest}"><span>${m.awayTeam.name}</span>
                     </div>
                 </div>`;
-            }).join('') || "Nincs meccs";
+            }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">NINCS MECCS</p>`;
         }
 
-        // INIT & REFRESH LOOP
-        updateData().then(() => renderDateStrip());
-        setInterval(updateData, 30000); // 30 másodpercenként frissít
+        // --- INIT ---
+        updateStaticTexts();
+        updateData();
+        setInterval(updateData, 30000); // 30 mp-es auto frissítés
     </script>
 </body>
 </html>
