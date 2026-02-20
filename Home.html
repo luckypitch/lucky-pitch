@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuckyPitch</title>
+    <title>LuckyPitch | Smart Betting</title>
 
     <script
       async
@@ -14,9 +14,6 @@
     ></script>
 
     <style>
-        /* =========================
-           THEME VARIABLES
-        ========================= */
         :root{
             --text: white;
             --box-bg: rgba(0,0,0,0.7);
@@ -32,15 +29,7 @@
             --btn-text: white;
         }
 
-        /* =========================
-           BASE
-        ========================= */
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-            font-family: Arial, sans-serif;
-        }
+        *{ margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
 
         body{
             min-height:100vh;
@@ -49,135 +38,81 @@
             transition: 0.3s ease;
         }
 
-        body.light {
-            background: url("Focivil.jpeg") center/cover no-repeat fixed;
-        }
+        body.light { background: url("Focivil.jpeg") center/cover no-repeat fixed; }
 
-        /* =========================
-           NAVBAR
-        ========================= */
+        /* NAVBAR */
         nav{
             display:flex;
             justify-content:space-between;
             align-items:center;
             padding:25px 60px;
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
         }
 
-        .logo{
-            font-size:24px;
-            font-weight:bold;
-            letter-spacing: 1px;
-        }
+        .logo{ font-size:24px; font-weight:bold; letter-spacing: 1px; color: var(--primary); }
 
-        .nav-buttons{
-            display:flex;
-            gap:15px;
-            align-items: center;
-        }
+        .nav-buttons{ display:flex; gap:15px; align-items: center; }
 
         button, .btn-link {
-            border:none;
-            padding:10px 18px;
-            border-radius:6px;
-            cursor:pointer;
-            font-weight:bold;
-            background:var(--btn-bg);
-            color:var(--btn-text);
-            text-decoration: none;
-            display: inline-block;
-            transition: 0.2s;
+            border:none; padding:10px 18px; border-radius:6px;
+            cursor:pointer; font-weight:bold; background:var(--btn-bg);
+            color:var(--btn-text); text-decoration: none; transition: 0.2s;
         }
 
-        /* Bejelentkezés gomb egyedi stílusa */
-        .btn-auth {
-            background: var(--primary);
-            color: #000;
-        }
+        .btn-auth { background: var(--primary); color: #000; border: 2px solid transparent; }
+        .btn-auth:hover { background: transparent; color: var(--primary); border-color: var(--primary); }
 
-        /* =========================
-           HERO
-        ========================= */
+        /* HERO SECTION */
         .hero{
-            min-height:80vh;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            padding:20px;
+            min-height:80vh; display:flex; justify-content:center;
+            align-items:center; padding:20px;
         }
 
         .box{
-            border:2px solid var(--text);
-            padding:60px;
-            max-width:750px;
-            text-align:center;
-            background:var(--box-bg);
-            backdrop-filter: blur(6px);
-            border-radius:12px;
+            border: 1px solid rgba(255,255,255,0.1); padding:60px;
+            max-width:750px; text-align:center; background:var(--box-bg);
+            backdrop-filter: blur(12px); border-radius:24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
 
-        h1{
-            font-size:48px;
-            margin-bottom:20px;
-        }
-
-        .kiemelt{
-            font-weight:bold;
-        }
-
-        p{
-            line-height:1.7;
-            margin-bottom:20px;
-        }
-
-        .divider{
-            border-top:1px solid var(--text);
-            margin:25px 0;
-        }
-
-        .btn-main {
-            margin-top:20px;
-            padding:14px 40px;
-            font-size:18px;
-        }
+        h1{ font-size:48px; margin-bottom:20px; text-transform: uppercase; letter-spacing: 2px; }
+        .kiemelt{ font-weight:bold; font-size: 1.2rem; color: var(--primary); }
+        p{ line-height:1.7; margin-bottom:20px; opacity: 0.9; }
+        .divider{ border-top:1px solid rgba(255,255,255,0.2); margin:25px 0; }
+        .btn-main { margin-top:20px; padding:16px 50px; font-size:18px; border-radius: 50px; }
 
         .fb-link {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #4e7cff, #1b2c5a);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            width: 42px; height: 42px; border-radius: 50%;
+            background: #1877F2; transition: 0.3s;
         }
-
-        .fb-link:hover { transform: scale(1.1); }
+        .fb-link:hover { transform: translateY(-3px); }
 
         @media (max-width:768px){
             nav{ padding:20px; }
             h1{ font-size:32px; }
             .box{ padding:30px 20px; }
+            .nav-buttons button:not(#mod-btn) { display: none; } /* Mobilon elrejtjük a sallangot */
         }
     </style>
 </head>
-
 <body>
 
 <nav>
     <div class="logo">LuckyPitch</div>
 
     <div class="nav-buttons">
-        <button id="mod-btn" onclick="toggleTheme()">🌙</button>
+        <button id="mod-btn" onclick="toggleTheme()">☀️</button>
         <button id="lang-toggle-btn" onclick="toggleLang()">HU 🇭🇺</button>
         
         <div id="user-button"></div>
-        <div id="auth-links">
+        <div id="auth-links" style="display: none;">
             <button onclick="Clerk.openSignIn()" class="btn-auth" id="login-text">LOGIN</button>
         </div>
 
         <a href="https://www.facebook.com/profile.php?id=61588443053104" target="_blank" class="fb-link">
-            <img id="facebook-img" src="facebook-1.png" style="width:25px">
+            <img src="facebook-1.png" style="width:20px; filter: brightness(0) invert(1);">
         </a>
     </div>
 </nav>
@@ -211,7 +146,7 @@ const translations = {
         kiemelt: "Ahol a szenvedély találkozik a precizitással — és minden döntés számít.",
         text1: "A LuckyPitchnél hisszük, hogy a győzelem nem csupán szerencse kérdése — hanem okos gondolkodásé, éles stratégiáé és annak a bátorságáé, hogy bízz az ösztöneidben.",
         text2: "Itt az éleslátás találkozik a lehetőséggel. Itt változik meg a játék. Játssz okosabban. Gondolkodj élesebben. Nyerj nagyobbat.",
-        cta: "Meccsek",
+        cta: "Meccsek megtekintése",
         langBtn: "EN 🇬🇧",
         login: "BELÉPÉS"
     },
@@ -220,21 +155,44 @@ const translations = {
         kiemelt: "Where passion meets precision — and every decision counts.",
         text1: "At LuckyPitch, we believe winning isn't just about luck — it's about smart thinking, sharp strategy, and the courage to trust your instincts.",
         text2: "Insight meets opportunity. This is where the game changes. Play smarter. Think sharper. Win bigger.",
-        cta: "Matches",
+        cta: "Explore Matches",
         langBtn: "HU 🇭🇺",
         login: "LOGIN"
     }
 };
 
-async function updateUI() {
-    // Várjuk meg, amíg a Clerk betölt, ha még nem tette meg
-    if (window.Clerk && !Clerk.isReady) await Clerk.load();
+// --- CLERK ÉS UI INICIALIZÁLÁS ---
+async function startApp() {
+    try {
+        // Megvárjuk a Clerk betöltődését
+        await Clerk.load();
+        
+        const userButtonDiv = document.getElementById('user-button');
+        const authLinks = document.getElementById('auth-links');
 
+        if (Clerk.user) {
+            // Bejelentkezve
+            Clerk.mountUserButton(userButtonDiv);
+            authLinks.style.display = 'none';
+        } else {
+            // Nincs bejelentkezve
+            authLinks.style.display = 'block';
+        }
+    } catch (err) {
+        console.error("Clerk betöltési hiba:", err);
+        // Ha elbukik a Clerk, legalább a login gombot mutassuk meg
+        document.getElementById('auth-links').style.display = 'block';
+    }
+
+    updateUI(); // Nyelv és téma beállítása
+}
+
+function updateUI() {
     const lang = localStorage.getItem("lang") || "en";
     const theme = localStorage.getItem("theme") || "dark";
     const data = translations[lang];
 
-    // Szövegek frissítése
+    // Szövegek cseréje
     document.getElementById("title").innerText = data.title;
     document.getElementById("kiemelt").innerText = data.kiemelt;
     document.getElementById("text1").innerText = data.text1;
@@ -243,27 +201,13 @@ async function updateUI() {
     document.getElementById("lang-toggle-btn").innerText = data.langBtn;
     document.getElementById("login-text").innerText = data.login;
 
-    // Téma frissítése
+    // Téma váltás
     if (theme === "light") {
         document.body.classList.add("light");
         document.getElementById("mod-btn").innerText = "🌙";
     } else {
         document.body.classList.remove("light");
         document.getElementById("mod-btn").innerText = "☀️";
-    }
-
-    // CLERK ÁLLAPOT KEZELÉSE
-    const userButtonDiv = document.getElementById('user-button');
-    const authLinks = document.getElementById('auth-links');
-
-    if (Clerk.user) {
-        // Ha be van lépve: profil gomb mutatása, belépés gomb elrejtése
-        Clerk.mountUserButton(userButtonDiv);
-        authLinks.style.display = 'none';
-    } else {
-        // Ha nincs belépve: profil gomb elrejtése, belépés gomb mutatása
-        userButtonDiv.innerHTML = ''; 
-        authLinks.style.display = 'block';
     }
 }
 
@@ -279,8 +223,8 @@ function toggleTheme() {
     updateUI();
 }
 
-// Clerk inicializálása betöltéskor
-window.addEventListener('load', updateUI);
+// Alkalmazás indítása
+window.addEventListener('load', startApp);
 </script>
 
 </body>
