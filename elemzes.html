@@ -14,7 +14,6 @@
             --neon-red: #ff3e3e;
             --text: #f1f5f9;
             --border: rgba(255, 255, 255, 0.1);
-            /* Zóna színek */
             --cl-gs: #0044ff; --cl-q: #6699ff;
             --el-gs: #cc7a00; --el-q: #ff9900;
             --ecl-q: #00cc6a;
@@ -58,7 +57,7 @@
         .team-box h2 { font-family: 'Orbitron'; font-size: 1.2rem; margin: 0; }
 
         /* --- LAYOUT --- */
-        .grid-layout { display: grid; grid-template-columns: 2.5fr 1fr; gap: 30px; }
+        .grid-layout { display: grid; grid-template-columns: 2.5fr 1.2fr; gap: 30px; }
         @media (max-width: 1100px) { 
             .grid-layout { grid-template-columns: 1fr; } 
             .back-btn { position: fixed; top: 10px; left: 10px; padding: 8px 15px; font-size: 10px; }
@@ -79,12 +78,14 @@
         .highlight td { background: rgba(0, 255, 136, 0.08) !important; border-color: var(--neon-green) !important; }
         .pts-bold { color: var(--neon-green); font-family: 'Orbitron'; font-weight: bold; }
 
-        /* --- MARKET / ODDS --- */
-        .bookmaker-badge { font-family: 'Orbitron'; font-size: 9px; color: var(--neon-blue); background: rgba(14,165,233,0.1); padding: 4px 10px; border-radius: 4px; margin-bottom: 15px; display: inline-block; border: 1px solid var(--neon-blue); }
-        .odds-card { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-family: 'Orbitron'; font-size: 13px; }
-        .odds-card b { color: var(--neon-green); font-size: 16px; }
+        /* --- ODDS TABLE STYLING --- */
+        .market-table { width: 100%; border-collapse: collapse; min-width: 0; font-family: 'Orbitron'; font-size: 11px; margin-top: 20px; }
+        .market-table th { color: var(--neon-blue); text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+        .market-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: left; background: transparent; }
+        .odd-val { color: var(--neon-green); font-weight: bold; background: rgba(0,255,136,0.05); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(0,255,136,0.2); display: inline-block; min-width: 35px; text-align: center; }
+        .bookie-name { color: #fff; font-weight: 600; font-size: 10px; }
+
         .chart-container { position: relative; height: 220px; margin-bottom: 20px; }
-        
         #no-data-msg { text-align: center; padding: 40px 20px; font-family: 'Orbitron'; color: var(--neon-red); }
     </style>
 </head>
@@ -98,8 +99,8 @@
 <div class="ticker-wrap">
     <div class="ticker">
         <span class="ticker-item">⚡ LIVE DATA FEED ACTIVE</span>
-        <span class="ticker-item">📊 MULTI-BOOKMAKER MARKET ANALYSIS RUNNING</span>
-        <span class="ticker-item">🤖 AI PROBABILITY UPDATING EVERY 60S</span>
+        <span class="ticker-item">📊 COMPARING ALL BOOKMAKERS</span>
+        <span class="ticker-item">🤖 AGGREGATED AI PROBABILITY ACTIVE</span>
     </div>
 </div>
 
@@ -116,11 +117,14 @@
         </div>
 
         <div class="glass-panel">
-            <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:12px; margin:0; margin-bottom:20px;">MARKET WIN PROBABILITY</h3>
+            <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:12px; margin:0; margin-bottom:20px;">MARKET WIN PROBABILITY (AVG)</h3>
             
             <div id="market-container">
                 <div class="chart-container"><canvas id="aiChart"></canvas></div>
-                <div id="odds-target"></div>
+                
+                <h3 style="font-family:'Orbitron'; color:var(--neon-blue); font-size:11px; margin-top:30px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">ALL AVAILABLE BOOKMAKERS</h3>
+                <div id="odds-list-target">
+                    </div>
             </div>
 
             <div id="no-data-msg" style="display:none;">
@@ -177,7 +181,7 @@
 
             updateMomentum(match.status, match.utcDate);
             loadStandings(match.competition.code, match.homeTeam.name, match.awayTeam.name);
-            loadOdds(match.homeTeam.name, match.awayTeam.name);
+            loadMultiOdds(match.homeTeam.name, match.awayTeam.name);
         } catch (e) { console.error(e); }
     }
 
@@ -197,43 +201,55 @@
         }
     }
 
-    async function loadOdds(home, away) {
+    async function loadMultiOdds(home, away) {
         const marketContainer = document.getElementById('market-container');
         const noDataMsg = document.getElementById('no-data-msg');
-        const oddsTarget = document.getElementById('odds-target');
+        const target = document.getElementById('odds-list-target');
 
         try {
             const res = await fetch('/api/odds-data');
             const data = await res.json();
             
             const homeKey = home.split(' ')[0].toLowerCase();
-            const matchOdds = data.find(o => o.home_team.toLowerCase().includes(homeKey) || o.away_team.toLowerCase().includes(homeKey));
+            const matchOdds = data.find(o => o.home_team.toLowerCase().includes(homeKey));
 
             if (matchOdds && matchOdds.bookmakers && matchOdds.bookmakers.length > 0) {
-                // Megpróbáljuk a Betfair-t vagy az Unibetet keresni, különben az elsőt vesszük
-                const bookie = matchOdds.bookmakers.find(b => b.key === 'betfair' || b.key === 'unibet') || matchOdds.bookmakers[0];
-                const market = bookie.markets.find(m => m.key === 'h2h');
+                let html = `<table class="market-table"><thead><tr><th>BOOKIE</th><th>1</th><th>X</th><th>2</th></tr></thead><tbody>`;
+                let avgH = 0, avgD = 0, avgA = 0, count = 0;
 
-                if (market) {
-                    const hO = market.outcomes.find(x => x.name === matchOdds.home_team).price;
-                    const aO = market.outcomes.find(x => x.name === matchOdds.away_team).price;
-                    const dO = market.outcomes.find(x => x.name === 'Draw').price;
+                matchOdds.bookmakers.forEach(bookie => {
+                    const market = bookie.markets.find(m => m.key === 'h2h');
+                    if (market) {
+                        const hO = market.outcomes.find(x => x.name === matchOdds.home_team).price;
+                        const aO = market.outcomes.find(x => x.name === matchOdds.away_team).price;
+                        const dO = market.outcomes.find(x => x.name === 'Draw').price;
 
-                    const total = (1/hO) + (1/aO) + (1/dO);
-                    updateChart(Math.round((1/hO)/total*100), Math.round((1/dO)/total*100), Math.round((1/aO)/total*100));
+                        avgH += (1/hO); avgD += (1/dO); avgA += (1/aO);
+                        count++;
 
-                    marketContainer.style.display = 'block';
-                    noDataMsg.style.display = 'none';
-                    oddsTarget.innerHTML = `
-                        <div class="bookmaker-badge">LIVE SOURCE: ${bookie.title.toUpperCase()}</div>
-                        <div class="odds-card"><span>HOME (1)</span> <b>${hO.toFixed(2)}</b></div>
-                        <div class="odds-card"><span>DRAW (X)</span> <b>${dO.toFixed(2)}</b></div>
-                        <div class="odds-card"><span>AWAY (2)</span> <b>${aO.toFixed(2)}</b></div>
-                    `;
-                    return;
+                        html += `
+                            <tr>
+                                <td class="bookie-name">${bookie.title}</td>
+                                <td><span class="odd-val">${hO.toFixed(2)}</span></td>
+                                <td><span class="odd-val">${dO.toFixed(2)}</span></td>
+                                <td><span class="odd-val">${aO.toFixed(2)}</span></td>
+                            </tr>`;
+                    }
+                });
+
+                html += `</tbody></table>`;
+                target.innerHTML = html;
+                
+                if (count > 0) {
+                    const total = avgH + avgD + avgA;
+                    updateChart(Math.round((avgH/total)*100), Math.round((avgD/total)*100), Math.round((avgA/total)*100));
                 }
+
+                marketContainer.style.display = 'block';
+                noDataMsg.style.display = 'none';
+                return;
             }
-            throw new Error("No odds");
+            throw new Error("No data");
         } catch (e) {
             marketContainer.style.display = 'none';
             noDataMsg.style.display = 'block';
