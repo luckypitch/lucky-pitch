@@ -3,153 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuckyPitch | Live Match Universe</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
+    <title>LuckyPitch | Profi Elemző Központ</title>
     <style>
-        :root {
-            --bg: #020617;
-            --glass: rgba(15, 23, 42, 0.75);
-            --neon-green: #00ff88;
-            --neon-blue: #0ea5e9;
-            --neon-red: #ff3e3e;
-            --text: #f1f5f9;
-            --border: rgba(255, 255, 255, 0.1);
+        :root { 
+            --primary: #00ff88; 
+            --text: #f8fafc; 
+            --box-bg: rgba(15, 23, 42, 0.98);
+            --cl-gs: #0044ff; --cl-q: #6699ff;
+            --el-gs: #cc7a00; --el-q: #ffb366;
+            --ecl-gs: #00cc6a; --ecl-q: #80ffc4;
+            --po: #d35400; --rel: #e74c3c;
         }
 
-        body {
-            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
-            color: var(--text);
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            overflow-x: hidden;
+        body { background: #0f172a; color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        /* FIXÁLT VISSZA GOMB */
+        .back-nav { margin-bottom: 20px; }
+        .back-btn { 
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--primary); text-decoration: none; font-weight: bold; 
+            background: rgba(0, 255, 136, 0.1); padding: 12px 24px; 
+            border-radius: 12px; border: 1px solid var(--primary); transition: 0.3s;
         }
+        .back-btn:hover { background: var(--primary); color: #000; }
 
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-
-        /* --- ⚡ GOAL FLASH ANIMATION --- */
-        #goal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 62, 62, 0.8);
-            display: none; justify-content: center; align-items: center;
-            z-index: 1000; backdrop-filter: blur(10px);
-            animation: flashAnim 0.5s infinite alternate;
+        .match-card { 
+            background: var(--box-bg); padding: 35px; border-radius: 24px; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex; justify-content: space-around; align-items: center; 
+            margin-bottom: 30px; text-align: center; 
         }
-        @keyframes flashAnim { from { opacity: 0.5; } to { opacity: 1; } }
-        .goal-text { font-family: 'Orbitron'; font-size: 8rem; color: white; text-shadow: 0 0 50px #ff0000; }
+        .team-box img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 12px; }
+        .score-box { display: flex; flex-direction: column; gap: 10px; }
+        .score { font-size: 3.5rem; font-weight: 900; color: var(--primary); }
+        .match-status { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: #64748b; }
+        .live-dot { display: inline-block; width: 8px; height: 8px; background: #ff4d4d; border-radius: 50%; margin-right: 5px; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-        /* --- 🎬 SMART TICKER --- */
-        .ticker-wrap {
-            background: rgba(0, 0, 0, 0.5); border-bottom: 1px solid var(--neon-blue);
-            padding: 10px 0; overflow: hidden; margin-bottom: 20px;
+        .grid { display: grid; grid-template-columns: 1fr 350px; gap: 25px; }
+        @media (max-width: 1200px) { .grid { grid-template-columns: 1fr; } }
+
+        .card { background: var(--box-bg); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); overflow-x: auto; }
+        h3.title { color: var(--primary); margin: 0 0 20px 0; font-size: 1rem; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; font-size: 13px; min-width: 850px; }
+        td { padding: 12px 10px; background: rgba(255,255,255,0.02); text-align: center; }
+        .team-col { text-align: left; min-width: 200px; font-weight: 600; }
+        .pos-col { width: 80px; border-left: 4px solid transparent; }
+        .zone-tag { font-size: 8px; font-weight: 900; display: block; margin-bottom: 2px; }
+        .pos-num { display: inline-block; width: 24px; height: 24px; line-height: 24px; border-radius: 6px; background: rgba(255,255,255,0.1); font-weight: bold; }
+        
+        .highlight td { background: rgba(0, 255, 136, 0.1) !important; }
+        .pts-bold { font-weight: 900; color: var(--primary); }
+
+        .odd-item { 
+            background: rgba(255,255,255,0.02); padding: 18px; border-radius: 15px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); 
         }
-        .ticker { display: flex; animation: ticker-scroll 30s linear infinite; white-space: nowrap; }
-        .ticker-item { margin-right: 50px; font-size: 12px; font-family: 'Orbitron'; color: var(--neon-blue); }
-        @keyframes ticker-scroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-
-        /* --- 🚀 HERO SECTION --- */
-        .hero-card {
-            background: var(--glass); backdrop-filter: blur(20px);
-            border-radius: 30px; border: 1px solid var(--border);
-            padding: 40px; display: flex; justify-content: space-around; align-items: center;
-            margin-bottom: 30px; position: relative; box-shadow: 0 0 50px rgba(0,0,0,0.5);
-        }
-
-        .score-display { font-family: 'Orbitron'; font-size: 5rem; font-weight: 900; color: var(--neon-green); text-shadow: 0 0 20px rgba(0,255,136,0.5); }
-        .team-box img { width: 110px; height: 110px; object-fit: contain; filter: drop-shadow(0 0 15px rgba(255,255,255,0.1)); }
-
-        /* --- 📊 DASHBOARD --- */
-        .grid-layout { display: grid; grid-template-columns: 2.5fr 1fr; gap: 25px; }
-
-        .glass-panel {
-            background: var(--glass); border: 1px solid var(--border);
-            padding: 25px; border-radius: 24px; backdrop-filter: blur(10px);
-        }
-
-        /* --- 🔋 MOMENTUM METER --- */
-        .momentum-wrap { height: 12px; background: #1e293b; border-radius: 20px; margin: 15px 0; overflow: hidden; position: relative; }
-        .momentum-fill { height: 100%; width: 50%; background: linear-gradient(90deg, var(--neon-red), var(--neon-green)); transition: 2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 15px var(--neon-green); }
-
-        /* --- 💎 BET SLIP SIMULATOR --- */
-        .bet-slip { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px; }
-        .bet-input {
-            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--neon-blue);
-            padding: 12px; border-radius: 12px; color: white; font-family: 'Orbitron'; margin-bottom: 15px;
-        }
-        .profit-preview { display: flex; justify-content: space-between; font-family: 'Orbitron'; color: var(--neon-green); font-size: 1.2rem; }
-
-        /* --- 🏅 NEON TABLE --- */
-        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
-        td { padding: 15px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); }
-        .highlight { background: rgba(0, 255, 136, 0.1) !important; border: 1px solid var(--neon-green); }
-
-        .btn-bet {
-            width: 100%; padding: 15px; background: var(--neon-green); color: black;
-            border: none; border-radius: 12px; font-family: 'Orbitron'; font-weight: bold;
-            cursor: pointer; transition: 0.3s; margin-top: 10px;
-        }
-        .btn-bet:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,255,136,0.3); }
+        .odd-val { color: var(--primary); font-size: 1.4rem; font-weight: 800; }
     </style>
 </head>
 <body>
 
-<div id="goal-overlay">
-    <div class="goal-text">GOAL !!!</div>
-</div>
-
-<div class="ticker-wrap">
-    <div class="ticker" id="ticker-content">
-        <span class="ticker-item">⚡ SMART INSIGHT: HOME TEAM IN TOP FORM (85%)</span>
-        <span class="ticker-item">🔥 TRENDING: 70% OF USERS BET ON OVER 2.5 GOALS</span>
-        <span class="ticker-item">⚠️ INJURY UPDATE: KEY STRIKER DOUBTFUL</span>
-        <span class="ticker-item">💎 VALUE BET: AWAY DRAW NO BET @ 2.10</span>
-    </div>
-</div>
-
 <div class="container">
-    <div class="hero-card" id="hero-target">
+    <nav class="back-nav">
+        <a href="/" class="back-btn">← VISSZA A MECCSEKHEZ</a>
+    </nav>
+
+    <div id="header-target"></div>
+
+    <div class="grid">
+        <div class="card">
+            <h3 class="title">🏆 Bajnoki Tabella</h3>
+            <div id="standings-target">Betöltés...</div>
         </div>
-
-    <div class="grid-layout">
-        <div class="glass-panel">
-            <h3 style="font-family:'Orbitron'; color:var(--neon-blue); display:flex; justify-content:space-between;">
-                Live Momentum (xG) <span>AI: Pressure High</span>
-            </h3>
-            <div class="momentum-wrap">
-                <div class="momentum-fill" id="momentum-bar"></div>
-            </div>
-            
-            <h3 style="font-family:'Orbitron'; margin-top:30px;">League Power Rankings</h3>
-            <div id="standings-target"></div>
-        </div>
-
-        <div class="right-col">
-            <div class="glass-panel">
-                <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:14px;">Win Probability</h3>
-                <canvas id="aiChart" style="margin-bottom: 20px;"></canvas>
-                
-                <div class="bet-slip">
-                    <h4 style="font-family:'Orbitron'; font-size:12px; opacity:0.7;">Interactive Bet Slip</h4>
-                    <input type="number" class="bet-input" id="stake" placeholder="STAKE (EUR)" oninput="calcProfit()">
-                    <div class="profit-preview">
-                        <span>EST. RETURN:</span>
-                        <span id="profit">0.00 €</span>
-                    </div>
-                    <button class="btn-bet" onclick="triggerGoal()">SIMULATE GOAL EVENT</button>
-                </div>
-            </div>
-
-            <div class="glass-panel" style="margin-top: 20px;">
-                <h3 style="font-family:'Orbitron'; font-size:14px;">Live Odds Heatmap</h3>
-                <div id="odds-target"></div>
-            </div>
+        
+        <div class="card">
+            <h3 class="title">📈 Élő Oddsok</h3>
+            <div id="odds-target">Keresés...</div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const matchId = new URLSearchParams(window.location.search).get('id');
-    let currentOdds = 1.0;
+
+    function getStatusColor(text) {
+        if (!text) return "transparent";
+        text = text.toLowerCase();
+        if (text.includes("champions league")) return text.includes("qualifiers") ? "var(--cl-q)" : "var(--cl-gs)";
+        if (text.includes("europa league")) return text.includes("qualifiers") ? "var(--el-q)" : "var(--el-gs)";
+        if (text.includes("conference league")) return "var(--ecl-q)";
+        if (text.includes("relegation") || text.includes("kiesés")) return "var(--rel)";
+        return "transparent";
+    }
 
     async function init() {
         try {
@@ -158,90 +107,73 @@
             const match = data.matches.find(m => m.id == matchId);
             if (!match) return;
 
-            document.getElementById('hero-target').innerHTML = `
-                <div class="team-box" style="text-align:right">
-                    <img src="${match.homeTeam.crest}">
-                    <h2 style="font-family:'Orbitron'">${match.homeTeam.name}</h2>
-                </div>
-                <div style="text-align:center">
-                    <div class="score-display">${match.score.fullTime.home ?? 0}:${match.score.fullTime.away ?? 0}</div>
-                    <div style="color:var(--neon-red); font-weight:800; letter-spacing:3px;">LIVE EVENT</div>
-                </div>
-                <div class="team-box">
-                    <img src="${match.awayTeam.crest}">
-                    <h2 style="font-family:'Orbitron'">${match.awayTeam.name}</h2>
+            // IDŐPONT VAGY LIVE KEZELÉSE
+            let statusHtml = "";
+            if (match.status === "IN_PLAY" || match.status === "PAUSED") {
+                statusHtml = `<span class="live-dot"></span> LIVE EVENT`;
+            } else {
+                const date = new Date(match.utcDate);
+                statusHtml = `KEZDÉS: ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+            }
+
+            document.getElementById('header-target').innerHTML = `
+                <div class="match-card">
+                    <div class="team-box"><img src="${match.homeTeam.crest}"><h3>${match.homeTeam.name}</h3></div>
+                    <div class="score-box">
+                        <div class="score">${match.score.fullTime.home ?? 0}:${match.score.fullTime.away ?? 0}</div>
+                        <div class="match-status">${statusHtml}</div>
+                    </div>
+                    <div class="team-box"><img src="${match.awayTeam.crest}"><h3>${match.awayTeam.name}</h3></div>
                 </div>`;
 
             loadStandings(match.competition.code, match.homeTeam.name, match.awayTeam.name);
             loadOdds(match.homeTeam.name, match.awayTeam.name);
-            initAIChart();
-            
-            // Momentum szimuláció
-            document.getElementById('momentum-bar').style.width = '68%'; 
         } catch (e) { console.error(e); }
     }
 
     async function loadStandings(code, home, away) {
-        const res = await fetch(`/api/standings/${code}`);
-        const data = await res.json();
-        const table = data.standings.find(s => s.type === 'TOTAL').table;
-        let html = `<table><tbody>`;
-        table.forEach(r => {
-            const isMatchTeam = (home.includes(r.team.name) || away.includes(r.team.name));
-            html += `<tr class="${isMatchTeam ? 'highlight' : ''}">
-                <td style="width:30px; font-family:'Orbitron'">${r.position}</td>
-                <td><img src="${r.team.crest}" width="20"> ${r.team.name}</td>
-                <td>${r.playedGames} MP</td>
-                <td style="color:var(--neon-green); font-weight:bold">${r.points} PTS</td>
-            </tr>`;
-        });
-        document.getElementById('standings-target').innerHTML = html + "</tbody></table>";
+        try {
+            const res = await fetch(`/api/standings/${code}`);
+            const data = await res.json();
+            const table = data.standings.find(s => s.type === 'TOTAL').table;
+            
+            let html = `<table><thead><tr><th>#</th><th class="team-col">Csapat</th><th>M</th><th>GY</th><th>D</th><th>V</th><th>GÓL</th><th>GK</th><th class="pts-bold">P</th></tr></thead><tbody>`;
+
+            table.forEach(r => {
+                let status = r.description || "";
+                const color = getStatusColor(status);
+                const isMatchTeam = (home.includes(r.team.name) || r.team.name.includes(home) || away.includes(r.team.name) || r.team.name.includes(away));
+
+                html += `<tr class="${isMatchTeam ? 'highlight' : ''}">
+                    <td class="pos-col" style="border-left-color: ${color}">
+                        <span class="pos-num">${r.position}</span>
+                    </td>
+                    <td class="team-col"><img src="${r.team.crest}" width="20" style="vertical-align:middle; margin-right:10px;"> ${r.team.name}</td>
+                    <td>${r.playedGames}</td><td>${r.won}</td><td>${r.draw}</td><td>${r.lost}</td>
+                    <td>${r.goalsFor}:${r.goalsAgainst}</td>
+                    <td style="color:${r.goalDifference >= 0 ? 'var(--primary)' : '#ff4d4d'}">${r.goalDifference > 0 ? '+'+r.goalDifference : r.goalDifference}</td>
+                    <td class="pts-bold">${r.points}</td>
+                </tr>`;
+            });
+            document.getElementById('standings-target').innerHTML = html + "</tbody></table>";
+        } catch (e) { }
     }
 
     async function loadOdds(home, away) {
-        const res = await fetch('/api/odds-data');
-        const data = await res.json();
-        const homeBase = home.split(' ')[0];
-        const m = data.find(o => o.home_team.includes(homeBase) || o.away_team.includes(homeBase));
-        if (m) {
-            const price = m.bookmakers[0].markets[0].outcomes[0].price;
-            currentOdds = price;
-            document.getElementById('odds-target').innerHTML = `
-                <div style="padding:15px; border-radius:12px; background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-family:'Orbitron'">${m.home_team} (1)</span>
-                    <span style="font-family:'Orbitron'; font-size:1.5rem; color:var(--neon-green)">${price}</span>
-                </div>`;
-        }
+        try {
+            const res = await fetch('/api/odds-data');
+            const data = await res.json();
+            const homeBase = home.split(' ')[0];
+            const m = data.find(o => o.home_team.includes(homeBase) || o.away_team.includes(homeBase));
+            if (m && m.bookmakers[0]) {
+                const outcomes = m.bookmakers[0].markets[0].outcomes;
+                document.getElementById('odds-target').innerHTML = `
+                    <div class="odd-item"><span>Hazai (1)</span><span class="odd-val">${outcomes.find(x=>x.name===m.home_team)?.price || '-'}</span></div>
+                    <div class="odd-item"><span>Döntetlen (X)</span><span class="odd-val">${outcomes.find(x=>x.name==='Draw')?.price || '-'}</span></div>
+                    <div class="odd-item"><span>Vendég (2)</span><span class="odd-val">${outcomes.find(x=>x.name===m.away_team)?.price || '-'}</span></div>`;
+            } else { document.getElementById('odds-target').innerHTML = "<p style='text-align:center; opacity:0.5;'>Nincs elérhető odds.</p>"; }
+        } catch (e) { }
     }
-
-    function calcProfit() {
-        const stake = document.getElementById('stake').value;
-        const total = (stake * currentOdds).toFixed(2);
-        document.getElementById('profit').innerText = total + " €";
-    }
-
-    function triggerGoal() {
-        const overlay = document.getElementById('goal-overlay');
-        overlay.style.display = 'flex';
-        setTimeout(() => { overlay.style.display = 'none'; }, 3000);
-    }
-
-    function initAIChart() {
-        const ctx = document.getElementById('aiChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Home', 'Draw', 'Away'],
-                datasets: [{
-                    data: [58, 22, 20],
-                    backgroundColor: ['#00ff88', '#0ea5e9', '#ff3e3e'],
-                    borderColor: 'transparent'
-                }]
-            },
-            options: { cutout: '85%', plugins: { legend: { display: false } } }
-        });
-    }
-
     init();
 </script>
 </body>
