@@ -8,162 +8,161 @@
     <style>
         :root {
             --bg: #020617;
-            --glass: rgba(15, 23, 42, 0.85);
+            --glass: rgba(15, 23, 42, 0.75);
             --neon-green: #00ff88;
             --neon-blue: #0ea5e9;
             --text: #f1f5f9;
-            --border: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.08);
             --sidebar-width: 280px;
+            --card-bg: rgba(30, 41, 59, 0.4);
         }
 
         body.light {
             --bg: #f8fafc;
-            --glass: rgba(255, 255, 255, 0.9);
+            --glass: rgba(255, 255, 255, 0.85);
             --text: #0f172a;
-            --border: rgba(0, 0, 0, 0.1);
+            --border: rgba(0, 0, 0, 0.08);
             --neon-blue: #0284c7;
+            --card-bg: rgba(255, 255, 255, 0.7);
         }
+
+        /* --- SCROLLBAR DESIGN --- */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-blue); }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body { 
-            background: radial-gradient(circle at center, #0f172a 0%, var(--bg) 100%); 
+            background: radial-gradient(circle at 20% 20%, #1e293b 0%, var(--bg) 100%); 
             color: var(--text); 
             font-family: 'Inter', sans-serif; 
             height: 100vh;
-            overflow: hidden; /* A főoldal ne görögjön, csak a panelek */
+            overflow: hidden;
             transition: 0.3s;
-        }
-
-        /* --- FŐ ELRENDEZÉS --- */
-        .main-wrapper {
-            display: flex;
-            height: 100vh;
-            padding-top: 70px; /* Navigáció helye */
         }
 
         /* --- NAV --- */
         nav { 
-            position: fixed; top: 0; left: 0; right: 0; height: 70px;
+            position: fixed; top: 0; left: 0; right: 0; height: 75px;
             display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 25px; background: var(--glass); backdrop-filter: blur(20px);
+            padding: 0 30px; background: var(--glass); backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border); z-index: 1000;
         }
-        .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.2rem; color: var(--neon-blue); letter-spacing: 2px; }
+        .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 3px; text-shadow: 0 0 15px rgba(14, 165, 233, 0.4); }
         
-        .nav-controls { display: flex; gap: 10px; align-items: center; }
+        .nav-controls { display: flex; gap: 12px; }
         button, .btn-link { 
-            padding: 8px 12px; border-radius: 50px; cursor: pointer; font-weight: bold; 
+            padding: 10px 18px; border-radius: 12px; cursor: pointer; font-weight: bold; 
             background: rgba(255,255,255,0.05); color: var(--text); text-decoration: none; 
-            border: 1px solid var(--border); font-family: 'Orbitron'; font-size: 9px;
+            border: 1px solid var(--border); font-family: 'Orbitron'; font-size: 10px;
             transition: 0.3s;
         }
-        button:hover { border-color: var(--neon-blue); }
+        button:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.1); }
 
-        /* --- BAL OLDALI SÁV (LIGÁK) --- */
+        /* --- MAIN LAYOUT --- */
+        .main-wrapper { display: flex; height: 100vh; padding-top: 75px; }
+
+        /* --- SIDEBAR --- */
         .sidebar {
             width: var(--sidebar-width);
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
             border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
             overflow-y: auto;
+            padding: 10px 0;
         }
         .sidebar-header {
-            padding: 20px;
-            font-family: 'Orbitron';
-            font-size: 10px;
-            color: var(--neon-blue);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid var(--border);
+            padding: 20px; font-family: 'Orbitron'; font-size: 10px;
+            color: var(--neon-blue); text-transform: uppercase; letter-spacing: 2px; opacity: 0.7;
         }
         .league-item {
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: 0.2s;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
+            margin: 5px 15px; padding: 12px 15px; border-radius: 14px;
+            display: flex; align-items: center; gap: 12px; cursor: pointer;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
         }
-        .league-item:hover { background: rgba(14, 165, 233, 0.1); }
+        .league-item:hover { background: rgba(255,255,255,0.05); transform: scale(1.02); }
         .league-item.active {
-            background: rgba(14, 165, 233, 0.2);
-            border-right: 3px solid var(--neon-blue);
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.15) 0%, transparent 100%);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            border-left: 4px solid var(--neon-blue);
         }
         .league-badge {
-            background: var(--neon-blue);
-            color: #000;
-            font-family: 'Orbitron';
-            font-size: 9px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: auto;
+            margin-left: auto; background: var(--neon-blue); color: #000;
+            font-family: 'Orbitron'; font-size: 9px; padding: 2px 7px; border-radius: 5px;
         }
 
-        /* --- JOBB OLDALI TARTALOM (MECCSEK) --- */
-        .content-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 30px;
-            background: rgba(255,255,255,0.01);
-        }
+        /* --- CONTENT AREA --- */
+        .content-area { flex: 1; overflow-y: auto; padding: 40px; }
 
-        .date-strip {
-            display: flex; gap: 10px; margin-bottom: 30px; padding-bottom: 10px;
-            border-bottom: 1px solid var(--border);
-        }
+        .date-strip { display: flex; gap: 12px; margin-bottom: 35px; overflow-x: auto; padding-bottom: 15px; }
         .date-pill {
-            padding: 8px 15px; border-radius: 10px; background: var(--glass);
-            border: 1px solid var(--border); cursor: pointer; font-size: 11px;
-            font-family: 'Orbitron'; transition: 0.3s;
+            flex: 0 0 auto; padding: 12px 20px; border-radius: 14px; background: var(--card-bg);
+            border: 1px solid var(--border); cursor: pointer; font-family: 'Orbitron'; font-size: 11px;
+            transition: 0.3s; text-align: center;
         }
-        .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); }
+        .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 20px rgba(0, 255, 136, 0.15); }
 
+        /* --- MATCH CARD --- */
         .match-card {
-            background: var(--glass);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 15px;
-            display: grid;
-            grid-template-columns: 1fr 120px 1fr;
-            align-items: center;
-            transition: 0.3s;
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 24px;
+            padding: 30px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 150px 1fr;
+            align-items: center; position: relative; overflow: hidden;
+            animation: slideUp 0.6s cubic-bezier(0.23, 1, 0.32, 1) both;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        .match-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-        .team { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
-        .team img { width: 45px; height: 45px; object-fit: contain; }
-        .team span { font-weight: 700; font-size: 14px; }
+        .match-card::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%); pointer-events: none;
+        }
 
-        .score-center { text-align: center; }
+        .team { display: flex; flex-direction: column; align-items: center; gap: 15px; z-index: 1; }
+        .team img { width: 55px; height: 55px; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); }
+        .team span { font-weight: 700; font-size: 15px; letter-spacing: 0.5px; }
+
+        .score-center { text-align: center; z-index: 1; }
         .score-display { 
-            display: block; font-family: 'Orbitron'; font-size: 1.8rem; font-weight: 900;
-            color: var(--neon-green); margin-bottom: 10px;
+            font-family: 'Orbitron'; font-size: 2.2rem; font-weight: 900;
+            color: var(--neon-green); margin: 10px 0; text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
         }
-        .status-badge { font-family: 'Orbitron'; font-size: 9px; opacity: 0.5; letter-spacing: 1px; }
+
+        .status-badge { 
+            font-family: 'Orbitron'; font-size: 10px; text-transform: uppercase;
+            padding: 4px 12px; background: rgba(255,255,255,0.05); border-radius: 50px; opacity: 0.8;
+        }
+        .status-badge.live { color: #ff4757; opacity: 1; font-weight: bold; }
+        .status-badge.live::before {
+            content: ""; display: inline-block; width: 8px; height: 8px; background: #ff4757;
+            border-radius: 50%; margin-right: 8px; animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
 
         .analyze-link {
-            display: inline-block; margin-top: 15px;
-            padding: 10px 20px; background: var(--neon-green);
-            color: #000; text-decoration: none; border-radius: 8px;
-            font-family: 'Orbitron'; font-weight: 900; font-size: 10px;
-            transition: 0.3s;
+            display: inline-block; margin-top: 20px; padding: 12px 25px;
+            background: var(--neon-green); color: #020617; text-decoration: none;
+            border-radius: 12px; font-family: 'Orbitron'; font-weight: 900; font-size: 11px;
+            transition: 0.3s; letter-spacing: 1px;
         }
-        .analyze-link:hover { box-shadow: 0 0 20px rgba(0, 255, 136, 0.4); transform: scale(1.05); }
+        .analyze-link:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 255, 136, 0.4); }
 
-        /* MOBIL NÉZET */
+        /* --- SKELETON LOADER --- */
+        .skeleton { background: linear-gradient(90deg, var(--border) 25%, rgba(255,255,255,0.05) 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite linear; }
+        @keyframes shimmer { to { background-position: -200% 0; } }
+
+        /* MOBIL */
         @media (max-width: 900px) {
-            .sidebar { width: 70px; }
+            .sidebar { width: 80px; }
             .sidebar span, .sidebar-header, .league-badge { display: none; }
-            .league-item { justify-content: center; padding: 15px 0; }
+            .league-item { justify-content: center; margin: 10px; }
         }
-
         @media (max-width: 600px) {
-            .match-card { grid-template-columns: 1fr; gap: 20px; }
-            .score-center { order: -1; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+            .match-card { grid-template-columns: 1fr; gap: 25px; padding: 20px; }
+            .score-center { order: -1; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+            .content-area { padding: 20px; }
         }
     </style>
 </head>
@@ -186,15 +185,18 @@
         <main class="content-area">
             <div id="date-strip" class="date-strip"></div>
             <div id="match-container">
-                <p style="text-align:center; opacity:0.5; margin-top:50px;">Válassz egy ligát a bal oldalon!</p>
+                <div style="text-align: center; margin-top: 100px; opacity: 0.4;">
+                    <svg width="60" height="60" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                    <p style="font-family: 'Orbitron'; margin-top: 20px;">VÁLASSZ EGY LIGÁT A KEZDÉSHEZ</p>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
         const translations = {
-            hu: { today: "MA", back: "VISSZA", analyze: "ELEMZÉS", empty: "Nincs mérkőzés ezen a napon.", days: ["VAS", "HÉTFŐ", "KEDD", "SZE", "CSÜT", "PÉN", "SZO"] },
-            en: { today: "TODAY", back: "BACK", analyze: "ANALYZE", empty: "No matches.", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] }
+            hu: { today: "MA", back: "VISSZA", analyze: "ELEMZÉS", days: ["VAS", "HÉTFŐ", "KEDD", "SZE", "CSÜT", "PÉN", "SZO"] },
+            en: { today: "TODAY", back: "BACK", analyze: "ANALYZE", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] }
         };
 
         let allMatches = [];
@@ -203,13 +205,24 @@
         let currentLang = localStorage.getItem("lang") || "hu";
 
         async function init() {
+            showSkeletons();
             try {
+                // Szimulált vagy valós Fetch
                 const res = await fetch("/live-matches");
                 const data = await res.json();
                 allMatches = data.matches || [];
                 renderDateStrip();
                 renderLeagues();
-            } catch (e) { console.error("Hiba:", e); }
+            } catch (e) {
+                document.getElementById("match-container").innerHTML = "<p>Szerver hiba. Próbáld később.</p>";
+            }
+        }
+
+        function showSkeletons() {
+            const container = document.getElementById("match-container");
+            container.innerHTML = Array(3).fill(0).map(() => `
+                <div class="match-card skeleton" style="height: 180px; opacity: 0.1;"></div>
+            `).join('');
         }
 
         function renderDateStrip() {
@@ -219,10 +232,10 @@
 
             strip.innerHTML = dates.map(date => {
                 const d = new Date(date);
-                const isToday = date === todayStr;
-                const label = isToday ? translations[currentLang].today : translations[currentLang].days[d.getDay()];
+                const label = date === todayStr ? translations[currentLang].today : translations[currentLang].days[d.getDay()];
                 return `<div class="date-pill ${date === selectedDate ? 'active' : ''}" onclick="setDate('${date}')">
-                    ${label} <span style="font-size:9px; opacity:0.6">${d.getMonth()+1}.${d.getDate()}</span>
+                    <div>${label}</div>
+                    <div style="font-size:9px; opacity:0.5">${d.getMonth()+1}.${d.getDate()}</div>
                 </div>`;
             }).join('');
         }
@@ -244,11 +257,7 @@
 
             filtered.forEach(m => {
                 if (!leagues[m.competition.id]) {
-                    leagues[m.competition.id] = { 
-                        name: m.competition.name, 
-                        count: 0, 
-                        emblem: m.competition.emblem 
-                    };
+                    leagues[m.competition.id] = { name: m.competition.name, count: 0, emblem: m.competition.emblem };
                 }
                 leagues[m.competition.id].count++;
             });
@@ -257,14 +266,10 @@
                 const l = leagues[id];
                 const div = document.createElement("div");
                 div.className = `league-item ${selectedLeagueId == id ? 'active' : ''}`;
-                div.onclick = () => {
-                    selectedLeagueId = id;
-                    renderLeagues();
-                    renderMatches();
-                };
+                div.onclick = () => { selectedLeagueId = id; renderLeagues(); renderMatches(); };
                 div.innerHTML = `
-                    <img src="${l.emblem}" width="20" height="20" onerror="this.style.display='none'">
-                    <span>${l.name}</span>
+                    <img src="${l.emblem}" width="24" height="24" onerror="this.src='https://via.placeholder.com/24'">
+                    <span style="font-size: 13px; font-weight: 600;">${l.name}</span>
                     <div class="league-badge">${l.count}</div>
                 `;
                 sidebar.appendChild(div);
@@ -273,40 +278,39 @@
 
         function renderMatches() {
             const container = document.getElementById("match-container");
-            if (!selectedLeagueId) {
-                container.innerHTML = `<p style="text-align:center; opacity:0.5; margin-top:50px;">Válassz egy ligát!</p>`;
+            const matches = allMatches.filter(m => m.utcDate.startsWith(selectedDate) && m.competition.id == selectedLeagueId);
+
+            if (matches.length === 0) {
+                container.innerHTML = `<div class="empty-state" style="text-align:center; padding:50px; opacity:0.5;">Nincs mérkőzés ebben a ligában.</div>`;
                 return;
             }
 
-            const matches = allMatches.filter(m => 
-                m.utcDate.startsWith(selectedDate) && m.competition.id == selectedLeagueId
-            );
-
-            container.innerHTML = matches.map(m => `
-                <div class="match-card">
+            container.innerHTML = matches.map((m, i) => {
+                const isLive = m.status === "IN_PLAY" || m.status === "LIVE" || m.status === "PAUSED";
+                return `
+                <div class="match-card" style="animation-delay: ${i * 0.1}s">
                     <div class="team">
-                        <img src="${m.homeTeam.crest}" onerror="this.src='https://via.placeholder.com/50'">
+                        <img src="${m.homeTeam.crest}" onerror="this.src='https://via.placeholder.com/60'">
                         <span>${m.homeTeam.shortName || m.homeTeam.name}</span>
                     </div>
                     <div class="score-center">
-                        <div class="status-badge">${m.status}</div>
+                        <div class="status-badge ${isLive ? 'live' : ''}">${m.status}</div>
                         <div class="score-display">${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}</div>
                         <a href="/elemzes?id=${m.id}" class="analyze-link">${translations[currentLang].analyze}</a>
                     </div>
                     <div class="team">
-                        <img src="${m.awayTeam.crest}" onerror="this.src='https://via.placeholder.com/50'">
+                        <img src="${m.awayTeam.crest}" onerror="this.src='https://via.placeholder.com/60'">
                         <span>${m.awayTeam.shortName || m.awayTeam.name}</span>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
-        // Téma és Nyelv kezelő függvények (kivonatolva a korábbi kódból)
         function toggleTheme() {
-            const newTheme = document.body.classList.contains('light') ? 'dark' : 'light';
-            document.body.className = newTheme;
-            localStorage.setItem("theme", newTheme);
-            document.getElementById("theme-btn").innerText = newTheme === "dark" ? "☀️" : "🌙";
+            const body = document.body;
+            const isLight = body.classList.toggle('light');
+            localStorage.setItem("theme", isLight ? "light" : "dark");
+            document.getElementById("theme-btn").innerText = isLight ? "🌙" : "☀️";
         }
 
         function toggleLang() {
@@ -319,6 +323,9 @@
             renderMatches();
         }
 
+        // Téma betöltése indításkor
+        if(localStorage.getItem("theme") === "light") toggleTheme();
+        
         init();
     </script>
 </body>
