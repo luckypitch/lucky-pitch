@@ -255,90 +255,88 @@
     }, 5000);
 }
 
-    // --- ADATKEZELÉS ---
-let prevScores = {}; 
+ let currentLang = localStorage.getItem('lp_lang') || 'HU';
+let matchesData = [];         // Ebbe kerülnek a meccsek
+let prevScores = {};          // Az előző eredmények tárolása
+let flashingMatches = new Set(); // A villogó meccsek ID-jai
+const goalSound = new Audio('https://www.myinstants.com/media/sounds/goal-sound-effect.mp3');
 
+// --- ADATKEZELÉS ---
 async function updateData() {
     try {
         const res = await fetch('/live-matches');
         const data = await res.json();
         
-        if (!data.matches) return;
+        if (!data || !data.matches) return;
 
         data.matches.forEach(match => {
             const mId = match.id;
             const currentH = match.score.fullTime.home ?? 0;
             const currentA = match.score.fullTime.away ?? 0;
 
-            // Csak akkor vizsgáljuk, ha már van rögzített előzményünk a meccshez
+            // Csak akkor vizsgáljuk, ha már van rögzített előzményünk (nem az első futás)
             if (prevScores[mId]) {
                 const oldH = prevScores[mId].home;
                 const oldA = prevScores[mId].away;
 
-                // GÓL DETEKTÁLÁSA
                 if (currentH > oldH || currentA > oldA) {
-                    console.log(`⚽ GÓL ÉRZÉKELVE: ${match.homeTeam.name} vs ${match.awayTeam.name}`);
+                    console.log(`⚽ GÓL: ${match.homeTeam.name} - ${match.awayTeam.name}`);
                     
-                    // 1. Villogó listába tétel
+                    // Effektusok indítása
                     flashingMatches.add(Number(mId));
+                    
+                    goalSound.currentTime = 0;
+                    goalSound.play().catch(e => console.log("Hanghoz kattintás kell!"));
 
-                    // 2. Hang lejátszása
-                    if (typeof goalSound !== 'undefined') {
-                        goalSound.currentTime = 0;
-                        goalSound.play().catch(e => console.log("Interakció kell a hanghoz!"));
-                    }
-
-                    // 3. Banner és renderelés
                     const scoringTeam = currentH > oldH ? match.homeTeam.name : match.awayTeam.name;
                     showGoal(scoringTeam, mId, `${currentH}:${currentA}`);
-                    
-                    // 4. Késleltetett eltávolítás
+
+                    // 10 mp után levesszük a villogást
                     setTimeout(() => {
                         flashingMatches.delete(Number(mId));
                         renderMatches(); 
                     }, 10000);
                 }
             }
-
-            // Frissítjük az "emlékezetünket" a következő körhöz
+            // Állapot mentése
             prevScores[mId] = { home: currentH, away: currentA };
         });
 
-        // Most már frissíthetjük a globális listát és kirajzolhatjuk
         matchesData = data.matches;
         renderMatches();
 
     } catch (err) {
-        console.error("Hiba az API frissítésnél:", err);
+        console.error("API Hiba:", err);
     }
 }
-  function renderMatches() {
-    const container = document.getElementById('matches-container');
+
+function renderMatches() {
+    // JAVÍTVA: Az ID-nek egyeznie kell a HTML-el!
+    const container = document.getElementById('match-container'); 
     if (!container) return;
 
-    // Itt a lényeg:
     container.innerHTML = matchesData.map(m => {
-        // Ellenőrizzük, hogy ez a konkrét meccs épp gólt lőtt-e
-        const isFlashing = flashingMatches.has(Number(m.id)); 
+        const isFlashing = flashingMatches.has(Number(m.id));
         
-        // Ha isFlashing igaz, hozzáadjuk a 'goal-highlight' osztályt
         return `
             <div id="match-${m.id}" 
                  class="match-card ${isFlashing ? 'goal-highlight' : ''}" 
                  onclick="goToMatch(${m.id})">
                  
                 <div class="match-header">
-                    <span>${m.competition.name}</span>
-                    <span class="live-badge">${m.status}</span>
+                    <span style="font-size: 10px; opacity: 0.7;">${m.competition.name}</span>
+                    <span class="live-badge ${m.status === 'IN_PLAY' ? 'active' : ''}">${m.status}</span>
                 </div>
-                <div class="match-teams">
-                    <div class="team">
-                        <img src="${m.homeTeam.crest}">
+                <div class="match-teams" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <div class="team-link">
+                        <img src="${m.homeTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/50'">
                         <span>${m.homeTeam.name}</span>
                     </div>
-                    <div class="score">${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}</div>
-                    <div class="team">
-                        <img src="${m.awayTeam.crest}">
+                    <div class="score-display ${m.status === 'IN_PLAY' ? 'score-live' : ''}">
+                        ${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}
+                    </div>
+                    <div class="team-link">
+                        <img src="${m.awayTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/50'">
                         <span>${m.awayTeam.name}</span>
                     </div>
                 </div>
@@ -346,6 +344,11 @@ async function updateData() {
         `;
     }).join('');
 }
+
+// --- INICIALIZÁLÁS ---
+updateStaticTexts();
+updateData(); // Első hívás
+setInterval(updateData, 30000); // 30 másodpercenként frissít
 
     // --- SEGÉDFÜGGVÉNYEK (TABELLA) ---
     function getStatusColor(text) {
@@ -509,6 +512,7 @@ async function updateData() {
     </script>
 </body>
 </html>
+
 
 
 
