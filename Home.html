@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LuckyPitch</title>
 
+    <script
+      async
+      crossorigin="anonymous"
+      data-clerk-publishable-key="pk_test_YWxsb3dlZC1pbnNlY3QtOTguY2xlcmsuYWNjb3VudHMuZGV2JA"
+      src="https://allowed-insect-98.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+      type="text/javascript"
+    ></script>
+
     <style>
         /* =========================
            THEME VARIABLES
@@ -14,6 +22,7 @@
             --box-bg: rgba(0,0,0,0.7);
             --btn-bg: #cde1e3;
             --btn-text: black;
+            --primary: #00ff88;
         }
 
         body.light{
@@ -55,13 +64,14 @@
         }
 
         .logo{
-            font-size:20px;
+            font-size:24px;
             font-weight:bold;
+            letter-spacing: 1px;
         }
 
         .nav-buttons{
             display:flex;
-            gap:10px;
+            gap:15px;
             align-items: center;
         }
 
@@ -76,6 +86,12 @@
             text-decoration: none;
             display: inline-block;
             transition: 0.2s;
+        }
+
+        /* Bejelentkezés gomb egyedi stílusa */
+        .btn-auth {
+            background: var(--primary);
+            color: #000;
         }
 
         /* =========================
@@ -154,6 +170,12 @@
     <div class="nav-buttons">
         <button id="mod-btn" onclick="toggleTheme()">🌙</button>
         <button id="lang-toggle-btn" onclick="toggleLang()">HU 🇭🇺</button>
+        
+        <div id="user-button"></div>
+        <div id="auth-links">
+            <button onclick="Clerk.openSignIn()" class="btn-auth" id="login-text">LOGIN</button>
+        </div>
+
         <a href="https://www.facebook.com/profile.php?id=61588443053104" target="_blank" class="fb-link">
             <img id="facebook-img" src="facebook-1.png" style="width:25px">
         </a>
@@ -190,7 +212,8 @@ const translations = {
         text1: "A LuckyPitchnél hisszük, hogy a győzelem nem csupán szerencse kérdése — hanem okos gondolkodásé, éles stratégiáé és annak a bátorságáé, hogy bízz az ösztöneidben.",
         text2: "Itt az éleslátás találkozik a lehetőséggel. Itt változik meg a játék. Játssz okosabban. Gondolkodj élesebben. Nyerj nagyobbat.",
         cta: "Meccsek",
-        langBtn: "EN 🇬🇧"
+        langBtn: "EN 🇬🇧",
+        login: "BELÉPÉS"
     },
     en: {
         title: "Let the Wins Begin",
@@ -198,28 +221,49 @@ const translations = {
         text1: "At LuckyPitch, we believe winning isn't just about luck — it's about smart thinking, sharp strategy, and the courage to trust your instincts.",
         text2: "Insight meets opportunity. This is where the game changes. Play smarter. Think sharper. Win bigger.",
         cta: "Matches",
-        langBtn: "HU 🇭🇺"
+        langBtn: "HU 🇭🇺",
+        login: "LOGIN"
     }
 };
 
-function updateUI() {
+async function updateUI() {
+    // Várjuk meg, amíg a Clerk betölt, ha még nem tette meg
+    if (window.Clerk && !Clerk.isReady) await Clerk.load();
+
     const lang = localStorage.getItem("lang") || "en";
     const theme = localStorage.getItem("theme") || "dark";
     const data = translations[lang];
 
+    // Szövegek frissítése
     document.getElementById("title").innerText = data.title;
     document.getElementById("kiemelt").innerText = data.kiemelt;
     document.getElementById("text1").innerText = data.text1;
     document.getElementById("text2").innerText = data.text2;
     document.getElementById("cta-link").innerText = data.cta;
     document.getElementById("lang-toggle-btn").innerText = data.langBtn;
+    document.getElementById("login-text").innerText = data.login;
 
+    // Téma frissítése
     if (theme === "light") {
         document.body.classList.add("light");
         document.getElementById("mod-btn").innerText = "🌙";
     } else {
         document.body.classList.remove("light");
         document.getElementById("mod-btn").innerText = "☀️";
+    }
+
+    // CLERK ÁLLAPOT KEZELÉSE
+    const userButtonDiv = document.getElementById('user-button');
+    const authLinks = document.getElementById('auth-links');
+
+    if (Clerk.user) {
+        // Ha be van lépve: profil gomb mutatása, belépés gomb elrejtése
+        Clerk.mountUserButton(userButtonDiv);
+        authLinks.style.display = 'none';
+    } else {
+        // Ha nincs belépve: profil gomb elrejtése, belépés gomb mutatása
+        userButtonDiv.innerHTML = ''; 
+        authLinks.style.display = 'block';
     }
 }
 
@@ -235,7 +279,8 @@ function toggleTheme() {
     updateUI();
 }
 
-document.addEventListener("DOMContentLoaded", updateUI);
+// Clerk inicializálása betöltéskor
+window.addEventListener('load', updateUI);
 </script>
 
 </body>
