@@ -2,13 +2,13 @@
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LuckyPitch | Live Match Universe</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #020617;
-            --glass: rgba(15, 23, 42, 0.75);
+            --glass: rgba(15, 23, 42, 0.85);
             --neon-green: #00ff88;
             --neon-blue: #0ea5e9;
             --neon-red: #ff3e3e;
@@ -25,67 +25,73 @@
             background: radial-gradient(circle at center, #0f172a 0%, #020617 100%); 
             color: var(--text); 
             font-family: 'Inter', sans-serif; 
-            margin: 0; 
-            overflow-x: hidden; 
+            margin: 0; padding: 0; overflow-x: hidden; 
         }
 
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+        .container { width: 100%; max-width: 1400px; margin: 0 auto; box-sizing: border-box; padding: 10px 15px; }
 
+        /* --- NAV --- */
         .back-btn {
-            position: absolute; top: 20px; left: 20px; display: flex; align-items: center; gap: 10px;
-            text-decoration: none; color: var(--neon-blue); font-family: 'Orbitron'; font-size: 11px;
+            display: inline-flex; align-items: center; gap: 8px;
+            text-decoration: none; color: var(--neon-blue); font-family: 'Orbitron'; font-size: 10px;
             padding: 10px 18px; background: rgba(14, 165, 233, 0.1); border: 1px solid var(--neon-blue);
-            border-radius: 50px; transition: 0.3s; z-index: 100; font-weight: bold;
+            border-radius: 50px; margin: 10px 0; font-weight: bold; transition: 0.3s;
         }
-        .back-btn:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 20px var(--neon-blue); transform: translateX(-5px); }
+        .back-btn:hover { background: var(--neon-blue); color: #000; }
 
-        .ticker-wrap { background: rgba(0, 0, 0, 0.6); border-bottom: 1px solid var(--neon-blue); padding: 12px 0; overflow: hidden; margin-top: 70px; margin-bottom: 25px; }
+        .ticker-wrap { background: rgba(0, 0, 0, 0.6); border-bottom: 1px solid var(--neon-blue); padding: 10px 0; overflow: hidden; }
         .ticker { display: flex; animation: ticker-scroll 40s linear infinite; white-space: nowrap; }
-        .ticker-item { margin-right: 60px; font-size: 11px; font-family: 'Orbitron'; color: var(--neon-blue); }
+        .ticker-item { margin-right: 50px; font-size: 10px; font-family: 'Orbitron'; color: var(--neon-blue); }
         @keyframes ticker-scroll { 0% { transform: translateX(50%); } 100% { transform: translateX(-100%); } }
 
+        /* --- HERO --- */
         .hero-card {
-            background: var(--glass); backdrop-filter: blur(25px); border-radius: 30px; border: 1px solid var(--border);
-            padding: 50px 40px; display: flex; justify-content: space-around; align-items: center;
-            margin-bottom: 30px; box-shadow: 0 0 50px rgba(0,0,0,0.6);
+            background: var(--glass); backdrop-filter: blur(25px); border-radius: 24px; border: 1px solid var(--border);
+            padding: 30px 15px; display: flex; justify-content: space-around; align-items: center;
+            margin: 15px 0; gap: 5px;
         }
-        .score-display { font-family: 'Orbitron'; font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 900; color: var(--neon-green); text-shadow: 0 0 25px rgba(0,255,136,0.6); }
+        .score-display { font-family: 'Orbitron'; font-size: clamp(1.5rem, 6vw, 3.5rem); font-weight: 900; color: var(--neon-green); text-shadow: 0 0 20px rgba(0,255,136,0.4); }
         .team-box { flex: 1; text-align: center; }
-        .team-box img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 15px; }
-        .team-box h2 { font-family: 'Orbitron'; font-size: 1.2rem; margin: 0; }
+        .team-box img { width: clamp(40px, 10vw, 70px); height: auto; margin-bottom: 10px; }
+        .team-box h2 { font-family: 'Orbitron'; font-size: clamp(0.7rem, 2.5vw, 1.1rem); margin: 0; }
 
-        .grid-layout { display: grid; grid-template-columns: 2.5fr 1.2fr; gap: 30px; }
-        @media (max-width: 1100px) { .grid-layout { grid-template-columns: 1fr; } }
-        .glass-panel { background: var(--glass); border: 1px solid var(--border); padding: 30px; border-radius: 28px; backdrop-filter: blur(15px); overflow-x: auto; }
+        /* --- LAYOUT --- */
+        .grid-layout { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 1100px) { .grid-layout { grid-template-columns: 2.5fr 1.2fr; } }
+
+        .glass-panel { background: var(--glass); border: 1px solid var(--border); padding: 20px; border-radius: 24px; backdrop-filter: blur(15px); }
+
+        /* --- TABLES & ZONES --- */
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 6px; min-width: 700px; }
+        th { font-family: 'Orbitron'; font-size: 9px; color: #64748b; padding-bottom: 10px; text-transform: uppercase; }
+        td { padding: 12px 8px; background: rgba(255,255,255,0.02); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 13px; }
+        
+        .pos-col { border-left-width: 4px !important; border-left-style: solid !important; }
+        .zone-tag { font-size: 8px; font-family: 'Orbitron'; display: block; margin-bottom: 4px; font-weight: 900; letter-spacing: 0.5px; }
+        .pos-num-box { width: 26px; height: 26px; line-height: 26px; margin: 0 auto; background: #000; border-radius: 6px; font-weight: bold; font-family: 'Orbitron'; font-size: 10px; }
+        
+        .highlight td { background: rgba(0, 255, 136, 0.08) !important; border-color: var(--neon-green) !important; }
+        .pts-bold { color: var(--neon-green); font-family: 'Orbitron'; font-weight: bold; }
+
+        /* --- ODDS --- */
+        .market-table { min-width: 100%; }
+        .odd-val { color: var(--neon-green); font-weight: bold; background: rgba(0,255,136,0.05); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(0,255,136,0.2); font-family: 'Orbitron'; font-size: 11px; }
 
         .momentum-wrap { height: 10px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 20px 0; overflow: hidden; border: 1px solid var(--border); }
         .momentum-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-green)); transition: 1.5s ease; }
 
-        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; min-width: 800px; }
-        th { font-family: 'Orbitron'; font-size: 10px; color: #64748b; padding-bottom: 10px; }
-        td { padding: 12px; background: rgba(255,255,255,0.02); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-        .pos-col { border-left-width: 4px !important; border-left-style: solid !important; }
-        .zone-tag { font-size: 8px; font-family: 'Orbitron'; display: block; margin-bottom: 4px; font-weight: 900; }
-        .pos-num-box { width: 28px; height: 28px; line-height: 28px; margin: 0 auto; background: #000; border-radius: 6px; font-weight: bold; font-family: 'Orbitron'; font-size: 11px; }
-        .highlight td { background: rgba(0, 255, 136, 0.08) !important; border-color: var(--neon-green) !important; }
-        .pts-bold { color: var(--neon-green); font-family: 'Orbitron'; font-weight: bold; }
-
-        .market-table { width: 100%; border-collapse: collapse; min-width: 0; font-family: 'Orbitron'; font-size: 11px; margin-top: 20px; }
-        .market-table th { color: var(--neon-blue); text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
-        .market-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: left; background: transparent; }
-        .odd-val { color: var(--neon-green); font-weight: bold; background: rgba(0,255,136,0.05); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(0,255,136,0.2); display: inline-block; min-width: 35px; text-align: center; }
-        .bookie-name { color: #fff; font-weight: 600; font-size: 10px; }
-
-        .chart-container { position: relative; height: 220px; margin-bottom: 20px; }
-        #no-data-msg { text-align: center; padding: 40px 20px; font-family: 'Orbitron'; color: var(--neon-red); }
+        .chart-container { position: relative; height: 200px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-<a href="meccsek.html" class="back-btn">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-    BACK TO MECCSEK
-</a>
+<div class="container">
+    <a href="meccsek.html" class="back-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        VISSZA
+    </a>
+</div>
 
 <div class="ticker-wrap">
     <div class="ticker">
@@ -100,22 +106,20 @@
     
     <div class="grid-layout">
         <div class="glass-panel">
-            <h3 id="momentum-title" style="font-family:'Orbitron'; color:var(--neon-blue); margin:0; font-size: 14px;">MATCH MOMENTUM</h3>
+            <h3 id="momentum-title" style="font-family:'Orbitron'; color:var(--neon-blue); margin:0; font-size: 13px;">MATCH MOMENTUM</h3>
             <div class="momentum-wrap"><div class="momentum-fill" id="momentum-bar"></div></div>
             
-            <h3 style="font-family:'Orbitron'; margin-top:40px; font-size: 14px;">LIVE LEAGUE TABLE</h3>
-            <div id="standings-target">Adatok lekérése...</div>
+            <h3 style="font-family:'Orbitron'; margin-top:30px; font-size: 13px; border-left: 3px solid var(--neon-green); padding-left: 10px;">LIVE LEAGUE TABLE</h3>
+            <div class="table-responsive" id="standings-target">Adatok betöltése...</div>
         </div>
 
         <div class="glass-panel">
-            <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:12px; margin:0; margin-bottom:20px;">MARKET WIN PROBABILITY (AVG)</h3>
+            <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:12px; margin:0; margin-bottom:20px;">WIN PROBABILITY</h3>
             <div id="market-container">
                 <div class="chart-container"><canvas id="aiChart"></canvas></div>
-                <h3 style="font-family:'Orbitron'; color:var(--neon-blue); font-size:11px; margin-top:30px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">ALL AVAILABLE BOOKMAKERS</h3>
-                <div id="odds-list-target"></div>
-            </div>
-            <div id="no-data-msg" style="display:none;">
-                <p style="font-family:'Orbitron'; font-size:11px; color:var(--neon-red);">NO LIVE ODDS DATA AVAILABLE</p>
+                
+                <h3 style="font-family:'Orbitron'; color:var(--neon-blue); font-size:11px; margin-top:30px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">BOOKMAKERS</h3>
+                <div class="table-responsive" id="odds-list-target"></div>
             </div>
         </div>
     </div>
@@ -129,12 +133,11 @@
     function getStatusColor(text) {
         if (!text) return "transparent";
         text = text.toLowerCase();
-        if (text.includes("champions league")) return text.includes("qualifiers") ? "var(--cl-q)" : "var(--cl-gs)";
-        if (text.includes("europa league")) return text.includes("qualifiers") ? "var(--el-q)" : "var(--el-gs)";
+        if (text.includes("champions league")) return "var(--cl-gs)";
+        if (text.includes("europa league")) return "var(--el-gs)";
         if (text.includes("conference league")) return "var(--ecl-q)";
         if (text.includes("play-off") || text.includes("promotion") || text.includes("osztályozó") || text.includes("feljutás")) return "var(--po)";
         if (text.includes("relegation") || text.includes("kiesés") || text.includes("kieső")) return "var(--rel)";
-        if (text.includes("bajnok")) return "var(--cl-gs)";
         return "transparent";
     }
 
@@ -143,10 +146,9 @@
         if (text.includes("Champions League")) return "BL";
         if (text.includes("Europa League")) return "EL";
         if (text.includes("Conference League")) return "KL";
-        if (text.includes("Relegation") || text.includes("kiesés") || text.includes("Kiesés")) return "KIESŐ";
+        if (text.includes("Relegation") || text.includes("kiesés")) return "KIESŐ";
         if (text.includes("Osztályozó") || text.includes("Play-off")) return "P.OFF";
         if (text.includes("Feljutás") || text.includes("Promotion")) return "FELJ";
-        if (text.includes("Bajnok")) return "BAJNOK";
         return "ZÓNA";
     }
 
@@ -158,9 +160,15 @@
             if (!match) return;
 
             document.getElementById('hero-target').innerHTML = `
-                <div class="team-box"><img src="${match.homeTeam.crest}" onerror="this.src='https://via.placeholder.com/80?text=H'"><h2>${match.homeTeam.name}</h2></div>
+                <div class="team-box">
+                    <img src="${match.homeTeam.crest}" onerror="this.src='https://via.placeholder.com/60?text=H'">
+                    <h2>${match.homeTeam.name}</h2>
+                </div>
                 <div class="score-display">${match.score.fullTime.home ?? 0} : ${match.score.fullTime.away ?? 0}</div>
-                <div class="team-box"><img src="${match.awayTeam.crest}" onerror="this.src='https://via.placeholder.com/80?text=A'"><h2>${match.awayTeam.name}</h2></div>`;
+                <div class="team-box">
+                    <img src="${match.awayTeam.crest}" onerror="this.src='https://via.placeholder.com/60?text=A'">
+                    <h2>${match.awayTeam.name}</h2>
+                </div>`;
 
             updateMomentum(match.status, match.utcDate);
             loadStandings(match.competition.code, match.homeTeam.name, match.awayTeam.name);
@@ -176,11 +184,10 @@
             const now = new Date().getTime();
             let mins = Math.min(90, Math.max(0, Math.floor((now - start) / 60000)));
             bar.style.width = (mins / 90 * 100) + '%';
-            title.innerText = `MATCH TIME: ${mins}'`;
-        } else if (status === 'FINISHED') {
-            bar.style.width = '100%'; title.innerText = `MATCH TIME: FT (FINISHED)`;
+            title.innerText = `MÉRKŐZÉS IDŐ: ${mins}'`;
         } else {
-            bar.style.width = '0%'; title.innerText = `MATCH TIME: NOT STARTED`;
+            bar.style.width = status === 'FINISHED' ? '100%' : '0%';
+            title.innerText = status === 'FINISHED' ? 'VÉGE (FT)' : 'NEM KEZDŐDÖTT EL';
         }
     }
 
@@ -193,7 +200,7 @@
             const matchOdds = data.find(o => o.home_team.toLowerCase().includes(homeKey));
 
             if (matchOdds && matchOdds.bookmakers.length > 0) {
-                let html = `<table class="market-table"><thead><tr><th>BOOKIE</th><th>1</th><th>X</th><th>2</th></tr></thead><tbody>`;
+                let html = `<table class="market-table"><thead><tr><th style="text-align:left">IRODA</th><th>1</th><th>X</th><th>2</th></tr></thead><tbody>`;
                 let avgH = 0, avgD = 0, avgA = 0, count = 0;
 
                 matchOdds.bookmakers.forEach(bookie => {
@@ -203,21 +210,25 @@
                         const aO = market.outcomes.find(x => x.name === matchOdds.away_team).price;
                         const dO = market.outcomes.find(x => x.name === 'Draw').price;
                         avgH += (1/hO); avgD += (1/dO); avgA += (1/aO); count++;
-                        html += `<tr><td class="bookie-name">${bookie.title}</td><td><span class="odd-val">${hO.toFixed(2)}</span></td><td><span class="odd-val">${dO.toFixed(2)}</span></td><td><span class="odd-val">${aO.toFixed(2)}</span></td></tr>`;
+                        html += `<tr><td style="text-align:left; font-weight:600">${bookie.title}</td><td><span class="odd-val">${hO.toFixed(2)}</span></td><td><span class="odd-val">${dO.toFixed(2)}</span></td><td><span class="odd-val">${aO.toFixed(2)}</span></td></tr>`;
                     }
                 });
-                target.innerHTML = html + `</tbody></table>`;
-                if (count > 0) updateChart(Math.round((avgH/(avgH+avgD+avgA))*100), Math.round((avgD/(avgH+avgD+avgA))*100), Math.round((avgA/(avgH+avgD+avgA))*100));
+                target.innerHTML = html + "</tbody></table>";
+                if (count > 0) updateChart(avgH, avgD, avgA);
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { target.innerHTML = "Odds nem elérhető."; }
     }
 
     function updateChart(h, d, a) {
         const ctx = document.getElementById('aiChart').getContext('2d');
+        const total = h + d + a;
         if (aiChart) aiChart.destroy();
         aiChart = new Chart(ctx, {
             type: 'doughnut',
-            data: { labels: [`Home ${h}%`, `Draw ${d}%`, `Away ${a}%`], datasets: [{ data: [h, d, a], backgroundColor: ['#00ff88', '#0ea5e9', '#ff3e3e'], borderColor: '#020617', borderWidth: 4 }] },
+            data: { 
+                labels: [`Hazai ${Math.round(h/total*100)}%`, `Döntetlen ${Math.round(d/total*100)}%`, `Vendég ${Math.round(a/total*100)}%`], 
+                datasets: [{ data: [h, d, a], backgroundColor: ['#00ff88', '#0ea5e9', '#ff3e3e'], borderColor: '#020617', borderWidth: 4 }] 
+            },
             options: { cutout: '80%', maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#fff', font: { family: 'Orbitron', size: 10 } } } } }
         });
     }
@@ -229,13 +240,13 @@
             const tableData = data.standings.find(s => s.type === 'TOTAL').table;
             const total = tableData.length;
 
-            let html = `<table><thead><tr><th>#</th><th style="text-align:left">TEAM</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GK</th><th class="pts-bold">P</th></tr></thead><tbody>`;
+            let html = `<table><thead><tr><th>#</th><th style="text-align:left">CSAPAT</th><th>M</th><th>GY</th><th>D</th><th>V</th><th>GK</th><th class="pts-bold">P</th></tr></thead><tbody>`;
 
             tableData.forEach(r => {
                 let status = r.description || "";
                 const pos = r.position;
 
-                // JAVÍTOTT MANUÁLIS LIGA LOGIKA
+                // MANUÁLIS LIGA LOGIKA (MINDEN LIGA)
                 if (!status || status === "") {
                     if (['PL', 'PD', 'SA'].includes(code)) {
                         if (pos <= 4) status = "Champions League Group Stage";
@@ -247,52 +258,32 @@
                         else if (pos === 5) status = "Europa League Group Stage";
                         else if (pos === 16) status = "Osztályozó";
                         else if (pos >= 17) status = "Relegation";
-                    } else if (code === 'DED') { 
-                        if (pos <= 2) status = "Champions League Group Stage";
-                        else if (pos === 3) status = "Champions League Qualifiers";
-                        else if (pos === 4) status = "Europa League Qualifiers";
-                        else if (pos >= 5 && pos <= 8) status = "Conference League Play-offs";
-                        else if (pos === 16) status = "Osztályozó";
-                        else if (pos >= 17) status = "Relegation";
-                    } else if (code === 'PPL') {
-                        if (pos === 1) status = "Champions League Group Stage";
-                        else if (pos === 2) status = "Champions League Qualifiers";
-                        else if (pos === 3) status = "Europa League Qualifiers";
-                        else if (pos === 4) status = "Conference League Qualifiers";
-                        else if (pos === 16) status = "Osztályozó";
-                        else if (pos >= 17) status = "Relegation";
-                    } else if (code === 'FL1') {
-                        if (pos <= 3) status = "Champions League Group Stage";
-                        else if (pos === 4) status = "Champions League Qualifiers";
-                        else if (pos === 5) status = "Europa League Group Stage";
-                        else if (pos === 16) status = "Osztályozó";
-                        else if (pos >= 17) status = "Relegation";
-                    } else if (code === 'ELC') { // CHAMPIONSHIP
+                    } else if (code === 'ELC') {
                         if (pos <= 2) status = "Feljutás - Premier League";
                         else if (pos <= 6) status = "Play-off (Championship)";
                         else if (pos >= total - 2) status = "Relegation";
                     } else {
                         if (pos === 1) status = "Bajnok / Feljutó";
-                        else if (pos >= total - 2) status = "Relegation";
+                        else if (pos >= total - 2) status = "Kieső zóna";
                     }
                 }
 
                 const color = getStatusColor(status);
-                const isMatchTeam = (home.includes(r.team.name) || r.team.name.includes(home) || away.includes(r.team.name) || r.team.name.includes(away));
+                const isMatchTeam = (home.includes(r.team.name) || away.includes(r.team.name));
                 
                 html += `<tr class="${isMatchTeam ? 'highlight' : ''}">
                     <td class="pos-col" style="border-left-color: ${color}">
                         ${status ? `<span class="zone-tag" style="color:${color}">${translateStatus(status)}</span>` : ''}
-                        <div class="pos-num-box" style="background:${color!=='transparent'?color:'#000'}; color:${color!=='transparent'?'#000':'var(--neon-blue)'}; border-color:${color!=='transparent'?'rgba(255,255,255,0.2)':'var(--neon-blue)'}">${pos}</div>
+                        <div class="pos-num-box" style="background:${color!=='transparent'?color:'#000'}; color:${color!=='transparent'?'#000':'var(--neon-blue)'}">${pos}</div>
                     </td>
-                    <td style="text-align:left; font-weight:800;"><img src="${r.team.crest}" width="20" style="margin-right:8px; vertical-align:middle;"> ${r.team.name}</td>
+                    <td style="text-align:left; font-weight:800;"><img src="${r.team.crest}" width="20" style="vertical-align:middle; margin-right:8px;"> ${r.team.name}</td>
                     <td>${r.playedGames}</td><td>${r.won}</td><td>${r.draw}</td><td>${r.lost}</td>
                     <td style="color:${r.goalDifference >= 0 ? 'var(--neon-green)' : 'var(--neon-red)'}">${r.goalDifference}</td>
                     <td class="pts-bold">${r.points}</td>
                 </tr>`;
             });
             document.getElementById('standings-target').innerHTML = html + "</tbody></table>";
-        } catch (e) { document.getElementById('standings-target').innerHTML = "Standings data unavailable."; }
+        } catch (e) { document.getElementById('standings-target').innerHTML = "Standings hiba."; }
     }
 
     init();
