@@ -27,41 +27,71 @@
 
         .card { background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; }
         
-        /* TÁBLÁZAT FIXÁLÁSA */
-        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 750px; }
         th { background: rgba(255,255,255,0.03); padding: 12px 8px; color: #94a3b8; font-weight: 600; text-align: center; }
         td { padding: 12px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
-        .team-col { text-align: left; min-width: 180px; }
-        .pos-col { width: 60px; text-align: center; position: relative; }
+        .team-col { text-align: left; min-width: 200px; }
         
-        /* Zóna és Helyezés egy oszlopban */
-        .status-border { border-left: 4px solid transparent; }
-        .zone-tag { font-size: 8px; font-weight: 900; display: block; line-height: 1; margin-bottom: 3px; }
-        .pos-num { display: inline-block; width: 22px; height: 22px; line-height: 22px; background: rgba(255,255,255,0.1); border-radius: 50%; font-weight: bold; }
+        /* HELYEZÉS ÉS KUPA ZÓNA JAVÍTÁSA */
+        .pos-col { 
+            width: 70px; /* Megnövelt szélesség */
+            text-align: center; 
+            position: relative;
+            padding-left: 10px !important;
+        }
+        
+        .status-border { 
+            border-left: 5px solid transparent; 
+        }
+
+        .zone-tag { 
+            font-size: 9px; 
+            font-weight: 900; 
+            display: block; 
+            line-height: 1; 
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .pos-num { 
+            display: inline-block; 
+            width: 24px; 
+            height: 24px; 
+            line-height: 24px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 50%; 
+            font-weight: bold; 
+            font-size: 11px;
+        }
 
         .highlight { background: rgba(0, 255, 136, 0.08) !important; }
-        .pts-bold { font-weight: 800; background: rgba(255,255,255,0.03); }
+        .pts-bold { font-weight: 800; background: rgba(255,255,255,0.03); font-size: 14px; color: var(--primary); }
 
-        .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; font-size: 10px; opacity: 0.8; }
-        .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+        .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px; font-size: 11px; }
+        .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="header-target"></div>
-
     <div class="grid">
         <div class="card">
             <h3 style="color:var(--primary); margin-top:0;">Bajnoki Tabella</h3>
             <div id="standings-target">Betöltés...</div>
-            <div class="legend" id="legend-target"></div>
+            <div class="legend" id="legend-target">
+                <div class="legend-item"><span class="dot" style="background:var(--cl-gs)"></span> BL Főtábla</div>
+                <div class="legend-item"><span class="dot" style="background:var(--cl-q)"></span> BL Selejt.</div>
+                <div class="legend-item"><span class="dot" style="background:var(--el-q)"></span> Európa Liga</div>
+                <div class="legend-item"><span class="dot" style="background:var(--ecl-q)"></span> Konf. Liga</div>
+                <div class="legend-item"><span class="dot" style="background:var(--po)"></span> Osztályozó</div>
+                <div class="legend-item"><span class="dot" style="background:var(--rel)"></span> Kiesés</div>
+            </div>
         </div>
-
         <div class="card">
             <h3 style="color:var(--primary); margin-top:0;">Élő Oddsok</h3>
-            <div id="odds-target"></div>
+            <div id="odds-target">Keresés...</div>
         </div>
     </div>
 </div>
@@ -74,20 +104,22 @@
         text = text.toLowerCase();
         if (text.includes("champions league")) return text.includes("qualifiers") ? "var(--cl-q)" : "var(--cl-gs)";
         if (text.includes("europa league")) return "var(--el-q)";
-        if (text.includes("conference league")) return "var(--ecl-q)";
-        if (text.includes("play-off") || text.includes("promotion")) return "var(--po)";
+        if (text.includes("conference league") || text.includes("ecl")) return "var(--ecl-q)";
+        if (text.includes("play-off") || text.includes("promotion") || text.includes("osztályozó")) return "var(--po)";
         if (text.includes("relegation") || text.includes("kiesés")) return "var(--rel)";
         return "transparent";
     }
 
     function translateStatus(text) {
         if (!text) return "";
-        if (text.includes("Champions League")) return "BL";
-        if (text.includes("Europa League")) return "EL";
-        if (text.includes("Conference League")) return "KL";
-        if (text.includes("Relegation")) return "KIESŐ";
-        if (text.includes("Promotion")) return "FELJ.";
-        return "ZÓNA";
+        const t = text.toLowerCase();
+        if (t.includes("champions league")) return "BL";
+        if (t.includes("europa league")) return "EL";
+        if (t.includes("conference league")) return "KL";
+        if (t.includes("relegation") || t.includes("kiesés")) return "KIESŐ";
+        if (t.includes("promotion") || t.includes("feljutás")) return "FELJ.";
+        if (t.includes("play-off") || t.includes("osztályozó")) return "P.OFF";
+        return "";
     }
 
     async function init() {
@@ -116,7 +148,7 @@
             let html = `<table>
                 <thead>
                     <tr>
-                        <th>#</th>
+                        <th style="width:70px">#</th>
                         <th class="team-col">Csapat</th>
                         <th>MP</th>
                         <th>GY</th>
@@ -133,13 +165,37 @@
                 let status = r.description || "";
                 const pos = r.position;
 
-                // Manuális szabályok ha az API nem küldi (pl. PPL)
-                if (!status && code === 'PPL') {
-                    if (pos === 1) status = "Champions League";
-                    else if (pos === 2) status = "Champions League Qualifiers";
-                    else if (pos === 3) status = "Europa League Qualifiers";
-                    else if (pos === 16) status = "Play-off";
-                    else if (pos >= 17) status = "Relegation";
+                // --- MANUÁLIS SZABÁLYOK (A kép alapján és a korábbi kérések szerint) ---
+                if (!status || status === "") {
+                    if (code === 'PPL') { // Portugál
+                        if (pos === 1) status = "Champions League Group Stage";
+                        else if (pos === 2) status = "Champions League Qualifiers";
+                        else if (pos === 3) status = "Europa League Qualifiers";
+                        else if (pos === 4) status = "Conference League Qualifiers";
+                        else if (pos === 16) status = "Play-off";
+                        else if (pos >= 17) status = "Relegation";
+                    }
+                    else if (code === 'DED') { // Holland
+                        if (pos <= 2) status = "Champions League Group Stage";
+                        else if (pos === 3) status = "Champions League Qualifiers";
+                        else if (pos === 4) status = "Europa League Qualifiers";
+                        else if (pos >= 5 && pos <= 8) status = "Conference League Play-offs";
+                        else if (pos === 16) status = "Play-off";
+                        else if (pos >= 17) status = "Relegation";
+                    }
+                    else if (code === 'BL1') { // Német
+                        if (pos <= 4) status = "Champions League Group Stage";
+                        else if (pos === 5) status = "Europa League Group Stage";
+                        else if (pos === 6) status = "Conference League Qualifiers";
+                        else if (pos === 16) status = "Play-off";
+                        else if (pos >= 17) status = "Relegation";
+                    }
+                    else if (['PL', 'PD', 'SA'].includes(code)) { // Top 3
+                        if (pos <= 4) status = "Champions League Group Stage";
+                        else if (pos === 5) status = "Europa League Group Stage";
+                        else if (pos === 6) status = "Conference League Qualifiers";
+                        else if (pos >= total - 2) status = "Relegation";
+                    }
                 }
 
                 const color = getStatusColor(status);
@@ -148,7 +204,7 @@
                 html += `
                     <tr class="${isMatchTeam ? 'highlight' : ''}">
                         <td class="pos-col status-border" style="border-left-color: ${color}">
-                            ${status ? `<span class="zone-tag" style="color:${color}">${translateStatus(status)}</span>` : ''}
+                            <span class="zone-tag" style="color:${color}">${translateStatus(status)}</span>
                             <span class="pos-num">${pos}</span>
                         </td>
                         <td class="team-col">
@@ -167,7 +223,7 @@
                     </tr>`;
             });
             document.getElementById('standings-target').innerHTML = html + "</tbody></table>";
-        } catch (e) { document.getElementById('standings-target').innerHTML = "Hiba."; }
+        } catch (e) { document.getElementById('standings-target').innerHTML = "Hiba történt."; }
     }
     init();
 </script>
