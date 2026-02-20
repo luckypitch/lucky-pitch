@@ -315,6 +315,15 @@
                         else if (pos === 16) status = "Osztályozó";
                         else if (pos >= 17) status = "Relegation";
                     }
+                    if (code === 'ELC') { // CHAMPIONSHIP (Angol 2.)
+                    if (pos <= 2) { zCls = "cl-main"; zTxt = "Feljutás - Premier League"; zCol = "var(--cl-main)"; }
+                    else if (pos <= 6) { zCls = "ecl-po"; zTxt = "Play-off (Championship)"; zCol = "var(--ecl-po)"; }
+                    else if (pos >= total - 2) { zCls = "relegation"; zTxt = "Kiesés - League One"; zCol = "var(--relegation)"; }
+                }
+                    else { // ALAPÉRTELMEZETT
+                    if (pos === 1) { zCls = "cl-main"; zTxt = "Bajnok / Feljutó"; zCol = "var(--cl-main)"; }
+                    else if (pos >= total - 2) { zCls = "relegation"; zTxt = "Kieső zóna"; zCol = "var(--relegation)"; }
+                }
                 }
 
                 const color = getStatusColor(status);
@@ -341,3 +350,4 @@
 </script>
 </body>
 </html>
+
