@@ -5,150 +5,118 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LuckyPitch | Meccsek</title>
     <script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_YWxsb3dlZC1pbnNlY3QtOTguY2xlcmsuYWNjb3VudHMuZGV2JA" src="https://allowed-insect-98.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
-
     <style>
-        :root { --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7); --text: #f8fafc; --primary: #00ff88; --secondary: #94a3b8; }
-        body.light { --bg: #f1f5f9; --card-bg: rgba(255, 255, 255, 0.9); --text: #0f172a; --secondary: #475569; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg); color: var(--text); transition: 0.3s; min-height: 100vh; }
+        :root { --bg: #0f172a; --card: rgba(30, 41, 59, 0.7); --text: #f8fafc; --primary: #00ff88; }
+        body.light { --bg: #f1f5f9; --card: #ffffff; --text: #0f172a; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: sans-serif; }
+        body { background: var(--bg); color: var(--text); transition: 0.3s; }
+        nav { display:flex; justify-content: space-between; padding: 1rem 5%; background: rgba(0,0,0,0.2); backdrop-filter: blur(10px); }
+        .container { max-width: 900px; margin: 2rem auto; padding: 1rem; }
         
-        nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 5%; background: rgba(0,0,0,0.2); backdrop-filter: blur(10px); sticky: top; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; }
-        .nav-actions { display: flex; gap: 1rem; align-items: center; }
+        /* Dátum választó stílus */
+        .date-selector { display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding: 10px 0; }
+        .date-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--primary); background: var(--card); color: var(--text); cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .date-btn.active { background: var(--primary); color: #000; font-weight: bold; }
 
-        button { padding: 0.5rem 1rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; background: var(--card-bg); color: var(--text); }
-        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
-        h2 { margin-bottom: 1.5rem; border-left: 4px solid var(--primary); padding-left: 15px; }
-
-        .match-grid { display: grid; gap: 1rem; }
-        .match-card { background: var(--card-bg); border-radius: 16px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
-        
-        .team-info { display: flex; flex-direction: column; align-items: center; width: 35%; gap: 8px; }
-        .team-logo { width: 40px; height: 40px; object-fit: contain; }
-        .match-details { text-align: center; width: 30%; }
-        .score { font-size: 1.5rem; font-weight: 900; color: var(--primary); }
-        .match-time { font-size: 0.75rem; color: var(--secondary); margin-top: 5px; }
-        
-        .btn-elemzes { display: block; margin-top: 10px; padding: 6px 12px; background: var(--primary); color: #000; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: bold; text-align: center; }
-        .loading { text-align: center; padding: 3rem; color: var(--secondary); }
+        .match-card { background: var(--card); border-radius: 12px; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.05); }
+        .team { display: flex; flex-direction: column; align-items: center; width: 35%; text-align: center; }
+        .team img { width: 45px; margin-bottom: 8px; }
+        .score { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+        .btn-elem { background: var(--primary); color: #000; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; margin-top: 10px; display: inline-block; }
     </style>
 </head>
 <body>
 
 <nav>
-    <a href="/" class="logo">LuckyPitch</a>
-    <div class="nav-actions">
-        <button onclick="toggleTheme()" id="theme-btn">☀️</button>
-        <button onclick="toggleLang()" id="lang-btn">HU 🇭🇺</button>
-        <div id="user-button"></div>
+    <a href="/" style="color:var(--primary); font-weight:900; text-decoration:none; font-size:1.5rem;">LuckyPitch</a>
+    <div>
+        <button onclick="toggleLang()" id="lang-btn" style="padding:5px 10px; cursor:pointer;">EN</button>
+        <div id="user-button" style="display:inline-block; vertical-align:middle; margin-left:10px;"></div>
     </div>
 </nav>
 
 <div class="container">
-    <h2 id="page-title">Közelgő Meccsek</h2>
-    <div id="match-list" class="match-grid">
-        <div class="loading" id="loading-text">Meccsek betöltése...</div>
-    </div>
+    <h2 id="page-title" style="margin-bottom:20px;">Meccsek</h2>
+    <div class="date-selector" id="date-bar"></div>
+    <div id="match-list"></div>
 </div>
 
 <script>
     const translations = {
-        hu: {
-            title: "Meccsek & Eredmények",
-            loading: "Meccsek betöltése...",
-            langBtn: "EN 🇬🇧",
-            noMatch: "Nincs elérhető meccs.",
-            analysis: "Elemzés",
-            statusTimed: "Később",
-            statusLive: "ÉLŐ"
-        },
-        en: {
-            title: "Matches & Results",
-            loading: "Loading matches...",
-            langBtn: "HU 🇭🇺",
-            noMatch: "No matches available.",
-            analysis: "Analysis",
-            statusTimed: "Timed",
-            statusLive: "LIVE"
-        }
+        hu: { title: "Mérkőzések", analysis: "Elemzés", loading: "Betöltés...", noMatch: "Nincs meccs ezen a napon.", lang: "EN" },
+        en: { title: "Matches", analysis: "Analysis", loading: "Loading...", noMatch: "No matches on this day.", lang: "HU" }
     };
+
+    let currentDate = new Date().toISOString().split('T')[0];
 
     async function init() {
         await Clerk.load();
-        if (Clerk.user) {
-            Clerk.mountUserButton(document.getElementById('user-button'));
-        }
+        if (Clerk.user) Clerk.mountUserButton(document.getElementById('user-button'));
+        renderDates();
+        loadMatches(currentDate);
         updateUI();
-        loadMatches();
     }
 
-    async function loadMatches() {
+    function renderDates() {
+        const bar = document.getElementById('date-bar');
+        bar.innerHTML = '';
+        for (let i = -3; i <= 3; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() + i);
+            const iso = d.toISOString().split('T')[0];
+            const btn = document.createElement('button');
+            btn.className = `date-btn ${iso === currentDate ? 'active' : ''}`;
+            btn.innerText = i === 0 ? "Ma" : d.toLocaleDateString('hu-HU', {month:'short', day:'numeric'});
+            btn.onclick = () => { currentDate = iso; renderDates(); loadMatches(iso); };
+            bar.appendChild(btn);
+        }
+    }
+
+    async function loadMatches(date) {
         const lang = localStorage.getItem('lang') || 'hu';
         const list = document.getElementById('match-list');
+        list.innerHTML = `<p style="text-align:center;">${translations[lang].loading}</p>`;
+        
         try {
-            const response = await fetch('/live-matches');
-            const data = await response.json();
-
+            const res = await fetch(`/live-matches?date=${date}`);
+            const data = await res.json();
             if (!data.matches || data.matches.length === 0) {
-                list.innerHTML = `<div class="loading">${translations[lang].noMatch}</div>`;
+                list.innerHTML = `<p style="text-align:center; opacity:0.6;">${translations[lang].noMatch}</p>`;
                 return;
             }
-
-            list.innerHTML = '';
-            data.matches.forEach(match => {
-                const matchDate = new Date(match.utcDate).toLocaleString(lang === 'hu' ? 'hu-HU' : 'en-US', {
-                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                });
-
-                const html = `
-                    <div class="match-card">
-                        <div class="team-info">
-                            <img src="${match.homeTeam.crest}" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
-                            <span style="font-weight:bold; text-align:center;">${match.homeTeam.shortName || match.homeTeam.name}</span>
-                        </div>
-                        <div class="match-details">
-                            <div class="score">${match.score.fullTime.home ?? 0} - ${match.score.fullTime.away ?? 0}</div>
-                            <div class="match-time">${matchDate}</div>
-                            <a href="/elemzes" class="btn-elemzes">${translations[lang].analysis}</a>
-                        </div>
-                        <div class="team-info">
-                            <img src="${match.awayTeam.crest}" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
-                            <span style="font-weight:bold; text-align:center;">${match.awayTeam.shortName || match.awayTeam.name}</span>
-                        </div>
+            list.innerHTML = data.matches.map(m => `
+                <div class="match-card">
+                    <div class="team">
+                        <img src="${m.homeTeam.crest}" onerror="this.src='https://via.placeholder.com/40'">
+                        <span>${m.homeTeam.shortName || m.homeTeam.name}</span>
                     </div>
-                `;
-                list.insertAdjacentHTML('beforeend', html);
-            });
-        } catch (err) {
-            list.innerHTML = '<div class="loading">Hiba történt.</div>';
-        }
+                    <div style="text-align:center;">
+                        <div class="score">${m.score.fullTime.home ?? 0} - ${m.score.fullTime.away ?? 0}</div>
+                        <a href="/elemzes" class="btn-elem">${translations[lang].analysis}</a>
+                    </div>
+                    <div class="team">
+                        <img src="${m.awayTeam.crest}" onerror="this.src='https://via.placeholder.com/40'">
+                        <span>${m.awayTeam.shortName || m.awayTeam.name}</span>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) { list.innerHTML = "Hiba történt."; }
     }
 
     function updateUI() {
         const lang = localStorage.getItem('lang') || 'hu';
-        const theme = localStorage.getItem('theme') || 'dark';
-        
-        document.body.classList.toggle('light', theme === 'light');
-        document.getElementById('theme-btn').innerText = theme === 'light' ? '🌙' : '☀️';
-        document.getElementById('lang-btn').innerText = translations[lang].langBtn;
         document.getElementById('page-title').innerText = translations[lang].title;
-        document.getElementById('loading-text').innerText = translations[lang].loading;
+        document.getElementById('lang-btn').innerText = translations[lang].lang;
     }
 
     function toggleLang() {
-        const cur = localStorage.getItem('lang') || 'hu';
-        localStorage.setItem('lang', cur === 'hu' ? 'en' : 'hu');
+        const lang = localStorage.getItem('lang') === 'hu' ? 'en' : 'hu';
+        localStorage.setItem('lang', lang);
         updateUI();
-        loadMatches(); // Frissítjük a kártyákat is a választott nyelven
+        loadMatches(currentDate);
     }
 
-    function toggleTheme() {
-        const cur = localStorage.getItem('theme') || 'dark';
-        localStorage.setItem('theme', cur === 'dark' ? 'light' : 'dark');
-        updateUI();
-    }
-
-    window.addEventListener('load', init);
+    window.onload = init;
 </script>
 </body>
 </html>
