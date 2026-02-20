@@ -1,9 +1,13 @@
+// Megadjuk a dotenv-nek a pontos fájlnevet
+require('dotenv').config({ path: './api.env' }); 
+
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const { ClerkExpressRequireAuth } = require('@clerk/clerk-sdk-node');
-// Stripe inicializálása a megadott Secret Key-vel
-const stripe = require('stripe')('sk_test_51T2qaQQkKVs47hkTkMsnipcp3GKHA0MviJdS179eEpwULDffM4BQlS1zNdTgpQG8LrAkADhKP6wURwj3B1Hp2HQV00yaXzJpID');
+
+// Stripe inicializálása a környezeti változóból
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
@@ -12,10 +16,14 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static(__dirname));
 
-// --- CLERK ÉS API KULCSOK ---
-process.env.CLERK_SECRET_KEY = 'sk_test_kjOIJA4piJNFfv5tLLEf7whRac65Nu5XmOTTstnJ7X';
-const ODDS_API_KEY = '17b18da5d210a284be65b75933b24f9e'; 
-const FOOTBALL_DATA_API_KEY = "1f931344560e4ddc9103eff9281d435b";
+// --- API KULCSOK ---
+const ODDS_API_KEY = process.env.ODDS_API_KEY; 
+const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
+
+// Ellenőrzés a konzolon (Indításkor látni fogod, ha valami hiányzik)
+if (!process.env.STRIPE_SECRET_KEY || !process.env.CLERK_SECRET_KEY) {
+    console.error("❌ HIBA: Hiányzó kulcsok az api.env fájlban!");
+}
 
 // --- STRIPE TÁMOGATÁS VÉGPONT ---
 app.post('/create-checkout-session', ClerkExpressRequireAuth(), async (req, res) => {
@@ -27,9 +35,9 @@ app.post('/create-checkout-session', ClerkExpressRequireAuth(), async (req, res)
                     currency: 'huf',
                     product_data: { 
                         name: 'LuckyPitch Támogatás',
-                        description: 'Köszönjük, hogy segíted a LuckyPitch fejlesztését!' 
+                        description: 'Köszönjük a támogatást!' 
                     },
-                    unit_amount: 100000, // 1000 Ft
+                    unit_amount: 100000, 
                 },
                 quantity: 1,
             }],
@@ -39,30 +47,23 @@ app.post('/create-checkout-session', ClerkExpressRequireAuth(), async (req, res)
         });
         res.json({ id: session.id });
     } catch (err) {
-        console.error("Stripe hiba a szerveren:", err.message);
         res.status(500).json({ error: err.message });
     }
 });
 
-// --- EGYÉB API VÉGPONTOK ---
-app.get('/api/odds-data', ClerkExpressRequireAuth(), async (req, res) => {
-    try {
-        const response = await fetch(`https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h&bookmakers=unibet,betfair_ex,williamhill,888sport`);
-        const data = await response.json();
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: "Szerver hiba" });
-    }
-});
-
+// --- MECCSLISTA VÉGPONT ---
 app.get("/live-matches", async (req, res) => {
     try {
-        const url = `https://api.football-data.org/v4/matches`;
-        const response = await fetch(url, { headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY } });
+        const leagueIds = "PL,PD,BL1,SA1,FL1,CL,EL"; 
+        const url = `https://api.football-data.org/v4/matches?competitions=${leagueIds}`;
+        
+        const response = await fetch(url, { 
+            headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY } 
+        });
         const data = await response.json();
         res.json(data);
     } catch (err) {
-        res.status(500).json({ error: "Hiba" });
+        res.status(500).json({ error: "API hiba" });
     }
 });
 
@@ -72,4 +73,4 @@ app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.htm
 app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 LuckyPitch Szerver fut a ${PORT} porton`));
+app.listen(PORT, () => console.log(`🚀 LuckyPitch Szerver fut: http://localhost:${PORT}`));
