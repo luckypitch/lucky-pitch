@@ -256,44 +256,61 @@
 }
 
     // --- ADATKEZELÉS ---
-let flashingMatches = new Set(); // Ebben tároljuk a villogó meccsek ID-it
-  async function updateData() {
+let prevScores = {}; 
+
+async function updateData() {
     try {
-        const res = await fetch("/live-matches");
+        const res = await fetch('/live-matches');
         const data = await res.json();
-        const newMatches = data.matches || [];
+        
+        if (!data.matches) return;
 
-        newMatches.forEach(match => {
-            const matchId = match.id;
-            const newScoreStr = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
+        data.matches.forEach(match => {
+            const mId = match.id;
+            const currentH = match.score.fullTime.home ?? 0;
+            const currentA = match.score.fullTime.away ?? 0;
 
-            if (prevScores.has(matchId)) {
-                const oldScoreStr = prevScores.get(matchId);
-                if (oldScoreStr !== newScoreStr) {
-                    const [oldH, oldA] = oldScoreStr.split('-').map(Number);
-                    const newH = match.score.fullTime.home;
-                    const newA = match.score.fullTime.away;
+            // Csak akkor vizsgáljuk, ha már van rögzített előzményünk a meccshez
+            if (prevScores[mId]) {
+                const oldH = prevScores[mId].home;
+                const oldA = prevScores[mId].away;
+
+                // GÓL DETEKTÁLÁSA
+                if (currentH > oldH || currentA > oldA) {
+                    console.log(`⚽ GÓL ÉRZÉKELVE: ${match.homeTeam.name} vs ${match.awayTeam.name}`);
                     
-                    if (newH > oldH || newA > oldA) {
-                        const teamName = newH > oldH ? match.homeTeam.name : match.awayTeam.name;
-                        showGoal(teamName, matchId, `${newH}:${newA}`);
-                        
-                        // VILLOGÁS AKTIVÁLÁSA
-                        flashingMatches.add(matchId);
-                        setTimeout(() => {
-                            flashingMatches.delete(matchId);
-                            renderMatches(); // Frissítés, hogy levegyük a villogást
-                        }, 10000); 
+                    // 1. Villogó listába tétel
+                    flashingMatches.add(Number(mId));
+
+                    // 2. Hang lejátszása
+                    if (typeof goalSound !== 'undefined') {
+                        goalSound.currentTime = 0;
+                        goalSound.play().catch(e => console.log("Interakció kell a hanghoz!"));
                     }
+
+                    // 3. Banner és renderelés
+                    const scoringTeam = currentH > oldH ? match.homeTeam.name : match.awayTeam.name;
+                    showGoal(scoringTeam, mId, `${currentH}:${currentA}`);
+                    
+                    // 4. Késleltetett eltávolítás
+                    setTimeout(() => {
+                        flashingMatches.delete(Number(mId));
+                        renderMatches(); 
+                    }, 10000);
                 }
             }
-            prevScores.set(matchId, newScoreStr);
+
+            // Frissítjük az "emlékezetünket" a következő körhöz
+            prevScores[mId] = { home: currentH, away: currentA };
         });
 
-        allMatches = newMatches;
+        // Most már frissíthetjük a globális listát és kirajzolhatjuk
+        matchesData = data.matches;
         renderMatches();
-        if (typeof renderLeagues === "function") renderLeagues(); 
-    } catch (e) { console.error("API hiba:", e); }
+
+    } catch (err) {
+        console.error("Hiba az API frissítésnél:", err);
+    }
 }
   function renderMatches() {
     const container = document.getElementById('matches-container');
@@ -492,6 +509,7 @@ let flashingMatches = new Set(); // Ebben tároljuk a villogó meccsek ID-it
     </script>
 </body>
 </html>
+
 
 
 
