@@ -249,35 +249,36 @@
     }
 
     // --- ADATKEZELÉS ---
-    async function updateData() {
-        try {
-            const res = await fetch("/live-matches");
-            const data = await res.json();
-            const newMatches = data.matches || [];
-
-            const currentHash = JSON.stringify(newMatches.map(m => ({ id: m.id, score: m.score.fullTime, status: m.status })));
-            if (currentHash === lastDataHash) return;
-            lastDataHash = currentHash;
-
-            // Gól check
-            newMatches.forEach(match => {
-                const matchId = match.id;
-                const newScore = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
-                if (prevScores.has(matchId) && prevScores.get(matchId) !== newScore) {
-                    const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
-                    const [newH, newA] = newScore.split('-').map(Number);
-                    if (newH > oldH) showGoal(match.homeTeam.name, match.id);
-                    if (newA > oldA) showGoal(match.awayTeam.name, match.id);
-                }
-                prevScores.set(matchId, newScore);
-            });
-
-            allMatches = newMatches;
-            renderDateStrip();
-            renderLeagues();
-            renderMatches();
-        } catch (e) { console.error("Update error", e); }
+   async function updateData() {
+    // 1. Ha van elmentett adatunk, azt azonnal mutassuk meg (Azonnali betöltés érzet)
+    const cached = sessionStorage.getItem('lp_matches_cache');
+    if (cached && allMatches.length === 0) {
+        allMatches = JSON.parse(cached);
+        renderMatches();
     }
+
+    try {
+        const res = await fetch("/live-matches");
+        if (!res.ok) throw new Error("API hiba");
+        
+        const data = await res.json();
+        const newMatches = data.matches || [];
+
+        // 2. Hash ellenőrzés (csak ha tényleg van változás, akkor rajzolunk újra)
+        const currentHash = JSON.stringify(newMatches.map(m => ({ id: m.id, s: m.score.fullTime })));
+        if (currentHash === lastDataHash) return;
+        
+        lastDataHash = currentHash;
+        allMatches = newMatches;
+        
+        // Mentés a gyorsítótárba
+        sessionStorage.setItem('lp_matches_cache', JSON.stringify(allMatches));
+        
+        renderMatches();
+    } catch (e) {
+        console.error("Lassú vagy sikertelen API hívás", e);
+    }
+}
 
     function renderMatches() {
     const cont = document.getElementById("match-container");
@@ -483,6 +484,7 @@
     </script>
 </body>
 </html>
+
 
 
 
