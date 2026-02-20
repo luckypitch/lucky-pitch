@@ -34,30 +34,37 @@
             height: 100vh; 
             overflow: hidden;
             position: relative;
-            transition: background 0.5s ease;
         }
 
-        /* --- JAVÍTOTT LÁVALÁMPA ANIMÁCIÓ --- */
+        /* --- LÁVALÁMPA ANIMÁCIÓ --- */
         .bg-animation {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1; overflow: hidden; filter: blur(100px); opacity: 0.5;
-            background: var(--bg);
         }
         .blob {
             position: absolute; width: 600px; height: 600px; border-radius: 50%;
             mix-blend-mode: screen;
             animation: move 25s infinite alternate ease-in-out;
         }
-        .blob-1 { background: var(--cl-gs); top: -100px; left: -100px; animation-duration: 30s; }
-        .blob-2 { background: var(--neon-green); bottom: -100px; right: -100px; animation-delay: -5s; animation-duration: 35s; }
-        .blob-3 { background: var(--el-gs); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-duration: 40s; animation-delay: -10s; }
+        .blob-1 { background: var(--cl-gs); top: -100px; left: -100px; }
+        .blob-2 { background: var(--neon-green); bottom: -100px; right: -100px; animation-delay: -5s; }
+        .blob-3 { background: var(--el-gs); top: 40%; left: 30%; animation-delay: -10s; }
         
         @keyframes move {
-            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-            33% { transform: translate(15vw, 10vh) scale(1.1) rotate(120deg); }
-            66% { transform: translate(-10vw, 20vh) scale(0.9) rotate(240deg); }
-            100% { transform: translate(10vw, -10vh) scale(1) rotate(360deg); }
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(15vw, 15vh) scale(1.2); }
         }
+
+        /* --- GOAL BANNER --- */
+        #goal-banner {
+            position: fixed; top: -100px; left: 0; right: 0; height: 60px;
+            background: var(--neon-green); color: #000;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Orbitron'; font-weight: 900; font-size: 1.5rem;
+            z-index: 2000; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 40px var(--neon-green);
+        }
+        #goal-banner.show { top: 75px; }
 
         /* --- NAV & LAYOUT --- */
         nav { 
@@ -68,20 +75,19 @@
         }
         .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 3px; }
 
-        .nav-tools { display: flex; gap: 12px; align-items: center; }
+        .nav-tools { display: flex; gap: 12px; }
         .tool-btn { 
             background: rgba(255,255,255,0.05); border: 1px solid var(--border);
             color: var(--text); padding: 8px 15px; border-radius: 12px;
-            cursor: pointer; font-family: 'Orbitron'; font-size: 10px; transition: 0.3s;
+            cursor: pointer; font-family: 'Orbitron'; font-size: 10px;
         }
-        .tool-btn:hover { border-color: var(--neon-blue); transform: translateY(-2px); }
 
         .main-wrapper { display: flex; height: 100vh; padding-top: 75px; }
         .sidebar, .standings-sidebar { background: var(--glass); backdrop-filter: blur(25px); overflow-y: auto; border: 1px solid var(--border); }
-        .sidebar { width: 300px; border-right: 1px solid var(--border); }
-        .standings-sidebar { width: 420px; border-left: 1px solid var(--border); padding: 20px; }
+        .sidebar { width: 300px; }
+        .standings-sidebar { width: 420px; padding: 20px; }
 
-        .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+        .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); }
 
         /* --- MATCH CARDS --- */
         .content-area { flex: 1; overflow-y: auto; padding: 25px; scrollbar-width: none; }
@@ -89,30 +95,28 @@
             background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 24px;
             padding: 20px; margin-bottom: 15px; display: flex; align-items: center; transition: 0.3s;
         }
-        .match-card:hover { border-color: var(--neon-blue); transform: scale(1.01); background: rgba(30, 41, 59, 0.6); }
+        .match-card:hover { border-color: var(--neon-blue); transform: translateY(-3px); }
 
         .team-link { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
-        .team-link img { width: 50px; height: 50px; object-fit: contain; transition: 0.4s; }
-        .team-link:hover img { transform: scale(1.2); filter: drop-shadow(0 0 10px var(--neon-blue)); }
+        .team-link img { width: 50px; height: 50px; object-fit: contain; }
         .team-link span { font-weight: 700; font-family: 'Orbitron'; font-size: 11px; text-align: center; }
 
         .score-display { font-family: 'Orbitron'; font-size: 2rem; font-weight: 900; color: var(--neon-green); }
-        .score-live { color: var(--neon-red); text-shadow: 0 0 15px var(--neon-red); animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .score-live { color: var(--neon-red); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
-        /* --- TABELLA STÍLUS --- */
+        /* --- TABELLA (PRECIZ SZÍNEZÉS) --- */
         .standings-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
         .standings-table td { padding: 12px 8px; background: rgba(255,255,255,0.03); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 12px; }
         .pos-col { border-left-width: 5px !important; border-left-style: solid !important; }
         .pos-num-box { width: 28px; height: 28px; line-height: 28px; margin: 0 auto; border-radius: 6px; font-weight: bold; font-family: 'Orbitron'; font-size: 11px; }
-        .zone-tag { font-size: 7px; font-family: 'Orbitron'; display: block; margin-bottom: 3px; font-weight: 900; text-transform: uppercase; }
+        .zone-tag { font-size: 7px; font-family: 'Orbitron'; display: block; margin-bottom: 3px; font-weight: 900; }
         .highlight td { background: rgba(0, 255, 136, 0.12) !important; border-color: var(--neon-green) !important; }
 
-        .league-item { margin: 8px 15px; padding: 12px 15px; border-radius: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.3s; border: 1px solid transparent; }
-        .league-item:hover { background: rgba(14, 165, 233, 0.1); }
-        .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); }
+        .league-item { margin: 8px 15px; padding: 12px 15px; border-radius: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.3s; }
+        .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); border: 1px solid; }
 
-        .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: none; justify-content: space-around; align-items: center; z-index: 1100; }
+        .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); }
         @media (max-width: 1100px) {
             .sidebar, .standings-sidebar { position: fixed; top: 75px; bottom: 70px; width: 85%; z-index: 1050; transform: translateX(-105%); background: var(--bg); }
             .standings-sidebar { right: 0; transform: translateX(105%); }
@@ -125,6 +129,8 @@
     </style>
 </head>
 <body>
+
+    <div id="goal-banner">GOOOAAAL!!! ⚽ <span id="goal-team"></span></div>
 
     <div class="bg-animation">
         <div class="blob blob-1"></div>
@@ -146,12 +152,10 @@
             <div class="sidebar-header" id="h-leagues">🏆 Bajnokságok</div>
             <div id="league-list"></div>
         </aside>
-
         <main class="content-area">
             <div id="date-strip" class="date-strip"></div>
             <div id="match-container"></div>
         </main>
-
         <aside class="standings-sidebar" id="sidebar-standings">
             <div class="sidebar-header" id="h-table">📊 Élő Tabella</div>
             <div id="standings-target">
@@ -169,22 +173,16 @@
     <script>
         let currentLang = 'HU';
         let allMatches = [];
+        let prevScores = new Map();
         let selectedDate = new Date().toLocaleDateString('sv');
         let selectedLeagues = new Set();
 
-        function toggleTheme() {
-            const isLight = document.body.classList.toggle('light');
-            document.getElementById('theme-btn').innerText = isLight ? '🌙' : '☀️';
-        }
-
+        function toggleTheme() { document.body.classList.toggle('light'); }
         function toggleLang() {
             currentLang = currentLang === 'HU' ? 'EN' : 'HU';
             document.getElementById('lang-btn').innerText = currentLang;
-            document.getElementById('h-leagues').innerText = currentLang === 'HU' ? '🏆 Bajnokságok' : '🏆 Leagues';
-            document.getElementById('h-table').innerText = currentLang === 'HU' ? '📊 Élő Tabella' : '📊 Live Standings';
             renderMatches();
         }
-
         function toggleM(id) { closeM(); document.getElementById(id).classList.add('open'); }
         function closeM() { document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => s.classList.remove('open')); }
 
@@ -204,17 +202,46 @@
             if (text.includes("Champions League")) return "BL";
             if (text.includes("Europa League")) return "EL";
             if (text.includes("Conference League")) return "KL";
-            if (text.includes("Relegation")) return "KIESŐ";
-            if (text.includes("Osztályozó")) return "OSZT.";
-            if (text.includes("Feljutás")) return "FELJ.";
             return "ZÓNA";
+        }
+
+        function showGoal(teamName) {
+            const banner = document.getElementById('goal-banner');
+            document.getElementById('goal-team').innerText = teamName.toUpperCase();
+            banner.classList.add('show');
+            setTimeout(() => banner.classList.remove('show'), 5000);
+        }
+
+        async function updateData() {
+            try {
+                const res = await fetch("/live-matches");
+                const data = await res.json();
+                const newMatches = data.matches || [];
+
+                // Gól figyelés
+                newMatches.forEach(match => {
+                    const matchId = match.id;
+                    const newScore = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
+                    
+                    if (prevScores.has(matchId) && prevScores.get(matchId) !== newScore) {
+                        const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
+                        const [newH, newA] = newScore.split('-').map(Number);
+                        
+                        if (newH > oldH) showGoal(match.homeTeam.name);
+                        if (newA > oldA) showGoal(match.awayTeam.name);
+                    }
+                    prevScores.set(matchId, newScore);
+                });
+
+                allMatches = newMatches;
+                renderLeagues();
+                renderMatches();
+            } catch (e) { console.error("Update error", e); }
         }
 
         async function showStandings(leagueId, teamId, code) {
             if(window.innerWidth <= 1100) toggleM('sidebar-standings');
             const target = document.getElementById("standings-target");
-            target.innerHTML = `<p style="text-align:center; padding:50px; font-family:'Orbitron'; font-size:10px; color:var(--neon-blue);">BETÖLTÉS...</p>`;
-            
             try {
                 const res = await fetch(`/api/standings/${code || leagueId}`);
                 const data = await res.json();
@@ -222,49 +249,15 @@
                 const total = tableData.length;
 
                 let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">CSAPAT</th><th>P</th></tr></thead><tbody>`;
-
                 tableData.forEach(r => {
                     let status = r.description || "";
                     let pos = r.position;
-
-                    // --- BEÉPÍTETT BAJNOKI LOGIKA ---
-                    if (!status || status === "") {
-                        if (['PL', 'PD', 'SA'].includes(code)) {
-                            if (pos <= 4) status = "Champions League Group Stage";
-                            else if (pos === 5) status = "Europa League Group Stage";
-                            else if (pos === 6) status = "Conference League Qualifiers";
-                            else if (pos >= total - 2) status = "Relegation";
-                        } else if (code === 'BL1') {
-                            if (pos <= 4) status = "Champions League Group Stage";
-                            else if (pos === 5) status = "Europa League Group Stage";
-                            else if (pos === 16) status = "Osztályozó";
-                            else if (pos >= 17) status = "Relegation";
-                        } else if (code === 'DED') { 
-                            if (pos <= 2) status = "Champions League Group Stage";
-                            else if (pos === 3) status = "Champions League Qualifiers";
-                            else if (pos === 4) status = "Europa League Qualifiers";
-                            else if (pos >= 5 && pos <= 8) status = "Conference League Play-offs";
-                            else if (pos === 16) status = "Osztályozó";
-                            else if (pos >= 17) status = "Relegation";
-                        } else if (code === 'PPL') {
-                            if (pos === 1) status = "Champions League Group Stage";
-                            else if (pos === 2) status = "Champions League Qualifiers";
-                            else if (pos === 3) status = "Europa League Qualifiers";
-                            else if (pos === 4) status = "Conference League Qualifiers";
-                            else if (pos === 16) status = "Osztályozó";
-                            else if (pos >= 17) status = "Relegation";
-                        } else if (code === 'FL1') {
-                            if (pos <= 3) status = "Champions League Group Stage";
-                            else if (pos === 4) status = "Champions League Qualifiers";
-                            else if (pos === 5) status = "Europa League Group Stage";
-                            else if (pos === 16) status = "Osztályozó";
-                            else if (pos >= 17) status = "Relegation";
-                        } else if (code === 'ELC') {
-                            if (pos <= 2) status = "Feljutás - Premier League";
-                            else if (pos <= 6) status = "Play-off (Championship)";
-                            else if (pos >= total - 2) status = "Relegation";
-                        } else {
-                            if (pos === 1) status = "Bajnok / Feljutó";
+                    
+                    // Bajnoki logika fallback
+                    if (!status) {
+                        if (['PL','PD','SA'].includes(code)) {
+                            if (pos <= 4) status = "Champions League";
+                            else if (pos === 5) status = "Europa League";
                             else if (pos >= total - 2) status = "Relegation";
                         }
                     }
@@ -287,29 +280,20 @@
                     </tr>`;
                 });
                 target.innerHTML = html + "</tbody></table>";
-            } catch (e) { target.innerHTML = `<p style="text-align:center; font-size:10px; margin-top:50px;">ADAT HIBA</p>`; }
-        }
-
-        async function init() {
-            const res = await fetch("/live-matches");
-            const data = await res.json();
-            allMatches = data.matches || [];
-            renderDateStrip(); renderLeagues(); renderMatches();
+            } catch (e) { target.innerHTML = "HIBA"; }
         }
 
         function renderDateStrip() {
             const strip = document.getElementById("date-strip");
             const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
-            strip.innerHTML = dates.map(d => `<div class="date-pill ${d === selectedDate ? 'active' : ''}" onclick="setDate('${d}')">${d.split('-')[1]+'.'+d.split('-')[2]}</div>`).join('');
+            strip.innerHTML = dates.map(d => `<div class="date-pill ${d === selectedDate ? 'active' : ''}" onclick="selectedDate='${d}';renderMatches();renderLeagues();renderDateStrip();">${d.split('-')[1]+'.'+d.split('-')[2]}</div>`).join('');
         }
-
-        function setDate(d) { selectedDate = d; renderDateStrip(); renderLeagues(); renderMatches(); }
 
         function renderLeagues() {
             const cont = document.getElementById("league-list");
-            cont.innerHTML = "";
             const unique = new Map();
             allMatches.filter(m => m.utcDate.startsWith(selectedDate)).forEach(m => unique.set(m.competition.id, m.competition));
+            cont.innerHTML = "";
             unique.forEach((l, id) => {
                 const div = document.createElement("div");
                 div.className = `league-item ${selectedLeagues.has(id.toString()) ? 'active' : ''}`;
@@ -341,10 +325,12 @@
                         <img src="${m.awayTeam.crest}"><span>${m.awayTeam.name}</span>
                     </div>
                 </div>`;
-            }).join('') || `<p style="text-align:center; opacity:0.3; margin-top:50px;">NINCS MECCS</p>`;
+            }).join('') || "Nincs meccs";
         }
 
-        init();
+        // INIT & REFRESH LOOP
+        updateData().then(() => renderDateStrip());
+        setInterval(updateData, 30000); // 30 másodpercenként frissít
     </script>
 </body>
 </html>
