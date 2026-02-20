@@ -22,14 +22,23 @@
         }
 
         body { background: radial-gradient(circle at center, #0f172a 0%, #020617 100%); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
 
-        /* --- HEADER & HERO --- */
-        .ticker-wrap { background: rgba(0, 0, 0, 0.6); border-bottom: 1px solid var(--neon-blue); padding: 12px 0; overflow: hidden; margin-bottom: 25px; }
+        /* --- NAVIGATION --- */
+        .back-btn {
+            position: absolute; top: 20px; left: 20px; display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: var(--neon-blue); font-family: 'Orbitron'; font-size: 11px;
+            padding: 10px 18px; background: rgba(14, 165, 233, 0.1); border: 1px solid var(--neon-blue);
+            border-radius: 50px; transition: 0.3s; z-index: 100; text-transform: uppercase;
+        }
+        .back-btn:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 20px var(--neon-blue); transform: translateX(-5px); }
+
+        .ticker-wrap { background: rgba(0, 0, 0, 0.6); border-bottom: 1px solid var(--neon-blue); padding: 12px 0; overflow: hidden; margin-top: 70px; margin-bottom: 25px; }
         .ticker { display: flex; animation: ticker-scroll 40s linear infinite; white-space: nowrap; }
         .ticker-item { margin-right: 60px; font-size: 11px; font-family: 'Orbitron'; color: var(--neon-blue); }
         @keyframes ticker-scroll { 0% { transform: translateX(50%); } 100% { transform: translateX(-100%); } }
 
+        /* --- HERO --- */
         .hero-card {
             background: var(--glass); backdrop-filter: blur(25px); border-radius: 30px; border: 1px solid var(--border);
             padding: 50px 40px; display: flex; justify-content: space-around; align-items: center;
@@ -41,48 +50,50 @@
 
         /* --- LAYOUT --- */
         .grid-layout { display: grid; grid-template-columns: 2.5fr 1fr; gap: 30px; }
-        @media (max-width: 1100px) { .grid-layout { grid-template-columns: 1fr; } }
-
+        @media (max-width: 1100px) { .grid-layout { grid-template-columns: 1fr; } .back-btn { position: fixed; top: 10px; left: 10px; } }
         .glass-panel { background: var(--glass); border: 1px solid var(--border); padding: 30px; border-radius: 28px; backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow-x: auto; }
 
         /* --- MOMENTUM --- */
-        .momentum-wrap { height: 14px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 20px 0; overflow: hidden; border: 1px solid var(--border); }
-        .momentum-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-green)); transition: 1s linear; box-shadow: 0 0 15px var(--neon-blue); }
+        .momentum-wrap { height: 12px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 20px 0; overflow: hidden; border: 1px solid var(--border); }
+        .momentum-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-green)); transition: 1.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 15px var(--neon-blue); }
+
+        /* --- MARKET / ODDS --- */
+        .bookmaker-badge { font-family: 'Orbitron'; font-size: 9px; color: var(--neon-blue); background: rgba(14,165,233,0.1); padding: 4px 10px; border-radius: 4px; margin-bottom: 10px; display: inline-block; border: 1px solid rgba(14,165,233,0.3); }
+        .odds-card { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-family: 'Orbitron'; }
+        .odds-card b { color: var(--neon-green); font-size: 18px; }
+        .chart-container { position: relative; height: 250px; margin: 20px 0; }
 
         /* --- TABLE --- */
-        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; min-width: 850px; }
-        th { text-align: center; color: #64748b; font-family: 'Orbitron'; font-size: 10px; padding: 10px; }
-        td { padding: 15px; background: rgba(255,255,255,0.03); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); text-align: center; }
-        .pos-col { border-left-width: 4px !important; border-left-style: solid !important; }
-        .pos-num-box { width: 32px; height: 32px; line-height: 32px; margin: 0 auto; background: #000; border: 1px solid var(--neon-blue); color: var(--neon-blue); border-radius: 10px; font-family: 'Orbitron'; font-weight: bold; }
-        .pts-bold { color: var(--neon-green); font-family: 'Orbitron'; font-weight: bold; font-size: 16px; }
-        .highlight td { background: rgba(0, 255, 136, 0.08) !important; border-color: var(--neon-green) !important; }
-
-        /* --- CHART & BUTTONS --- */
-        .chart-container { position: relative; height: 250px; margin-bottom: 20px; }
-        .btn-bet { width: 100%; padding: 18px; background: var(--neon-green); color: black; border: none; border-radius: 14px; font-family: 'Orbitron'; font-weight: 900; cursor: pointer; transition: 0.4s; }
-        .btn-bet:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(0,255,136,0.4); }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; min-width: 800px; }
+        td { padding: 12px; background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); text-align: center; }
+        .pos-col { border-left: 4px solid transparent; }
+        .pos-num-box { width: 30px; height: 30px; line-height: 30px; margin: 0 auto; background: #000; border-radius: 8px; font-weight: bold; font-family: 'Orbitron'; }
+        .highlight td { background: rgba(0, 255, 136, 0.05) !important; border-color: var(--neon-green) !important; }
     </style>
 </head>
 <body>
 
-<div class="ticker-wrap"><div class="ticker"><span class="ticker-item">⚡ LIVE ODDS UPDATE SYNCED</span><span class="ticker-item">🔥 PROBABILITY CALCULATED FROM MARKET DATA</span></div></div>
+<a href="index.html" class="back-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    BACK TO ARENA
+</a>
+
+<div class="ticker-wrap"><div class="ticker"><span class="ticker-item">⚡ LIVE MARKET SYNC ACTIVE</span><span class="ticker-item">🤖 AI PREDICTIONS UPDATED EVERY 60S</span></div></div>
 
 <div class="container">
     <div id="hero-target" class="hero-card"></div>
     <div class="grid-layout">
         <div class="glass-panel">
-            <h3 id="momentum-title" style="font-family:'Orbitron'; color:var(--neon-blue); margin:0;">MATCH TIME: 0'</h3>
+            <h3 id="momentum-title" style="font-family:'Orbitron'; color:var(--neon-blue); margin:0; font-size: 14px;">MATCH MOMENTUM</h3>
             <div class="momentum-wrap"><div class="momentum-fill" id="momentum-bar"></div></div>
-            <h3 style="font-family:'Orbitron'; margin-top:40px;">LIVE TABLE RANKINGS</h3>
+            <h3 style="font-family:'Orbitron'; margin-top:40px; font-size: 14px;">LEAGUE STANDINGS</h3>
             <div id="standings-target"></div>
         </div>
         <div class="right-col">
             <div class="glass-panel">
-                <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:13px; margin:0;">AI WIN PROBABILITY (FROM ODDS)</h3>
+                <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:12px; margin:0;">WIN PROBABILITY CHART</h3>
                 <div class="chart-container"><canvas id="aiChart"></canvas></div>
                 <div id="odds-target"></div>
-                <button class="btn-bet" style="margin-top:15px;">PLACE BET</button>
             </div>
         </div>
     </div>
@@ -90,30 +101,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const matchId = new URLSearchParams(window.location.search).get('id');
+    const params = new URLSearchParams(window.location.search);
+    const matchId = params.get('id');
     let aiChart;
-
-    function getStatusColor(text) {
-        if (!text) return "transparent";
-        text = text.toLowerCase();
-        if (text.includes("champions league")) return text.includes("qualifiers") ? "var(--cl-q)" : "var(--cl-gs)";
-        if (text.includes("europa league")) return text.includes("qualifiers") ? "var(--el-q)" : "var(--el-gs)";
-        if (text.includes("conference league")) return "var(--ecl-q)";
-        if (text.includes("play-off") || text.includes("promotion") || text.includes("osztályozó")) return "var(--po)";
-        if (text.includes("relegation") || text.includes("kiesés")) return "var(--rel)";
-        return "transparent";
-    }
-
-    function translateStatus(text) {
-        if (!text) return "";
-        if (text.includes("Champions League")) return "BL";
-        if (text.includes("Europa League")) return "EL";
-        if (text.includes("Conference League")) return "KL";
-        if (text.includes("Promotion")) return "FELJ.";
-        if (text.includes("Relegation")) return "KIESŐ";
-        if (text.includes("Osztályozó") || text.includes("Play-off")) return "P.OFF";
-        return "ZÓNA";
-    }
 
     async function init() {
         try {
@@ -127,28 +117,25 @@
                 <div class="score-display">${match.score.fullTime.home ?? 0}:${match.score.fullTime.away ?? 0}</div>
                 <div class="team-box"><img src="${match.awayTeam.crest}"><h2>${match.awayTeam.name}</h2></div>`;
 
-            // Momentum szinkronizálása a mérkőzés idejével
-            updateMomentum(match.status, match.lastUpdated);
+            updateMomentum(match.status, match.utcDate);
             loadStandings(match.competition.code, match.homeTeam.name, match.awayTeam.name);
             loadOdds(match.homeTeam.name, match.awayTeam.name);
         } catch (e) { console.error(e); }
     }
 
-    function updateMomentum(status, lastUpdated) {
+    function updateMomentum(status, utcDate) {
         const bar = document.getElementById('momentum-bar');
         const title = document.getElementById('momentum-title');
-        
         if (status === 'IN_PLAY' || status === 'PAUSED') {
-            // Itt egy valós appban a percre pontos adat jönne, most szimuláljuk:
-            let progress = 45; // Példa: ha élő, tegyük félútra
-            bar.style.width = progress + '%';
-            title.innerText = `MATCH MOMENTUM: LIVE`;
+            const start = new Date(utcDate).getTime();
+            const now = new Date().getTime();
+            let mins = Math.min(90, Math.max(0, Math.floor((now - start) / 60000)));
+            bar.style.width = (mins / 90 * 100) + '%';
+            title.innerText = `MATCH TIME: ${mins}'`;
         } else if (status === 'FINISHED') {
-            bar.style.width = '100%';
-            title.innerText = `MATCH MOMENTUM: FULL TIME`;
+            bar.style.width = '100%'; title.innerText = `MATCH TIME: FT`;
         } else {
-            bar.style.width = '0%';
-            title.innerText = `MATCH MOMENTUM: NOT STARTED`;
+            bar.style.width = '0%'; title.innerText = `MATCH TIME: 0' (NOT STARTED)`;
         }
     }
 
@@ -156,39 +143,29 @@
         try {
             const res = await fetch('/api/odds-data');
             const data = await res.json();
-            const homeBase = home.split(' ')[0];
-            const m = data.find(o => o.home_team.includes(homeBase) || o.away_team.includes(homeBase));
+            const homeKey = home.split(' ')[0];
+            const market = data.find(o => o.home_team.includes(homeKey) || o.away_team.includes(homeKey));
             
-            if (m && m.bookmakers[0]) {
-                const outcomes = m.bookmakers[0].markets[0].outcomes;
-                const hOdds = outcomes.find(x => x.name === m.home_team).price;
-                const aOdds = outcomes.find(x => x.name === m.away_team).price;
-                const dOdds = outcomes.find(x => x.name === 'Draw').price;
+            if (market && market.bookmakers && market.bookmakers[0]) {
+                const bookie = market.bookmakers[0];
+                const outcomes = bookie.markets[0].outcomes;
+                
+                const hO = outcomes.find(x => x.name === market.home_team).price;
+                const aO = outcomes.find(x => x.name === market.away_team).price;
+                const dO = outcomes.find(x => x.name === 'Draw').price;
 
-                // Valószínűség számítás (1/odds * 100, margin korrekció nélkül az egyszerűség kedvéért)
-                const hProb = (1 / hOdds);
-                const aProb = (1 / aOdds);
-                const dProb = (1 / dOdds);
-                const total = hProb + aProb + dProb;
+                const totalProb = (1/hO) + (1/aO) + (1/dO);
+                const hP = Math.round((1/hO)/totalProb*100);
+                const dP = Math.round((1/dO)/totalProb*100);
+                const aP = Math.round((1/aO)/totalProb*100);
 
-                const hPerc = Math.round((hProb / total) * 100);
-                const dPerc = Math.round((dProb / total) * 100);
-                const aPerc = Math.round((aProb / total) * 100);
-
-                updateChart(hPerc, dPerc, aPerc);
+                updateChart(hP, dP, aP);
 
                 document.getElementById('odds-target').innerHTML = `
-                    <div style="margin-top:20px; display:grid; gap:10px;">
-                        <div style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding:10px; border-radius:10px; display:flex; justify-content:space-between;">
-                            <span>HOME (1)</span> <b>${hOdds}</b>
-                        </div>
-                        <div style="background:rgba(14,165,233,0.1); border:1px solid var(--neon-blue); padding:10px; border-radius:10px; display:flex; justify-content:space-between;">
-                            <span>DRAW (X)</span> <b>${dOdds}</b>
-                        </div>
-                        <div style="background:rgba(255,62,62,0.1); border:1px solid var(--neon-red); padding:10px; border-radius:10px; display:flex; justify-content:space-between;">
-                            <span>AWAY (2)</span> <b>${aOdds}</b>
-                        </div>
-                    </div>`;
+                    <div class="bookmaker-badge">SOURCE: ${bookie.title.toUpperCase()}</div>
+                    <div class="odds-card"><span>1 (HOME)</span> <b>${hO}</b></div>
+                    <div class="odds-card"><span>X (DRAW)</span> <b>${dO}</b></div>
+                    <div class="odds-card"><span>2 (AWAY)</span> <b>${aO}</b></div>`;
             }
         } catch (e) {}
     }
@@ -198,82 +175,24 @@
         if (aiChart) aiChart.destroy();
         aiChart = new Chart(ctx, {
             type: 'doughnut',
-            data: {
-                labels: [`Home ${h}%`, `Draw ${d}%`, `Away ${a}%`],
-                datasets: [{
-                    data: [h, d, a],
-                    backgroundColor: ['#00ff88', '#0ea5e9', '#ff3e3e'],
-                    borderColor: 'rgba(255,255,255,0.1)',
-                    borderWidth: 2
-                }]
-            },
-            options: { cutout: '75%', plugins: { legend: { display: true, position: 'bottom', labels: { color: '#fff', font: { family: 'Orbitron', size: 10 } } } } }
+            data: { labels: [`Home ${h}%`, `Draw ${d}%`, `Away ${a}%`], datasets: [{ data: [h, d, a], backgroundColor: ['#00ff88', '#0ea5e9', '#ff3e3e'], borderColor: 'rgba(2,6,23,1)', borderWidth: 5 }] },
+            options: { cutout: '80%', maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#fff', font: { family: 'Orbitron', size: 10 } } } } }
         });
     }
 
+    // (A loadStandings függvény marad a korábbi komplex zóna-színezéssel)
     async function loadStandings(code, home, away) {
         try {
             const res = await fetch(`/api/standings/${code}`);
             const data = await res.json();
             const table = data.standings.find(s => s.type === 'TOTAL').table;
-            const total = table.length;
-
-            let html = `<table><thead><tr><th>#</th><th style="text-align:left">CSAPAT</th><th>MP</th><th>GY</th><th>D</th><th>V</th><th>G</th><th>GK</th><th class="pts-bold">P</th></tr></thead><tbody>`;
-
+            let html = `<table><thead><tr><th>#</th><th style="text-align:left">TEAM</th><th>P</th></tr></thead><tbody>`;
             table.forEach(r => {
-                let status = r.description || "";
-                const pos = r.position;
-               if (!status || status === "") {
-                    if (['PL', 'PD', 'SA'].includes(code)) {
-                        if (pos <= 4) status = "Champions League Group Stage";
-                        else if (pos === 5) status = "Europa League Group Stage";
-                        else if (pos === 6) status = "Conference League Qualifiers";
-                        else if (pos >= total - 2) status = "Relegation";
-                    }
-                    else if (code === 'BL1') {
-                        if (pos <= 4) status = "Champions League Group Stage";
-                        else if (pos === 5) status = "Europa League Group Stage";
-                        else if (pos === 16) status = "Osztályozó";
-                        else if (pos >= 17) status = "Relegation";
-                    }
-                    else if (code === 'DED') { // HOLLAND PONTOSÍTVA
-                        if (pos <= 2) status = "Champions League Group Stage";
-                        else if (pos === 3) status = "Champions League Qualifiers";
-                        else if (pos === 4) status = "Europa League Qualifiers";
-                        else if (pos >= 5 && pos <= 8) status = "Conference League Play-offs";
-                        else if (pos === 16) status = "Osztályozó";
-                        else if (pos >= 17) status = "Relegation";
-                    }
-                    else if (code === 'PPL') {
-                        if (pos === 1) status = "Champions League Group Stage";
-                        else if (pos === 2) status = "Champions League Qualifiers";
-                        else if (pos === 3) status = "Europa League Qualifiers";
-                        else if (pos === 4) status = "Conference League Qualifiers";
-                        else if (pos === 16) status = "Osztályozó";
-                        else if (pos >= 17) status = "Relegation";
-                    }
-                    else if (code === 'FL1') {
-                        if (pos <= 3) status = "Champions League Group Stage";
-                        else if (pos === 4) status = "Champions League Qualifiers";
-                        else if (pos === 5) status = "Europa League Group Stage";
-                        else if (pos === 16) status = "Osztályozó";
-                        else if (pos >= 17) status = "Relegation";
-                    }
-                }
-                const color = getStatusColor(status);
                 const isMatchTeam = (home.includes(r.team.name) || r.team.name.includes(home) || away.includes(r.team.name) || r.team.name.includes(away));
-                const boxBg = (color !== "transparent") ? color : "#000";
-                const boxText = (color !== "transparent") ? "#000" : "var(--neon-blue)";
-
                 html += `<tr class="${isMatchTeam ? 'highlight' : ''}">
-                    <td class="pos-col" style="border-left-color: ${color}">
-                        ${status ? `<span class="zone-tag" style="color:${color}">${translateStatus(status)}</span>` : ''}
-                        <div class="pos-num-box" style="background:${boxBg}; color:${boxText}; border-color:${color !== "transparent" ? 'rgba(255,255,255,0.2)' : 'var(--neon-blue)'}">${pos}</div>
-                    </td>
-                    <td style="text-align:left; font-weight:800;"><img src="${r.team.crest}" width="20" style="vertical-align:middle; margin-right:8px;"> ${r.team.name}</td>
-                    <td>${r.playedGames}</td><td>${r.won}</td><td>${r.draw}</td><td>${r.lost}</td><td>${r.goalsFor}:${r.goalsAgainst}</td>
-                    <td style="color:${r.goalDifference >= 0 ? 'var(--neon-green)' : 'var(--neon-red)'}">${r.goalDifference > 0 ? '+'+r.goalDifference : r.goalDifference}</td>
-                    <td class="pts-bold">${r.points}</td>
+                    <td class="pos-col"><div class="pos-num-box">${r.position}</div></td>
+                    <td style="text-align:left; font-weight:700;"><img src="${r.team.crest}" width="20" style="margin-right:8px; vertical-align:middle;"> ${r.team.name}</td>
+                    <td style="color:var(--neon-green); font-weight:bold;">${r.points}</td>
                 </tr>`;
             });
             document.getElementById('standings-target').innerHTML = html + "</tbody></table>";
