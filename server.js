@@ -8,20 +8,20 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Statikus fájlok kiszolgálása (fontos, hogy ez legyen az első!)
-app.use(express.static(__dirname));
+// Ez a sor gondoskodik róla, hogy a képek, CSS és JS fájlok bárhonnan elérhetőek legyenek
+app.use(express.static(path.join(__dirname)));
 
-// --- DEBUG VÉGPONT ---
+// --- API VÉGPONTOK ---
+
 app.get("/api/debug", (req, res) => {
     res.json({
         status: "Szerver fut",
-        football_key_megvan: !!process.env.FOOTBALL_DATA_API_KEY,
-        stripe_key_megvan: !!process.env.STRIPE_SECRET_KEY,
-        node_env: process.env.NODE_ENV || "nincs beállítva"
+        football_key: !!process.env.FOOTBALL_DATA_API_KEY,
+        stripe_key: !!process.env.STRIPE_SECRET_KEY,
+        current_dir: __dirname
     });
 });
 
-// --- MECCSEK ---
 app.get("/live-matches", async (req, res) => {
     const FD_KEY = process.env.FOOTBALL_DATA_API_KEY;
     const date = req.query.date || new Date().toISOString().split('T')[0];
@@ -32,34 +32,30 @@ app.get("/live-matches", async (req, res) => {
         const data = await response.json();
         res.json(data);
     } catch (err) {
-        res.status(500).json({ error: "Szerver hiba az API lekérésekor" });
+        res.status(500).json({ error: "API hiba" });
     }
 });
 
-// --- STRIPE ---
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-app.post('/create-checkout-session', async (req, res) => {
-    try {
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [{
-                price_data: { currency: 'huf', product_data: { name: 'LuckyPitch Támogatás' }, unit_amount: 100000 },
-                quantity: 1,
-            }],
-            mode: 'payment',
-            success_url: `${req.headers.origin}/Home.html?success=true`,
-            cancel_url: `${req.headers.origin}/Home.html?cancel=true`,
-        });
-        res.json({ id: session.id });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+// --- OLDALAK KISZOLGÁLÁSA (Fix útvonalakkal) ---
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "Home.html"));
 });
 
-// Útvonalak fixálása
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
-app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
-app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
+app.get("/meccsek", (req, res) => {
+    res.sendFile(path.join(__dirname, "meccsek.html"));
+});
+
+app.get("/elemzes", (req, res) => {
+    res.sendFile(path.join(__dirname, "elemzes.html"));
+});
+
+// Ha bármi mást írnak be, dobja vissza a főoldalra, ne legyen 404
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "Home.html"));
+});
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`🚀 LuckyPitch Szerver ONLINE a ${PORT} porton`));
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 LuckyPitch Szerver Elindult! Port: ${PORT}`);
+});
