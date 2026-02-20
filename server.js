@@ -15,7 +15,7 @@ const ODDS_API_KEY = process.env.ODDS_API_KEY;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const stripe = require('stripe')(STRIPE_SECRET_KEY);
 
-// CACHE TÁROLÓK
+// --- CACHE TÁROLÓK (API VÉDELEM) ---
 let matchCache = { data: null, lastFetch: 0 };
 let oddsCache = { data: null, lastFetch: 0 };
 let standingsCache = {};
@@ -77,10 +77,10 @@ app.post('/create-checkout-session', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ÚTVONALAK
+// FIX OLDALAK
 app.get(["/", "/home", "/Home"], (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
 app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Szerver fut a ${PORT} porton`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 LuckyPitch Szerver ONLINE a ${PORT} porton`));
