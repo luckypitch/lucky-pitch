@@ -16,9 +16,6 @@
     <script src="https://js.stripe.com/v3/"></script>
 
     <style>
-        /* =========================
-           VÁLTOZÓK ÉS TÉMÁK
-        ========================= */
         :root{
             --text: white;
             --box-bg: rgba(0,0,0,0.7);
@@ -35,10 +32,7 @@
             --btn-text: white;
         }
 
-        /* =========================
-           ALAP STÍLUSOK
-        ========================= */
-        *{ margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        *{ margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
 
         body{
             min-height:100vh;
@@ -50,9 +44,6 @@
 
         body.light { background: url("Focivil.jpeg") center/cover no-repeat fixed; }
 
-        /* =========================
-           NAVIGÁCIÓ
-        ========================= */
         nav{
             display:flex;
             justify-content:space-between;
@@ -65,7 +56,7 @@
             z-index: 1000;
         }
 
-        .logo{ font-size:26px; font-weight:900; letter-spacing: 1px; color: var(--primary); }
+        .logo{ font-size:26px; font-weight:900; color: var(--primary); }
 
         .nav-buttons{ display:flex; gap:12px; align-items: center; }
 
@@ -76,12 +67,9 @@
         }
 
         .btn-auth { background: var(--primary); color: #000; }
-        .btn-support { background: var(--stripe); color: white; border: 1px solid transparent; }
-        .btn-support:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(99, 91, 255, 0.4); }
+        .btn-support { background: var(--stripe); color: white; }
+        .btn-support:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* =========================
-           HERO SZEKCIÓ
-        ========================= */
         .hero{
             min-height:90vh; display:flex; justify-content:center;
             align-items:center; padding:20px;
@@ -96,7 +84,7 @@
 
         h1{ font-size:52px; margin-bottom:15px; text-transform: uppercase; font-weight: 800; }
         .kiemelt{ font-weight:bold; font-size: 1.3rem; color: var(--primary); margin-bottom: 25px; }
-        p{ line-height:1.8; margin-bottom:20px; font-size: 1.1rem; opacity: 0.95; }
+        p{ line-height:1.8; margin-bottom:20px; font-size: 1.1rem; }
         .divider{ border-top:1px solid rgba(255,255,255,0.2); margin:30px 0; }
         
         .btn-main { 
@@ -104,13 +92,12 @@
             border-radius: 50px; display: inline-block;
         }
 
-        #status-msg { color: var(--primary); margin-top: 15px; font-weight: bold; height: 24px; }
+        #status-msg { color: var(--primary); margin-top: 15px; font-weight: bold; }
 
         @media (max-width:768px){
             nav{ padding:15px 20px; }
-            h1{ font-size:36px; }
-            .box{ padding:40px 20px; }
-            .nav-buttons button:not(#mod-btn):not(#support-btn) { display: none; }
+            h1{ font-size:32px; }
+            .box{ padding:40px 15px; }
         }
     </style>
 </head>
@@ -130,8 +117,8 @@
             <button onclick="Clerk.openSignIn()" class="btn-auth" id="login-text">LOGIN</button>
         </div>
 
-        <a href="https://www.facebook.com/profile.php?id=61588443053104" target="_blank" style="margin-left:5px;">
-            <img src="facebook-1.png" style="width:30px; vertical-align: middle;">
+        <a href="https://www.facebook.com/profile.php?id=61588443053104" target="_blank">
+            <img src="facebook-1.png" style="width:30px; vertical-align: middle; margin-left: 5px;">
         </a>
     </div>
 </nav>
@@ -139,82 +126,87 @@
 <section class="hero">
     <div class="box">
         <h1 id="title">Let the wins Begin</h1>
-
-        <p id="kiemelt" class="kiemelt">
-            Where passion meets precision — and every decision counts.
-        </p>
-
-        <p id="text1">
-            At LuckyPitch, we believe winning isn’t just about luck — it’s about smart thinking, sharp strategy, and the courage to trust your instincts.
-        </p>
+        <p id="kiemelt" class="kiemelt">Where passion meets precision — and every decision counts.</p>
+        
+        <p id="text1">At LuckyPitch, we believe winning isn’t just about luck — it’s about smart thinking, sharp strategy, and the courage to trust your instincts.</p>
 
         <div id="status-msg"></div>
-
         <div class="divider"></div>
 
-        <p id="text2">
-            This is where insight meets opportunity. This is where the game changes. Play smarter. Think sharper. Win bigger.
-        </p>
+        <p id="text2">This is where insight meets opportunity. This is where the game changes. Play smarter. Think sharper. Win bigger.</p>
 
         <a href="/meccsek" id="cta-link" class="btn-link btn-main">Matches</a>
     </div>
 </section>
 
 <script>
-// --- FORDÍTÁSOK ---
+// --- KONFIGURÁCIÓ ---
+const stripe = Stripe('pk_test_51T2qaQQkKVs47hkTqXwOVadi0o1GiBortnh6rNLqLxHMS7E6CKCQwp4lcwtnk7jIojzDjERp8wuMHNgx5FKqHEUo00uXcI3IS5');
+
 const translations = {
     hu: {
         title: "Kezdődjenek a Győzelmek",
-        kiemelt: "Ahol a szenvedély találkozik a precizitással — és minden döntés számít.",
-        text1: "A LuckyPitchnél hisszük, hogy a győzelem nem csupán szerencse kérdése — hanem okos gondolkodásé és éles stratégiáé.",
-        text2: "Itt az éleslátás találkozik a lehetőséggel. Itt változik meg a játék. Játssz okosabban. Nyerj nagyobbat.",
+        kiemelt: "Ahol a szenvedély találkozik a precizitással.",
+        text1: "A LuckyPitchnél hisszük, hogy a győzelem nem csupán szerencse kérdése.",
+        text2: "Játssz okosabban. Gondolkodj élesebben. Nyerj nagyobbat.",
         cta: "Meccsek megtekintése",
         langBtn: "EN 🇬🇧",
         login: "BELÉPÉS",
         support: "Támogatás",
-        logAlert: "Kérlek, jelentkezz be a támogatáshoz!"
+        loading: "Betöltés...",
+        alert: "Kérlek, jelentkezz be a támogatáshoz!"
     },
     en: {
         title: "Let the Wins Begin",
-        kiemelt: "Where passion meets precision — and every decision counts.",
-        text1: "At LuckyPitch, we believe winning isn't just about luck — it's about smart thinking, sharp strategy, and courage.",
-        text2: "Insight meets opportunity. This is where the game changes. Play smarter. Think sharper. Win bigger.",
+        kiemelt: "Where passion meets precision.",
+        text1: "At LuckyPitch, we believe winning isn't just about luck.",
+        text2: "Play smarter. Think sharper. Win bigger.",
         cta: "Explore Matches",
         langBtn: "HU 🇭🇺",
         login: "LOGIN",
         support: "Donate",
-        logAlert: "Please log in to donate!"
+        loading: "Loading...",
+        alert: "Please log in to donate!"
     }
 };
 
-// --- STRIPE KONFIGURÁCIÓ ---
-// Ide másold a saját Stripe Publishable Key-edet!
-const stripe = Stripe('pk_test_51...ITT_A_TE_STRIPE_KULCSOD');
-
+// --- TÁMOGATÁS KEZELÉSE ---
 async function handleSupport() {
-    if (!Clerk.user) {
+    if (!window.Clerk || !Clerk.user) {
         const lang = localStorage.getItem("lang") || "en";
-        alert(translations[lang].logAlert);
+        alert(translations[lang].alert);
         Clerk.openSignIn();
         return;
     }
 
+    const btn = document.getElementById('support-btn');
+    const lang = localStorage.getItem("lang") || "en";
+    const originalText = btn.innerText;
+
     try {
+        btn.innerText = translations[lang].loading;
+        btn.disabled = true;
+
         const response = await fetch('/create-checkout-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
-        
+
+        if (!response.ok) throw new Error("Szerver hiba");
+
         const session = await response.json();
         if (session.id) {
-            stripe.redirectToCheckout({ sessionId: session.id });
+            await stripe.redirectToCheckout({ sessionId: session.id });
         }
     } catch (err) {
-        console.error("Stripe hiba:", err);
+        console.error(err);
+        alert("Hiba történt. Próbáld újra később.");
+        btn.innerText = originalText;
+        btn.disabled = false;
     }
 }
 
-// --- APP INDÍTÁSA ÉS CLERK ---
+// --- APP INICIALIZÁLÁS ---
 async function startApp() {
     try {
         await Clerk.load();
@@ -229,11 +221,11 @@ async function startApp() {
             authLinks.style.display = 'block';
         }
     } catch (err) {
-        console.error("Clerk betöltési hiba:", err);
+        console.error("Clerk error:", err);
         document.getElementById('auth-links').style.display = 'block';
     }
 
-    // URL Paraméterek ellenőrzése (Sikeres fizetés után)
+    // URL visszajelzés (sikeres fizetés után)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success')) {
         document.getElementById('status-msg').innerText = "❤️ Thank you for your support!";
@@ -257,23 +249,19 @@ function updateUI() {
     document.getElementById("login-text").innerText = data.login;
     document.getElementById("support-btn").innerText = data.support;
 
-    if (theme === "light") {
-        document.body.classList.add("light");
-        document.getElementById("mod-btn").innerText = "🌙";
-    } else {
-        document.body.classList.remove("light");
-        document.getElementById("mod-btn").innerText = "☀️";
-    }
+    document.body.classList.toggle("light", theme === "light");
+    document.getElementById("mod-btn").innerText = theme === "light" ? "🌙" : "☀️";
 }
 
 function toggleLang() {
-    localStorage.setItem("lang", (localStorage.getItem("lang") === "en") ? "hu" : "en");
+    const cur = localStorage.getItem("lang") || "en";
+    localStorage.setItem("lang", cur === "en" ? "hu" : "en");
     updateUI();
 }
 
 function toggleTheme() {
-    const newTheme = localStorage.getItem("theme") === "dark" ? "light" : "dark";
-    localStorage.setItem("theme", newTheme);
+    const cur = localStorage.getItem("theme") || "dark";
+    localStorage.setItem("theme", cur === "dark" ? "light" : "dark");
     updateUI();
 }
 
