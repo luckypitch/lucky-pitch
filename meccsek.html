@@ -291,7 +291,7 @@
 }
 
         function setDate(d) { selectedDate = d; renderDateStrip(); renderLeagues(); renderMatches(); }
-
+        
         // --- ADATKEZELÉS ---
        async function init() {
     await updateData();
@@ -307,30 +307,25 @@
 }
 
         async function updateData() {
-            try {
-                const res = await fetch("/live-matches");
-                const data = await res.json();
-                const matches = data.matches || [];
+    try {
+        const res = await fetch("/live-matches");
+        const data = await res.json();
+        allMatches = data.matches || [];
 
-                matches.forEach(match => {
-                    const mId = String(match.id);
-                    const curH = match.score.fullTime.home ?? 0;
-                    const curA = match.score.fullTime.away ?? 0;
-
-                    if (prevScores[mId]) {
-                        if (curH > prevScores[mId].h || curA > prevScores[mId].a) {
-                            triggerGoalEffect(match, curH, curA);
-                        }
-                    }
-                    prevScores[mId] = { h: curH, a: curA };
-                });
-
-                allMatches = matches;
-                renderDateStrip();
-                renderLeagues();
-                renderMatches();
-            } catch (e) { console.error("Hiba:", e); }
+        // HA MÉG ÜRES A LISTA (pl. első betöltés), JELÖLJÜNK KI MINDENT
+        if (selectedLeagues.size === 0 && !sessionStorage.getItem('selectedLeagues')) {
+            allMatches.forEach(m => {
+                selectedLeagues.add(String(m.competition.id));
+            });
+            // Mentjük is az állapotot
+            sessionStorage.setItem('selectedLeagues', JSON.stringify([...selectedLeagues]));
         }
+
+        renderDateStrip();
+        renderLeagues();
+        renderMatches();
+    } catch (e) { console.error("Hiba:", e); }
+}
 
         function triggerGoalEffect(match, h, a) {
             const mId = String(match.id);
@@ -350,21 +345,20 @@
         }
 
         function renderLeagues() {
-            const cont = document.getElementById("league-list");
-            const unique = new Map();
-            allMatches.filter(m => m.utcDate.startsWith(selectedDate)).forEach(m => unique.set(m.competition.id, m.competition));
-            cont.innerHTML = "";
-            unique.forEach((l, id) => {
-                const div = document.createElement("div");
-                div.className = `league-item ${selectedLeagues.has(id.toString()) ? 'active' : ''}`;
-                div.onclick = () => {
-                    selectedLeagues.has(id.toString()) ? selectedLeagues.delete(id.toString()) : selectedLeagues.add(id.toString());
-                    renderLeagues(); renderMatches();
-                };
-                div.innerHTML = `<img src="${l.emblem}" width="25"> <span>${l.name}</span>`;
-                cont.appendChild(div);
-            });
-        }
+    const cont = document.getElementById("league-list");
+    const unique = new Map();
+    allMatches.forEach(m => unique.set(m.competition.id, m.competition));
+    
+    cont.innerHTML = "";
+    unique.forEach((l, id) => {
+        const div = document.createElement("div");
+        // Itt dől el a vizuális kijelölés (a CSS-ben az .active osztály színezi)
+        div.className = `league-item ${selectedLeagues.has(id.toString()) ? 'active' : ''}`;
+        div.onclick = () => toggleLeague(id); 
+        div.innerHTML = `<img src="${l.emblem}" width="25"> <span>${l.name}</span>`;
+        cont.appendChild(div);
+    });
+}
 
         function renderMatches() {
             const cont = document.getElementById("match-container");
@@ -388,7 +382,32 @@
                 </div>`;
             }).join('') || `<p style="text-align:center; opacity:0.3; margin-top:50px;">NINCS MECCS</p>`;
         }
+// Adatok betöltése a memóriából (ha van)
+let savedLeagues = sessionStorage.getItem('selectedLeagues');
+let selectedLeagues = new Set(JSON.parse(savedLeagues || "[]"));
+let selectedDate = sessionStorage.getItem('selectedDate') || new Date().toISOString().split('T')[0];
 
+// Dátumváltó mentéssel
+function setDate(d) { 
+    selectedDate = d; 
+    sessionStorage.setItem('selectedDate', d); 
+    renderDateStrip(); 
+    renderMatches(); 
+}
+
+// Liga kijelölés/törlés mentéssel
+function toggleLeague(id) {
+    id = String(id);
+    if (selectedLeagues.has(id)) {
+        selectedLeagues.delete(id);
+    } else {
+        selectedLeagues.add(id);
+    }
+    sessionStorage.setItem('selectedLeagues', JSON.stringify([...selectedLeagues]));
+    renderLeagues();
+    renderMatches();
+}
+        
         // --- TABELLA SZÍNEZÉS ÉS MEGJELENÍTÉS ---
         function getStatusColor(text) {
             if (!text) return "transparent";
@@ -493,4 +512,5 @@
     </script>
 </body>
 </html>
+
 
