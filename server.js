@@ -25,7 +25,7 @@ let standingsCache = {};
 // MECCSEK (1 perces cache)
 app.get("/live-matches", async (req, res) => {
     const now = Date.now();
-    if (matchCache.data && (now - matchCache.lastFetch < 60000)) return res.json(matchCache.data);
+    if (matchCache.data && (now - matchCache.lastFetch < 30000)) return res.json(matchCache.data);
     try {
         const today = new Date();
         const dFrom = new Date(today); dFrom.setDate(today.getDate() - 4);
@@ -121,3 +121,4 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: ${ODDS_API_KEY ? "AKTÍV" : "HIÁNYZIK"}
     `);
 });
+
