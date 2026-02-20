@@ -12,8 +12,6 @@
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .card { background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
         .back-btn { display: inline-block; margin-bottom: 20px; color: var(--primary); text-decoration: none; font-weight: bold; cursor: pointer; }
-        
-        /* Designos Tabella */
         table { width: 100%; border-collapse: separate; border-spacing: 0 4px; font-size: 13px; }
         td { padding: 10px; background: rgba(255,255,255,0.03); }
         .cl-zone { border-left: 4px solid #007bff; }
@@ -21,12 +19,10 @@
         .relegation-zone { border-left: 4px solid #e74c3c; }
         .highlight { background: rgba(0, 255, 136, 0.15) !important; color: var(--primary); font-weight: bold; }
         .pos-circle { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: rgba(255,255,255,0.1); font-size: 10px; }
-        .zone-label { font-size: 9px; display: block; margin-bottom: -2px; }
-
-        /* Jelmagyarázat */
-        .legend { display: flex; gap: 15px; margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 11px; }
+        .zone-label { font-size: 8px; font-weight: bold; display: block; margin-bottom: -2px; }
+        .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 10px; }
         .legend-item { display: flex; align-items: center; gap: 5px; }
-        .dot { width: 10px; height: 10px; border-radius: 2px; }
+        .dot { width: 8px; height: 8px; border-radius: 2px; }
     </style>
 </head>
 <body>
@@ -44,16 +40,13 @@
             </div>
         </div>
     </div>
-
     <script>
         const matchId = new URLSearchParams(window.location.search).get('id');
-
         async function init() {
             const res = await fetch('/live-matches');
             const data = await res.json();
             const m = data.matches.find(x => x.id == matchId);
             if(!m) return;
-
             document.getElementById('header').innerHTML = `
                 <div class="match-card">
                     <div class="team-box"><img src="${m.homeTeam.crest}"><h3>${m.homeTeam.name}</h3></div>
@@ -63,44 +56,43 @@
             loadStandings(m.competition.code, m.homeTeam.name, m.awayTeam.name);
             loadOdds(m.homeTeam.name, m.awayTeam.name);
         }
-
         async function loadStandings(code, home, away) {
             try {
                 const res = await fetch(`/api/standings/${code}`);
                 const data = await res.json();
                 const table = data.standings[0].table;
                 const total = table.length;
-
+                let bl = 4, el = 5;
+                if(['PL','PD','BL1','SA'].includes(code)) { bl=4; el=6; }
+                else if(['FL1','PPL'].includes(code)) { bl=3; el=5; }
+                else if(code==='ELC') { bl=2; el=6; }
                 let html = `<table>`;
                 table.forEach(r => {
-                    let zCls = "", zTxt = "";
-                    if(r.position <= 4) { zCls = "cl-zone"; zTxt = "BL"; }
-                    else if(r.position === 5) { zCls = "el-zone"; zTxt = "EL"; }
-                    else if(r.position >= total - 2) { zCls = "relegation-zone"; zTxt = "Kieső"; }
-                    
-                    const isM = (r.team.name === home || r.team.name === away);
-                    html += `<tr class="${isM ? 'highlight' : ''}">
-                        <td class="${zCls}">${zTxt ? `<span class="zone-label" style="color:white">${zTxt}</span>`:''}<span class="pos-circle">${r.position}</span></td>
+                    let zCls="", zTxt="";
+                    if(r.position <= bl) { zCls="cl-zone"; zTxt=(code==='ELC'?'FELJ':'BL'); }
+                    else if(r.position <= el) { zCls="el-zone"; zTxt=(code==='ELC'?'P-OFF':'EL'); }
+                    else if(r.position >= total-2) { zCls="relegation-zone"; zTxt="KIE"; }
+                    const isM = (r.team.name===home || r.team.name===away);
+                    html += `<tr class="${isM?'highlight':''}">
+                        <td class="${zCls}">${zTxt?`<span class="zone-label" style="color:var(--primary)">${zTxt}</span>`:''}<span class="pos-circle">${r.position}</span></td>
                         <td><img src="${r.team.crest}" width="18"> ${r.team.name}</td>
-                        <td>${r.points}p</td>
+                        <td style="text-align:right"><b>${r.points}p</b></td>
                     </tr>`;
                 });
-                html += `</table><div class="legend">
-                    <div class="legend-item"><div class="dot" style="background:#007bff"></div> BL</div>
-                    <div class="legend-item"><div class="dot" style="background:#f39c12"></div> EL</div>
+                document.getElementById('standings').innerHTML = html + `</table><div class="legend">
+                    <div class="legend-item"><div class="dot" style="background:#007bff"></div> ${code==='ELC'?'Feljutás':'BL'}</div>
+                    <div class="legend-item"><div class="dot" style="background:#f39c12"></div> ${code==='ELC'?'Rájátszás':'EL/EKL'}</div>
                     <div class="legend-item"><div class="dot" style="background:#e74c3c"></div> Kieső</div>
                 </div>`;
-                document.getElementById('standings').innerHTML = html;
-            } catch(e) { document.getElementById('standings').innerText = "Nem elérhető."; }
+            } catch(e) { document.getElementById('standings').innerText = "Tabella nem elérhető."; }
         }
-
         async function loadOdds(home, away) {
             try {
                 const res = await fetch('/api/odds-data');
                 const data = await res.json();
                 const o = data.find(x => x.home_team.includes(home.split(' ')[0]));
-                const vals = o.bookmakers[0].markets[0].outcomes;
-                document.getElementById('odds').innerHTML = `<p>H: ${vals[0].price} | D: ${vals[1].price} | V: ${vals[2].price}</p>`;
+                const v = o.bookmakers[0].markets[0].outcomes;
+                document.getElementById('odds').innerHTML = `<p>H: ${v[0].price} | D: ${v[1].price} | V: ${v[2].price}</p>`;
             } catch(e) { document.getElementById('odds').innerText = "Nincs odds."; }
         }
         init();
