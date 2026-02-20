@@ -16,49 +16,73 @@
         }
 
         body { background: #0f172a; color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 1350px; margin: 0 auto; }
+        .container { max-width: 1400px; margin: 0 auto; }
         
+        /* VISSZA GOMB - Új stílus */
         .back-btn { 
-            display: inline-block; margin-bottom: 20px; color: var(--primary); 
-            text-decoration: none; font-weight: bold; border: 1px solid var(--primary); 
-            padding: 8px 15px; border-radius: 8px; transition: 0.3s; 
+            display: inline-flex; align-items: center; gap: 8px; margin-bottom: 25px; 
+            color: var(--primary); text-decoration: none; font-weight: bold; 
+            background: rgba(0, 255, 136, 0.05); padding: 10px 20px; 
+            border-radius: 10px; border: 1px solid rgba(0, 255, 136, 0.2); transition: 0.3s;
         }
         .back-btn:hover { background: var(--primary); color: #000; }
 
+        /* HEADER KÁRTYA */
         .match-card { 
-            background: var(--box-bg); padding: 30px; border-radius: 20px; border: 1px solid rgba(0, 255, 136, 0.2); 
-            display: flex; justify-content: space-around; align-items: center; margin-bottom: 30px; text-align: center; 
+            background: var(--box-bg); padding: 35px; border-radius: 24px; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex; justify-content: space-around; align-items: center; 
+            margin-bottom: 30px; text-align: center; 
         }
-        .team-box img { width: 65px; height: 65px; object-fit: contain; margin-bottom: 10px; }
-        .score { font-size: 3rem; font-weight: 800; color: var(--primary); }
+        .team-box img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.1)); }
+        .team-box h3 { margin: 0; font-size: 1.4rem; letter-spacing: -0.5px; }
+        .score { font-size: 3.5rem; font-weight: 900; color: var(--primary); text-shadow: 0 0 20px rgba(0, 255, 136, 0.3); }
 
-        .grid { display: grid; grid-template-columns: 2.8fr 1fr; gap: 25px; }
-        @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+        .grid { display: grid; grid-template-columns: 1fr 350px; gap: 25px; }
+        @media (max-width: 1200px) { .grid { grid-template-columns: 1fr; } }
 
-        .card { background: var(--box-bg); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; }
-        h3.title { color: var(--primary); margin: 0 0 20px 0; font-size: 1.1rem; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        /* KÁRTYÁK */
+        .card { 
+            background: var(--box-bg); padding: 25px; border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.05); overflow-x: auto;
+        }
+        h3.title { 
+            color: var(--primary); margin: 0 0 20px 0; font-size: 1rem; 
+            text-transform: uppercase; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 10px;
+        }
 
-        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 800px; }
-        th { padding: 12px 5px; color: #64748b; font-weight: 600; text-align: center; background: rgba(255,255,255,0.02); }
-        td { padding: 12px 5px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        /* TÁBLÁZAT DESIGN */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; font-size: 13.5px; min-width: 850px; }
+        th { padding: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 11px; text-align: center; }
+        td { padding: 12px 10px; background: rgba(255,255,255,0.02); vertical-align: middle; }
+        td:first-child { border-radius: 12px 0 0 12px; }
+        td:last-child { border-radius: 0 12px 12px 0; }
 
-        .team-col { text-align: left; min-width: 180px; font-weight: 500; }
-        .pos-col { width: 75px; text-align: center; border-left: 5px solid transparent; }
-        .zone-tag { font-size: 9px; font-weight: 900; display: block; text-transform: uppercase; line-height: 1; margin-bottom: 4px; }
-        .pos-num { display: inline-block; width: 24px; height: 24px; line-height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); font-weight: bold; }
+        .team-col { text-align: left; min-width: 220px; font-weight: 600; }
+        .pos-col { width: 85px; text-align: center; border-left: 4px solid transparent; }
+        .zone-tag { font-size: 8px; font-weight: 900; display: block; text-transform: uppercase; opacity: 0.9; margin-bottom: 2px; }
+        .pos-num { 
+            display: inline-block; width: 26px; height: 26px; line-height: 26px; 
+            border-radius: 8px; background: rgba(255,255,255,0.05); font-weight: 800; font-size: 12px;
+        }
         
-        .highlight { background: rgba(0, 255, 136, 0.12) !important; outline: 1px solid var(--primary); }
-        .pts-bold { font-weight: 800; color: var(--primary); font-size: 14px; background: rgba(255,255,255,0.03); }
+        .highlight td { background: rgba(0, 255, 136, 0.08) !important; border-top: 1px solid rgba(0, 255, 136, 0.2); border-bottom: 1px solid rgba(0, 255, 136, 0.2); }
+        .pts-bold { font-weight: 900; color: var(--primary); font-size: 15px; }
 
+        /* ODDS STÍLUS */
         .odd-item { 
-            background: rgba(255,255,255,0.03); padding: 18px; border-radius: 12px; 
+            background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; 
             display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05); 
+            margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s;
         }
-        .odd-val { color: var(--primary); font-size: 1.4rem; font-weight: bold; }
+        .odd-item:hover { background: rgba(255,255,255,0.05); border-color: var(--primary); }
+        .odd-label { color: #94a3b8; font-weight: 500; }
+        .odd-val { color: var(--primary); font-size: 1.5rem; font-weight: 800; }
 
-        .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; font-size: 10px; opacity: 0.7; }
-        .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 5px; }
+        .legend { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 25px; padding: 15px; background: rgba(255,255,255,0.02); border-radius: 12px; font-size: 10px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
     </style>
 </head>
 <body>
@@ -69,19 +93,19 @@
 
     <div class="grid">
         <div class="card">
-            <h3 class="title">Bajnoki Tabella & Kupák</h3>
+            <h3 class="title">🏆 Bajnoki Tabella & Kupák</h3>
             <div id="standings-target">Betöltés...</div>
             <div class="legend">
-                <div class="legend-item"><span class="dot" style="background:var(--cl-gs)"></span> BL Főtábla</div>
-                <div class="legend-item"><span class="dot" style="background:var(--cl-q)"></span> BL Selejt.</div>
-                <div class="legend-item"><span class="dot" style="background:var(--el-gs)"></span> EL Főtábla</div>
-                <div class="legend-item"><span class="dot" style="background:var(--ecl-q)"></span> KL / P.Off</div>
-                <div class="legend-item"><span class="dot" style="background:var(--rel)"></span> Kiesés</div>
+                <div><span class="dot" style="background:var(--cl-gs)"></span> BL Főtábla</div>
+                <div><span class="dot" style="background:var(--cl-q)"></span> BL Selejt.</div>
+                <div><span class="dot" style="background:var(--el-gs)"></span> Európa Liga</div>
+                <div><span class="dot" style="background:var(--ecl-q)"></span> Konferencia Liga</div>
+                <div><span class="dot" style="background:var(--rel)"></span> Kiesés</div>
             </div>
         </div>
         
         <div class="card">
-            <h3 class="title">Élő Oddsok (1X2)</h3>
+            <h3 class="title">📈 Élő Oddsok (1X2)</h3>
             <div id="odds-target">Keresés...</div>
         </div>
     </div>
@@ -121,7 +145,7 @@
             document.getElementById('header-target').innerHTML = `
                 <div class="match-card">
                     <div class="team-box"><img src="${match.homeTeam.crest}"><h3>${match.homeTeam.name}</h3></div>
-                    <div class="score">${match.score.fullTime.home ?? 0} : ${match.score.fullTime.away ?? 0}</div>
+                    <div class="score">${match.score.fullTime.home ?? 0}:${match.score.fullTime.away ?? 0}</div>
                     <div class="team-box"><img src="${match.awayTeam.crest}"><h3>${match.awayTeam.name}</h3></div>
                 </div>`;
 
@@ -183,14 +207,16 @@
                             <span class="pos-num">${pos}</span>
                         </td>
                         <td class="team-col">
-                            <img src="${r.team.crest}" width="18" style="vertical-align:middle; margin-right:8px;"> ${r.team.name}
+                            <img src="${r.team.crest}" width="20" style="vertical-align:middle; margin-right:12px;"> ${r.team.name}
                         </td>
                         <td>${r.playedGames}</td>
                         <td>${r.won}</td>
                         <td>${r.draw}</td>
                         <td>${r.lost}</td>
                         <td>${r.goalsFor}:${r.goalsAgainst}</td>
-                        <td style="color:${r.goalDifference >= 0 ? 'var(--primary)' : '#ff4d4d'}">${r.goalDifference > 0 ? '+'+r.goalDifference : r.goalDifference}</td>
+                        <td style="color:${r.goalDifference >= 0 ? 'var(--primary)' : '#ff4d4d'}; font-weight:bold;">
+                            ${r.goalDifference > 0 ? '+'+r.goalDifference : r.goalDifference}
+                        </td>
                         <td class="pts-bold">${r.points}</td>
                     </tr>`;
             });
@@ -209,11 +235,11 @@
                 const outcomes = m.bookmakers[0].markets[0].outcomes;
                 document.getElementById('odds-target').innerHTML = `
                     <div class="odds-list">
-                        <div class="odd-item"><span>Hazai (1)</span><span class="odd-val">${outcomes.find(x=>x.name===m.home_team)?.price || '-'}</span></div>
-                        <div class="odd-item"><span>Döntetlen (X)</span><span class="odd-val">${outcomes.find(x=>x.name==='Draw')?.price || '-'}</span></div>
-                        <div class="odd-item"><span>Vendég (2)</span><span class="odd-val">${outcomes.find(x=>x.name===m.away_team)?.price || '-'}</span></div>
+                        <div class="odd-item"><span class="odd-label">Hazai (1)</span><span class="odd-val">${outcomes.find(x=>x.name===m.home_team)?.price || '-'}</span></div>
+                        <div class="odd-item"><span class="odd-label">Döntetlen (X)</span><span class="odd-val">${outcomes.find(x=>x.name==='Draw')?.price || '-'}</span></div>
+                        <div class="odd-item"><span class="odd-label">Vendég (2)</span><span class="odd-val">${outcomes.find(x=>x.name===m.away_team)?.price || '-'}</span></div>
                     </div>`;
-            } else { document.getElementById('odds-target').innerHTML = "Nincs odds."; }
+            } else { document.getElementById('odds-target').innerHTML = "<p style='text-align:center; opacity:0.5;'>Nincs élő odds.</p>"; }
         } catch (e) { }
     }
     init();
