@@ -6,93 +6,123 @@
     <title>LuckyPitch | Meccsek</title>
     <script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_YWxsb3dlZC1pbnNlY3QtOTguY2xlcmsuYWNjb3VudHMuZGV2JA" src="https://allowed-insect-98.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --primary: #00ff88; --text: #f8fafc; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; }
-        nav { display: flex; justify-content: space-between; padding: 1rem 5%; background: rgba(0,0,0,0.3); }
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #00ff88; --text: #f8fafc; --secondary: #94a3b8; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; }
+        nav { display: flex; justify-content: space-between; padding: 1rem 5%; background: rgba(0,0,0,0.3); align-items: center; }
         .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-        .date-bar { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; overflow-x: auto; padding: 10px; }
-        .date-btn { background: var(--card); border: 1px solid #334155; color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
-        .date-btn.active { border-color: var(--primary); color: var(--primary); }
-        .match-card { background: var(--card); padding: 1rem; border-radius: 12px; display: flex; align-items: center; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); }
-        .team { flex: 1; text-align: center; font-weight: bold; font-size: 0.9rem; }
-        .team img { width: 30px; display: block; margin: 0 auto 5px; }
-        .score { flex: 1; text-align: center; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
-        .btn-anal { background: var(--primary); color: #000; text-decoration: none; padding: 5px 10px; border-radius: 5px; font-size: 0.7rem; font-weight: bold; display: block; margin-top: 5px; }
+        
+        /* Dátum választó */
+        .date-bar { display: flex; gap: 10px; justify-content: center; margin-bottom: 30px; overflow-x: auto; padding: 10px; scrollbar-width: none; }
+        .date-btn { background: var(--card); border: 1px solid #334155; color: white; padding: 10px 18px; border-radius: 12px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .date-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(0, 255, 136, 0.1); }
+        
+        /* Meccs kártyák */
+        .match-card { background: var(--card); padding: 1.5rem; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); }
+        .team { width: 35%; text-align: center; font-weight: bold; }
+        .team img { width: 40px; height: 40px; display: block; margin: 0 auto 10px; object-fit: contain; }
+        .score-info { text-align: center; width: 30%; }
+        .score { font-size: 2rem; font-weight: 900; color: var(--primary); line-height: 1; }
+        .btn-anal { background: var(--primary); color: #000; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-top: 15px; transition: 0.2s; }
+        .btn-anal:hover { transform: scale(1.05); }
+        .empty-msg { text-align: center; opacity: 0.5; margin-top: 50px; font-style: italic; }
     </style>
 </head>
 <body>
 
 <nav>
-    <a href="/" style="color:var(--primary); text-decoration:none; font-weight:900;">LuckyPitch</a>
-    <button onclick="toggleLang()" id="lang-btn">EN</button>
+    <a href="/" style="color:var(--primary); text-decoration:none; font-size:1.6rem; font-weight:900;">LuckyPitch</a>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <button onclick="toggleLang()" id="lang-btn" style="background:var(--card); color:white; border:1px solid #334155; padding:6px 12px; border-radius:6px; cursor:pointer;">EN</button>
+        <div id="user-button"></div>
+    </div>
 </nav>
 
 <div class="container">
-    <h2 id="title" style="text-align:center; margin-bottom:20px;">Mérkőzések</h2>
+    <h2 id="page-title" style="text-align:center; margin-bottom:20px;">Mérkőzések</h2>
     <div class="date-bar" id="date-bar"></div>
     <div id="match-list"></div>
 </div>
 
 <script>
     const trans = {
-        hu: { title: "Mérkőzések", anal: "Elemzés", empty: "Nincs meccs.", btn: "EN" },
-        en: { title: "Matches", anal: "Analysis", empty: "No matches.", btn: "HU" }
+        hu: { title: "Mérkőzések", analysis: "Elemzés", empty: "Nincs mérkőzés ezen a napon.", loading: "Meccsek keresése...", btn: "EN 🇬🇧" },
+        en: { title: "Matches", analysis: "Analysis", empty: "No matches found for this day.", loading: "Searching matches...", btn: "HU 🇭🇺" }
     };
-    let selDate = new Date().toISOString().split('T')[0];
+
+    let selectedDate = new Date().toISOString().split('T')[0];
 
     async function init() {
         await Clerk.load();
+        if (Clerk.user) Clerk.mountUserButton(document.getElementById('user-button'));
         renderDates();
-        loadMatches();
+        fetchMatches();
         updateUI();
     }
 
     function renderDates() {
         const bar = document.getElementById('date-bar');
         bar.innerHTML = '';
-        for(let i=-3; i<=3; i++) {
-            let d = new Date(); d.setDate(d.getDate() + i);
-            let iso = d.toISOString().split('T')[0];
-            let btn = document.createElement('button');
-            btn.className = `date-btn ${iso === selDate ? 'active' : ''}`;
-            btn.innerText = i === 0 ? "Ma" : d.toLocaleDateString('hu-HU', {day:'numeric', month:'short'});
-            btn.onclick = () => { selDate = iso; renderDates(); loadMatches(); };
+        for (let i = -3; i <= 3; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() + i);
+            const iso = d.toISOString().split('T')[0];
+            const btn = document.createElement('button');
+            btn.className = `date-btn ${iso === selectedDate ? 'active' : ''}`;
+            
+            // Dátum formázása
+            const label = i === 0 ? "Ma" : d.toLocaleDateString('hu-HU', {month:'short', day:'numeric'});
+            
+            btn.innerText = label;
+            btn.onclick = () => { selectedDate = iso; renderDates(); fetchMatches(); };
             bar.appendChild(btn);
         }
     }
 
-    async function loadMatches() {
+    async function fetchMatches() {
         const lang = localStorage.getItem('lang') || 'hu';
         const list = document.getElementById('match-list');
-        list.innerHTML = '<p style="text-align:center;">Betöltés...</p>';
+        list.innerHTML = `<p class="empty-msg">${trans[lang].loading}</p>`;
+
         try {
-            const res = await fetch(`/live-matches?date=${selDate}`);
+            const res = await fetch(`/live-matches?date=${selectedDate}`);
             const data = await res.json();
-            if(!data.matches || data.matches.length === 0) {
-                list.innerHTML = `<p style="text-align:center; opacity:0.5;">${trans[lang].empty}</p>`;
+
+            if (!data.matches || data.matches.length === 0) {
+                list.innerHTML = `<p class="empty-msg">${trans[lang].empty}</p>`;
                 return;
             }
+
             list.innerHTML = data.matches.map(m => `
                 <div class="match-card">
-                    <div class="team"><img src="${m.homeTeam.crest}">${m.homeTeam.shortName || m.homeTeam.name}</div>
-                    <div class="score">
-                        ${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}
-                        <a href="/elemzes" class="btn-anal">${trans[lang].anal}</a>
+                    <div class="team">
+                        <img src="${m.homeTeam.crest}" onerror="this.src='https://via.placeholder.com/40?text=?'">
+                        <span>${m.homeTeam.shortName || m.homeTeam.name}</span>
                     </div>
-                    <div class="team"><img src="${m.awayTeam.crest}">${m.awayTeam.shortName || m.awayTeam.name}</div>
+                    <div class="score-info">
+                        <div class="score">${m.score.fullTime.home ?? 0}:${m.score.fullTime.away ?? 0}</div>
+                        <a href="/elemzes" class="btn-anal">${trans[lang].analysis}</a>
+                    </div>
+                    <div class="team">
+                        <img src="${m.awayTeam.crest}" onerror="this.src='https://via.placeholder.com/40?text=?'">
+                        <span>${m.awayTeam.shortName || m.awayTeam.name}</span>
+                    </div>
                 </div>
             `).join('');
-        } catch(e) { list.innerHTML = "Hiba történt."; }
+        } catch (e) {
+            list.innerHTML = `<p class="empty-msg">Hiba történt a csatlakozáskor.</p>`;
+        }
     }
 
     function toggleLang() {
-        localStorage.setItem('lang', (localStorage.getItem('lang') === 'hu' ? 'en' : 'hu'));
-        updateUI(); loadMatches();
+        const newLang = (localStorage.getItem('lang') || 'hu') === 'hu' ? 'en' : 'hu';
+        localStorage.setItem('lang', newLang);
+        updateUI();
+        fetchMatches();
     }
 
     function updateUI() {
         const lang = localStorage.getItem('lang') || 'hu';
-        document.getElementById('title').innerText = trans[lang].title;
+        document.getElementById('page-title').innerText = trans[lang].title;
         document.getElementById('lang-btn').innerText = trans[lang].btn;
     }
 
