@@ -317,17 +317,43 @@ function triggerGoalEffect(match, h, a) {
 }
 
     function renderDateStrip() {
-        const strip = document.getElementById("date-strip");
-        const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
-        strip.innerHTML = dates.map(d => {
-            const isToday = d === todayStr;
-            const label = isToday ? (currentLang === 'HU' ? 'MA' : 'TODAY') : d.split('-')[1]+'.'+d.split('-')[2];
-            return `<div class="date-pill ${d === selectedDate ? 'active' : ''}" 
-                         onclick="selectedDate='${d}';saveState();renderMatches();renderLeagues();renderDateStrip();">
-                        ${label}
-                    </div>`;
-        }).join('');
+    const strip = document.getElementById("date-strip");
+    if (!strip) return;
+
+    const dates = [];
+    const today = new Date();
+
+    // Generálunk -3 és +3 napot
+    for (let i = -3; i <= 3; i++) {
+        const d = new Date();
+        d.setDate(today.getDate() + i);
+        dates.push(d.toISOString().split('T')[0]); // YYYY-MM-DD formátum
     }
+
+    strip.innerHTML = dates.map(d => {
+        const isToday = d === todayStr;
+        const dateObj = new Date(d);
+        
+        // Formázás: "02.21" vagy "MA"
+        let label = `${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
+        if (isToday) label = (currentLang === 'HU' ? 'MA' : 'TODAY');
+
+        return `
+            <div class="date-pill ${d === selectedDate ? 'active' : ''}" 
+                 onclick="setDate('${d}')">
+                ${label}
+            </div>`;
+    }).join('');
+}
+
+// Segédfüggvény a dátumváltáshoz
+function setDate(dateStr) {
+    selectedDate = dateStr;
+    saveState();
+    renderDateStrip();
+    renderLeagues();
+    renderMatches();
+}
 
     function renderLeagues() {
         const cont = document.getElementById("league-list");
@@ -509,6 +535,7 @@ function triggerGoalEffect(match, h, a) {
     </script>
 </body>
 </html>
+
 
 
 
