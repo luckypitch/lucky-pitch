@@ -280,13 +280,16 @@
     
     // HANG JAVÍTÁS
     const goalSound = document.getElementById('goal-sound');
-    goalSound.pause(); 
-    goalSound.currentTime = 0;
-    goalSound.volume = 1.0; // Max hangerő
-    
-    // A lejátszás csak akkor fog menni, ha már kattintottál valahová az oldalon!
-    goalSound.play().catch(e => console.log("Hang blokkolva, várj egy kattintásra:", e));
-    
+    if (goalSound) {
+        goalSound.pause();
+        goalSound.currentTime = 0;
+        goalSound.volume = 0.6;
+        
+        // Csak akkor indul el, ha már kattintottál az oldalon!
+        goalSound.play().catch(e => {
+            console.warn("Autoplay tiltva! Kattints az oldalra a hanghoz.", e);
+        });
+    }
     // Banner és villogás indítása...
     const banner = document.getElementById('goal-banner');
     banner.innerText = `GOAL! ${match.homeTeam.name} ${h}:${a} ${match.awayTeam.name}`;
@@ -590,6 +593,7 @@ function updateSelectAllButton() {
     </script>
 </body>
 </html>
+
 
 
 
