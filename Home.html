@@ -118,7 +118,7 @@
         </div>
 
         <a href="https://www.facebook.com/profile.php?id=61588443053104" target="_blank">
-            <img src="facebook-1.png" style="width:30px; vertical-align: middle; margin-left: 5px;">
+            <img id="fb-logo" src="facebook-1.png" style="width:30px; vertical-align: middle; margin-left: 5px;">
         </a>
     </div>
 </nav>
@@ -251,6 +251,9 @@ function updateUI() {
 
     document.body.classList.toggle("light", theme === "light");
     document.getElementById("mod-btn").innerText = theme === "light" ? "🌙" : "☀️";
+    // FACEBOOK LOGO VÁLTÁS
+    const fbLogo = document.getElementById("fb-logo");
+    fbLogo.src = theme === "light" ? "facebook-2.png" : "facebook-1.png";
 }
 
 function toggleLang() {
@@ -270,3 +273,4 @@ window.addEventListener('load', startApp);
 
 </body>
 </html>
+
