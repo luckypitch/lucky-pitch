@@ -153,32 +153,77 @@
     .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); }
 
     /* --- MOBIL NÉZET JAVÍTÁSA (FIXED) --- */
-    @media (max-width: 1024px) {
-        .main-wrapper { display: block; }
-
-        .sidebar, .standings-sidebar {
-            position: fixed;
-            top: 75px;
-            bottom: 0;
-            width: 85% !important;
-            z-index: 2000;
-            background: #0f172a !important; /* Erős sötét háttér mobilon */
-            display: block !important;
-        }
-
-        .sidebar { left: 0; transform: translateX(-105%); border-right: 1px solid var(--neon-blue); }
-        .standings-sidebar { right: 0; transform: translateX(105%); border-left: 1px solid var(--neon-blue); }
-
-        /* Nyitott állapot */
-        .sidebar.open, .standings-sidebar.open {
-            transform: translateX(0);
-            box-shadow: 0 0 100px rgba(0,0,0,1);
-        }
-
-        .content-area { width: 100%; padding: 15px; }
-        .score-display { font-size: 1.5rem; }
-        .team-link img { width: 45px; height: 45px; }
+  /* --- MOBIL FIX (MINDENRE KITERJEDŐ) --- */
+@media (max-width: 1024px) {
+    /* Megakadályozzuk, hogy a panelek eltolják a tartalmat */
+    .main-wrapper { 
+        display: block !important; 
+        height: auto !important;
+        overflow-y: auto !important;
+        padding-top: 80px;
     }
+
+    /* A panelek (Ligák és Tabella) rögzítése */
+    .sidebar, .standings-sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important; /* Teljes szélesség mobilon */
+        height: 100% !important;
+        background: var(--bg) !important; /* Nem átlátszó, hogy olvasható legyen */
+        z-index: 9999 !important;
+        transform: translateY(-100%); /* Alapból fent "bújik meg" */
+        transition: transform 0.4s ease-in-out !important;
+        display: block !important;
+        padding-top: 80px !important;
+    }
+
+    /* Tabella jöhet alulról vagy maradjon ez is fenti */
+    .standings-sidebar {
+        transform: translateY(100%); /* A tabella alulról jön be */
+    }
+
+    /* NYITOTT ÁLLAPOT: Amikor rányomsz a gombra */
+    .sidebar.open, .standings-sidebar.open {
+        transform: translateY(0) !important;
+    }
+
+    /* A gombok elérhetősége a felső Nav-ban */
+    .nav-tools {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 75px;
+        background: var(--glass);
+        display: flex;
+        justify-content: space-around; /* Gombok egyenlő elosztása */
+        padding: 0 10px;
+        z-index: 10000; /* Mindig a panelek felett maradjanak a gombok! */
+    }
+
+    .tool-btn {
+        flex: 1; /* Legyenek nagyok a gombok, hogy könnyű legyen rájuk nyomni */
+        margin: 5px;
+        height: 50px;
+        font-size: 14px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .content-area {
+        width: 100% !important;
+        padding: 10px !important;
+    }
+
+    /* A kártyák mobilon */
+    .match-card {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+}
 </style>
 </head>
 <body class="dark">
@@ -226,11 +271,11 @@
         </aside>
     </div>
 
-    <div class="mobile-nav">
-        <button class="tool-btn" onclick="toggleM('sidebar-leagues')">LIGÁK</button>
-        <button class="tool-btn" onclick="closeM()">MECCSEK</button>
-        <button class="tool-btn" onclick="toggleM('sidebar-standings')">TABELLA</button>
-    </div>
+    <<div class="nav-tools">
+    <button class="tool-btn" onclick="toggleM('league-sidebar')">🏆 Ligák</button>
+    <button class="tool-btn" onclick="toggleM('standings-sidebar')">📊 Tabella</button>
+    <button class="tool-btn" onclick="toggleTheme()">🌓</button>
+</div>
 
     <script>
     // --- GLOBÁLIS ÁLLAPOT ÉS MENTÉS KEZELÉSE ---
@@ -602,6 +647,7 @@ function updateSelectAllButton() {
     </script>
 </body>
 </html>
+
 
 
 
