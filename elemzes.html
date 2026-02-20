@@ -208,19 +208,45 @@
     }
 
     function updateMomentum(status, utcDate) {
-        const bar = document.getElementById('momentum-bar');
-        const title = document.getElementById('momentum-title');
-        if (status === 'IN_PLAY' || status === 'PAUSED') {
-            const start = new Date(utcDate).getTime();
-            const now = new Date().getTime();
-            let mins = Math.min(90, Math.max(0, Math.floor((now - start) / 60000)));
-            bar.style.width = (mins / 90 * 100) + '%';
-            title.innerText = `MÉRKŐZÉS IDŐ: ${mins}'`;
-        } else {
-            bar.style.width = status === 'FINISHED' ? '100%' : '0%';
-            title.innerText = status === 'FINISHED' ? 'VÉGE (FT)' : 'NEM KEZDŐDÖTT EL';
-        }
+    const bar = document.getElementById('momentum-bar');
+    const title = document.getElementById('momentum-title');
+    if (!bar || !title) return;
+
+    if (status === 'IN_PLAY') {
+        const start = new Date(utcDate).getTime();
+        const now = new Date().getTime();
+        // Alap perc számítás
+        let mins = Math.floor((now - start) / 60000);
+        
+        // Logika a szebb kijelzéshez
+        let displayMins = mins;
+        if (mins > 45 && mins < 60) displayMins = "45+"; // Első félidő végi hosszabbítás körülbelül
+        if (mins >= 105) displayMins = "90+"; // Meccs végi hosszabbítás
+
+        bar.style.width = Math.min(100, (mins / 95) * 100) + '%';
+        bar.style.background = 'linear-gradient(90deg, var(--neon-blue), var(--neon-green))';
+        title.innerHTML = `LIVE: <span style="color:var(--neon-red); animation: pulse 1s infinite;">${displayMins}'</span>`;
+        
+    } else if (status === 'PAUSED') {
+        bar.style.width = '50%';
+        bar.style.background = 'var(--el-gs)'; // Narancssárgás szünet jelzés
+        title.innerText = 'SZÜNET (HT)';
+        
+    } else if (status === 'FINISHED') {
+        bar.style.width = '100%';
+        bar.style.background = 'var(--neon-green)';
+        title.innerText = 'VÉGE (FT)';
+        
+    } else if (status === 'TIMED' || status === 'SCHEDULED') {
+        bar.style.width = '0%';
+        const startTime = new Date(utcDate).toLocaleTimeString('hu-HU', {hour: '2-digit', minute:'2-digit'});
+        title.innerText = `KEZDÉS: ${startTime}`;
+        
+    } else {
+        bar.style.width = '0%';
+        title.innerText = 'NEM KEZDŐDÖTT EL';
     }
+}
 
     async function loadMultiOdds(home, away) {
         const target = document.getElementById('odds-list-target');
@@ -340,3 +366,4 @@
 </script>
 </body>
 </html>
+
