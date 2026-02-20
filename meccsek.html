@@ -8,144 +8,98 @@
  <style>
         :root {
             --bg: #020617;
-            --glass: rgba(15, 23, 42, 0.75);
+            --glass: rgba(15, 23, 42, 0.85);
             --neon-green: #00ff88;
             --neon-blue: #0ea5e9;
             --neon-red: #ff3e3e;
             --text: #f1f5f9;
             --border: rgba(255, 255, 255, 0.1);
-            --cl-gs: #0044ff; --el-gs: #cc7a00; --ecl-q: #00cc6a; --po: #d35400; --rel: #ff3e3e;
         }
 
-        body.light {
-            --bg: #f8fafc;
-            --glass: rgba(255, 255, 255, 0.85);
-            --text: #0f172a;
-            --border: rgba(0, 0, 0, 0.1);
-            --neon-blue: #0284c7;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
+        /* --- ALAPOK JAVÍTÁSA (GÖRGETHETŐSÉG) --- */
         body { 
-            background: var(--bg);
+            background: var(--bg); 
             color: var(--text); 
             font-family: 'Inter', sans-serif; 
-            height: 100vh; 
-            overflow: hidden;
-            position: relative;
+            margin: 0; padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden; /* Megállítja az oldalra csúszkálást */
         }
 
-        /* --- LÁVALÁMPA ANIMÁCIÓ --- */
+        /* --- LÁVALÁMPA (Z-index és Pointer fix) --- */
         .bg-animation {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; overflow: hidden; filter: blur(80px); opacity: 0.4;
+            z-index: -1; overflow: hidden; filter: blur(80px); opacity: 0.3;
+            pointer-events: none; /* Átengedi a kattintást a gombokra! */
         }
-        .blob {
-            position: absolute; width: 500px; height: 500px; border-radius: 50%;
-            animation: move 20s infinite alternate;
-        }
-        .blob-1 { background: var(--cl-gs); top: -10%; left: -10%; animation-duration: 25s; }
-        .blob-2 { background: var(--neon-green); bottom: -10%; right: -10%; animation-duration: 30s; }
-        .blob-3 { background: var(--neon-blue); top: 40%; left: 30%; animation-duration: 22s; }
-        
-        @keyframes move {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(200px, 100px) scale(1.2); }
-        }
+        .blob { position: absolute; width: 400px; height: 400px; border-radius: 50%; animation: move 20s infinite alternate; }
+        .blob-1 { background: #0044ff; top: -10%; left: -10%; }
+        .blob-2 { background: var(--neon-green); bottom: -10%; right: -10%; }
+        @keyframes move { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(100px, 50px) scale(1.1); } }
 
-        /* --- NAV --- */
+        /* --- NAVIGÁCIÓ (Fixált HU/EN gombokkal) --- */
         nav { 
-            position: fixed; top: 0; left: 0; right: 0; height: 75px; 
+            position: sticky; top: 0; height: 70px; 
             display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 30px; background: var(--glass); backdrop-filter: blur(20px); 
-            border-bottom: 1px solid var(--border); z-index: 1000; 
+            padding: 0 20px; background: var(--glass); backdrop-filter: blur(20px); 
+            border-bottom: 1px solid var(--border); z-index: 1100; 
         }
-        .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 3px; }
-
-        .nav-tools { display: flex; gap: 12px; align-items: center; }
+        .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.1rem; color: var(--neon-blue); letter-spacing: 2px; }
+        .nav-tools { display: flex; gap: 8px; z-index: 1200; }
         .tool-btn { 
             background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            color: var(--text); padding: 8px 15px; border-radius: 12px;
-            cursor: pointer; font-family: 'Orbitron'; font-size: 10px; transition: 0.3s;
-        }
-        .tool-btn:hover { border-color: var(--neon-blue); transform: translateY(-2px); }
-
-        /* --- LAYOUT --- */
-        .main-wrapper { display: flex; height: 100vh; padding-top: 75px; }
-
-        .sidebar, .standings-sidebar {
-            background: var(--glass); backdrop-filter: blur(25px);
-            overflow-y: auto; border: 1px solid var(--border);
-        }
-        .sidebar { width: 300px; border-right: 1px solid var(--border); }
-        .standings-sidebar { width: 420px; border-left: 1px solid var(--border); padding: 20px; }
-
-        .sidebar-header { 
-            padding: 20px; font-family: 'Orbitron'; font-size: 11px; 
-            color: var(--neon-blue); letter-spacing: 2px; text-transform: uppercase;
-            border-bottom: 1px solid var(--border);
+            color: var(--text); padding: 8px 12px; border-radius: 10px;
+            cursor: pointer; font-family: 'Orbitron'; font-size: 10px;
+            pointer-events: auto !important;
         }
 
-        /* --- DATE STRIP --- */
-        .date-strip { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
-        .date-pill { flex: 0 0 auto; padding: 12px 22px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); cursor: pointer; font-family: 'Orbitron'; font-size: 10px; transition: 0.3s; }
-        .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0, 255, 136, 0.05); }
+        /* --- LAYOUT (Ami régen jó volt) --- */
+        .main-wrapper { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 20px; 
+            padding: 15px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-        /* --- MATCH CARDS & GOAL EFFECT --- */
-        .content-area { flex: 1; overflow-y: auto; padding: 25px; scrollbar-width: none; }
+        @media (min-width: 1100px) {
+            .main-wrapper { grid-template-columns: 280px 1fr 380px; }
+        }
+
+        /* --- MATCH CARDS (Mobilra optimalizálva) --- */
         .match-card {
-            background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 24px;
-            padding: 20px; margin-bottom: 15px; display: flex; align-items: center;
-            transition: 0.3s; position: relative;
+            background: var(--glass); border: 1px solid var(--border); border-radius: 20px;
+            padding: 15px; margin-bottom: 12px; display: flex; align-items: center;
+            justify-content: space-between; transition: 0.3s;
         }
+        .team-link img { width: 40px; height: 40px; object-fit: contain; }
+        .team-link span { font-size: 10px; font-family: 'Orbitron'; margin-top: 5px; text-align: center; }
+        .score-display { font-family: 'Orbitron'; font-size: 1.5rem; font-weight: 900; color: var(--neon-green); }
 
-        @keyframes goal-flash {
-            0% { background-color: rgba(255, 62, 62, 0.8) !important; box-shadow: 0 0 20px rgba(255, 62, 62, 0.6); }
-            50% { background-color: rgba(30, 41, 59, 0.4) !important; box-shadow: none; }
-            100% { background-color: rgba(255, 62, 62, 0.8) !important; box-shadow: 0 0 20px rgba(255, 62, 62, 0.6); }
-        }
-        .goal-highlight { animation: goal-flash 0.6s ease-in-out infinite !important; border: 2px solid var(--neon-red) !important; transform: scale(1.02); z-index: 10; }
+        /* --- DÁTUM CSÍK --- */
+        .date-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none; }
+        .date-pill { flex: 0 0 auto; padding: 10px 18px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); font-size: 10px; font-family: 'Orbitron'; }
+        .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); }
 
+        /* --- GOAL BANNER --- */
         #goal-banner {
             position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
             background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
-            color: #000; padding: 15px 40px; border-radius: 0 0 20px 20px;
+            color: #000; padding: 15px 30px; border-radius: 0 0 20px 20px;
             font-family: 'Orbitron'; font-weight: 900; z-index: 2000;
-            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: 0.5s; width: 90%; text-align: center;
         }
         #goal-banner.show { top: 0; }
 
-        .team-link { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
-        .team-link img { width: 55px; height: 55px; object-fit: contain; transition: 0.4s; }
-        .team-link:hover img { transform: scale(1.15) rotate(5deg); }
-        .team-link span { font-weight: 700; font-family: 'Orbitron'; font-size: 12px; text-align: center; }
+        /* --- VILLOGÁS --- */
+        .goal-highlight { animation: goal-flash 0.6s infinite; border: 2px solid var(--neon-red) !important; }
+        @keyframes goal-flash { 0% { background: rgba(255, 62, 62, 0.4); } 100% { background: transparent; } }
 
-        .score-display { font-family: 'Orbitron'; font-size: 2rem; font-weight: 900; color: var(--neon-green); text-shadow: 0 0 15px rgba(0,255,136,0.3); }
-        .score-live { color: var(--neon-red); text-shadow: 0 0 15px var(--neon-red); }
-
-        /* --- TABELLA --- */
-        .standings-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
-        .standings-table td { padding: 12px 8px; background: rgba(255,255,255,0.03); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 12px; }
-        .pos-col { border-left-width: 5px !important; border-left-style: solid !important; }
-        .pos-num-box { width: 28px; height: 28px; line-height: 28px; margin: 0 auto; border-radius: 6px; font-weight: bold; font-family: 'Orbitron'; font-size: 11px; }
-        .zone-tag { font-size: 7px; font-family: 'Orbitron'; display: block; margin-bottom: 3px; font-weight: 900; text-transform: uppercase; }
-        .highlight td { background: rgba(0, 255, 136, 0.12) !important; border-color: var(--neon-green) !important; }
-
-        /* --- LEAGUE ITEMS --- */
-        .league-item { margin: 8px 15px; padding: 12px 15px; border-radius: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.3s; border: 1px solid transparent; background: rgba(255,255,255,0.02); }
-        .league-item:hover { background: rgba(14, 165, 233, 0.1); border-color: rgba(14, 165, 233, 0.2); }
-        .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); }
-
-        /* --- MOBILE --- */
-        .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: none; justify-content: space-around; align-items: center; z-index: 1100; }
-
-        @media (max-width: 1100px) {
-            .sidebar, .standings-sidebar { position: fixed; top: 75px; bottom: 70px; width: 85%; z-index: 1050; transform: translateX(-105%); background: var(--bg); }
-            .standings-sidebar { right: 0; transform: translateX(105%); }
-            .sidebar.open, .standings-sidebar.open { transform: translateX(0); }
-            .mobile-nav { display: flex; }
+        /* --- SIDEBAROK MOBILON --- */
+        @media (max-width: 1099px) {
+            .sidebar, .standings-sidebar { background: var(--glass); border-radius: 20px; padding: 15px; }
+            .sidebar-header { font-size: 12px; margin-bottom: 15px; color: var(--neon-blue); font-family: 'Orbitron'; }
         }
     </style>
 </head>
@@ -570,6 +524,7 @@ function updateSelectAllButton() {
     </script>
 </body>
 </html>
+
 
 
 
