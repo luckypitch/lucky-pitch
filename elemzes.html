@@ -168,6 +168,14 @@
                         else if (pos === 6) status = "Conference League Qualifiers";
                         else if (pos >= total - 2) status = "Relegation";
                     }
+                    else if (code === 'PPL') { // Portugál Primeira Liga (A kép alapján pontosítva)
+    if (pos === 1) status = "Champions League Group Stage"; 
+    else if (pos === 2) status = "Champions League Qualifiers"; 
+    else if (pos === 3) status = "Europa League Qualifiers";
+    else if (pos === 4) status = "Conference League Qualifiers";
+    else if (pos === 16) status = "Liga Portugal Osztályozó";
+    else if (pos >= 17) status = "Kiesés - Liga Portugal 2";
+}
                     else if (code === 'BL1') {
                         if (pos <= 4) status = "Champions League Group Stage";
                         else if (pos === 5) status = "Europa League Group Stage";
@@ -242,3 +250,4 @@
 </script>
 </body>
 </html>
+
