@@ -2,31 +2,30 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 
-// Fetch támogatás
+// Fetch támogatás (Node 20-nál már alap, de a biztonság kedvéért maradjon)
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
+const { ClerkExpressRequireAuth } = require('@clerk/clerk-sdk-node');
 
 const app = express();
 app.use(cors());
 app.use(express.static(__dirname));
 
-const { ClerkExpressRequireAuth } = require('@clerk/clerk-sdk-node');
-
 // --- KULCSOK BEÁLLÍTÁSA ---
-// FIGYELEM: Ide az SK_TEST kulcs kell, nem a PK_TEST!
+// Clerk Secret Key (sk_test kell ide!)
 process.env.CLERK_SECRET_KEY = 'sk_test_kjOIJA4piJNFfv5tLLEf7whRac65Nu5XmOTTstnJ7X';
 
 const ODDS_API_KEY = '17b18da5d210a284be65b75933b24f9e'; 
 const FOOTBALL_DATA_API_KEY = "1f931344560e4ddc9103eff9281d435b";
 
 // --- 1. VÉGPONT: Odds adatok lekérése (VÉDETT) ---
-// Csak bejelentkezett felhasználók érhetik el
 app.get('/api/odds-data', ClerkExpressRequireAuth(), async (req, res) => {
     try {
         const response = await fetch(`https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h&bookmakers=unibet,betfair_ex,williamhill,888sport`);
         const data = await response.json();
         res.json(data);
     } catch (error) {
-        console.error("Odds hiba:", error);
+        console.error("Odds lekérési hiba:", error);
         res.status(500).json({ error: "Szerver hiba az oddsoknál" });
     }
 });
@@ -72,12 +71,12 @@ app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.htm
 app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
 
 // --- Clerk hiba kezelése ---
-// Ha a felhasználó nincs belépve, de védett adatot kér, ezt a választ kapja
 app.use((err, req, res, next) => {
     if (err.message === 'Unauthenticated') {
         res.status(401).json({ error: 'Jelentkezz be a tartalom megtekintéséhez!' });
     } else {
-        next(err);
+        console.error("Ismeretlen hiba:", err);
+        res.status(500).json({ error: 'Szerver hiba történt' });
     }
 });
 
