@@ -306,25 +306,28 @@
     setInterval(updateData, 30000);
 }
 
-        async function updateData() {
+       async function updateData() {
     try {
         const res = await fetch("/live-matches");
         const data = await res.json();
         allMatches = data.matches || [];
 
-        // HA MÉG ÜRES A LISTA (pl. első betöltés), JELÖLJÜNK KI MINDENT
-        if (selectedLeagues.size === 0 && !sessionStorage.getItem('selectedLeagues')) {
+        // Ha most töltöttük be először az oldalt (nincs mentett szűrés)
+        if (!sessionStorage.getItem('selectedLeagues') && allMatches.length > 0) {
             allMatches.forEach(m => {
                 selectedLeagues.add(String(m.competition.id));
             });
-            // Mentjük is az állapotot
+            // Elmentjük, hogy visszalépéskor tudja: ez volt az alapállapot
             sessionStorage.setItem('selectedLeagues', JSON.stringify([...selectedLeagues]));
         }
 
         renderDateStrip();
         renderLeagues();
         renderMatches();
-    } catch (e) { console.error("Hiba:", e); }
+    } catch (e) { 
+        console.error("Hiba az adatok frissítésekor:", e);
+        document.getElementById("match-container").innerHTML = "Hiba történt az adatok betöltésekor.";
+    }
 }
 
         function triggerGoalEffect(match, h, a) {
@@ -382,10 +385,19 @@
                 </div>`;
             }).join('') || `<p style="text-align:center; opacity:0.3; margin-top:50px;">NINCS MECCS</p>`;
         }
-// Adatok betöltése a memóriából (ha van)
-let savedLeagues = sessionStorage.getItem('selectedLeagues');
-let selectedLeagues = new Set(JSON.parse(savedLeagues || "[]"));
-let selectedDate = sessionStorage.getItem('selectedDate') || new Date().toISOString().split('T')[0];
+let allMatches = [];
+const todayStr = new Date().toISOString().split('T')[0];
+
+// Csak egyszer deklaráljuk őket, beépített ellenőrzéssel
+let selectedDate = sessionStorage.getItem('selectedDate') || todayStr;
+let savedLeaguesRaw = sessionStorage.getItem('selectedLeagues');
+let selectedLeagues = new Set(JSON.parse(savedLeaguesRaw || "[]"));
+
+// Segédfüggvény a mentéshez, hogy ne kelljen mindenhol megírni
+function saveState() {
+    sessionStorage.setItem('selectedDate', selectedDate);
+    sessionStorage.setItem('selectedLeagues', JSON.stringify([...selectedLeagues]));
+}
 
 // Dátumváltó mentéssel
 function setDate(d) { 
@@ -512,5 +524,6 @@ function toggleLeague(id) {
     </script>
 </body>
 </html>
+
 
 
