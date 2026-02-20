@@ -26,7 +26,7 @@
             --card-bg: rgba(255, 255, 255, 0.7);
         }
 
-        /* --- SCROLLBAR DESIGN --- */
+        /* SCROLLBAR */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
@@ -43,14 +43,13 @@
             transition: 0.3s;
         }
 
-        /* --- NAV --- */
         nav { 
             position: fixed; top: 0; left: 0; right: 0; height: 75px;
             display: flex; justify-content: space-between; align-items: center; 
             padding: 0 30px; background: var(--glass); backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border); z-index: 1000;
         }
-        .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 3px; text-shadow: 0 0 15px rgba(14, 165, 233, 0.4); }
+        .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 3px; }
         
         .nav-controls { display: flex; gap: 12px; }
         button, .btn-link { 
@@ -59,42 +58,29 @@
             border: 1px solid var(--border); font-family: 'Orbitron'; font-size: 10px;
             transition: 0.3s;
         }
-        button:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.1); }
 
-        /* --- MAIN LAYOUT --- */
         .main-wrapper { display: flex; height: 100vh; padding-top: 75px; }
 
-        /* --- SIDEBAR --- */
         .sidebar {
             width: var(--sidebar-width);
             background: rgba(0, 0, 0, 0.15);
             backdrop-filter: blur(10px);
             border-right: 1px solid var(--border);
             overflow-y: auto;
-            padding: 10px 0;
         }
-        .sidebar-header {
-            padding: 20px; font-family: 'Orbitron'; font-size: 10px;
-            color: var(--neon-blue); text-transform: uppercase; letter-spacing: 2px; opacity: 0.7;
-        }
+        .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 10px; color: var(--neon-blue); text-transform: uppercase; }
+
         .league-item {
             margin: 5px 15px; padding: 12px 15px; border-radius: 14px;
             display: flex; align-items: center; gap: 12px; cursor: pointer;
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid transparent;
+            transition: 0.3s; border: 1px solid transparent;
         }
-        .league-item:hover { background: rgba(255,255,255,0.05); transform: scale(1.02); }
         .league-item.active {
             background: linear-gradient(90deg, rgba(14, 165, 233, 0.15) 0%, transparent 100%);
             border: 1px solid rgba(14, 165, 233, 0.3);
             border-left: 4px solid var(--neon-blue);
         }
-        .league-badge {
-            margin-left: auto; background: var(--neon-blue); color: #000;
-            font-family: 'Orbitron'; font-size: 9px; padding: 2px 7px; border-radius: 5px;
-        }
 
-        /* --- CONTENT AREA --- */
         .content-area { flex: 1; overflow-y: auto; padding: 40px; }
 
         .date-strip { display: flex; gap: 12px; margin-bottom: 35px; overflow-x: auto; padding-bottom: 15px; }
@@ -103,58 +89,32 @@
             border: 1px solid var(--border); cursor: pointer; font-family: 'Orbitron'; font-size: 11px;
             transition: 0.3s; text-align: center;
         }
-        .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 20px rgba(0, 255, 136, 0.15); }
+        .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); }
 
-        /* --- MATCH CARD --- */
         .match-card {
             background: var(--card-bg); border: 1px solid var(--border); border-radius: 24px;
             padding: 30px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 150px 1fr;
-            align-items: center; position: relative; overflow: hidden;
-            animation: slideUp 0.6s cubic-bezier(0.23, 1, 0.32, 1) both;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            align-items: center; animation: slideUp 0.5s ease both;
         }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .team { display: flex; flex-direction: column; align-items: center; gap: 15px; z-index: 1; }
-        .team img { width: 55px; height: 55px; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); }
-        .team span { font-weight: 700; font-size: 15px; letter-spacing: 0.5px; }
-
-        .score-center { text-align: center; z-index: 1; }
-        .score-display { 
-            font-family: 'Orbitron'; font-size: 2.2rem; font-weight: 900;
-            color: var(--neon-green); margin: 10px 0; text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        .score-center { text-align: center; }
+        .score-display { font-family: 'Orbitron'; font-size: 2.2rem; color: var(--neon-green); margin: 10px 0; }
+        .analyze-link {
+            display: inline-block; margin-top: 15px; padding: 10px 20px;
+            background: var(--neon-green); color: #020617; text-decoration: none;
+            border-radius: 10px; font-family: 'Orbitron'; font-weight: 900; font-size: 10px;
         }
 
-        .status-badge { 
-            font-family: 'Orbitron'; font-size: 10px; text-transform: uppercase;
-            padding: 4px 12px; background: rgba(255,255,255,0.05); border-radius: 50px; opacity: 0.8;
-        }
-        .status-badge.live { color: #ff4757; opacity: 1; font-weight: bold; }
         .status-badge.live::before {
             content: ""; display: inline-block; width: 8px; height: 8px; background: #ff4757;
             border-radius: 50%; margin-right: 8px; animation: pulse 1.5s infinite;
         }
-        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
-
-        .analyze-link {
-            display: inline-block; margin-top: 20px; padding: 12px 25px;
-            background: var(--neon-green); color: #020617; text-decoration: none;
-            border-radius: 12px; font-family: 'Orbitron'; font-weight: 900; font-size: 11px;
-            transition: 0.3s; letter-spacing: 1px;
-        }
-        .analyze-link:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 255, 136, 0.4); }
-
-        .skeleton { background: linear-gradient(90deg, var(--border) 25%, rgba(255,255,255,0.05) 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite linear; }
-        @keyframes shimmer { to { background-position: -200% 0; } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
         @media (max-width: 900px) {
             .sidebar { width: 80px; }
-            .sidebar span, .sidebar-header, .league-badge { display: none; }
-            .league-item { justify-content: center; margin: 10px; }
-        }
-        @media (max-width: 600px) {
-            .match-card { grid-template-columns: 1fr; gap: 25px; padding: 20px; }
-            .score-center { order: -1; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+            .sidebar span, .sidebar-header { display: none; }
         }
     </style>
 </head>
@@ -173,7 +133,6 @@
         <aside class="sidebar" id="sidebar-leagues">
             <div class="sidebar-header">Bajnokságok</div>
         </aside>
-
         <main class="content-area">
             <div id="date-strip" class="date-strip"></div>
             <div id="match-container"></div>
@@ -182,42 +141,70 @@
 
     <script>
         const translations = {
-            hu: { today: "MA", back: "VISSZA", analyze: "ELEMZÉS", days: ["VAS", "HÉTFŐ", "KEDD", "SZE", "CSÜT", "PÉN", "SZO"], empty: "Nincs mérkőzés ebben a ligában." },
-            en: { today: "TODAY", back: "BACK", analyze: "ANALYZE", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"], empty: "No matches in this league." }
+            hu: { today: "MA", back: "VISSZA", analyze: "ELEMZÉS", days: ["VAS", "HÉTFŐ", "KEDD", "SZE", "CSÜT", "PÉN", "SZO"], empty: "Nincs mérkőzés." },
+            en: { today: "TODAY", back: "BACK", analyze: "ANALYZE", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"], empty: "No matches." }
         };
 
         let allMatches = [];
+        // Memóriából való kiolvasás vagy alapértelmezett értékek
         let selectedDate = sessionStorage.getItem('lp_selected_date') || new Date().toLocaleDateString('sv');
-        let selectedLeagueId = null;
+        let selectedLeagueId = sessionStorage.getItem('lp_selected_league') || null;
         let currentLang = localStorage.getItem("lang") || "hu";
 
         async function init() {
-            showSkeletons();
             try {
                 const res = await fetch("/live-matches");
                 const data = await res.json();
                 allMatches = data.matches || [];
                 
                 renderDateStrip();
-                autoSelectFirstLeague(); // <--- Ez az új funkció
+                
+                // Ha van mentett ligánk, ellenőrizzük, hogy létezik-e az adott napon
+                if (selectedLeagueId) {
+                    const leagueExists = allMatches.some(m => m.utcDate.startsWith(selectedDate) && m.competition.id == selectedLeagueId);
+                    if (!leagueExists) autoSelectFirst(); 
+                } else {
+                    autoSelectFirst();
+                }
+
+                renderLeagues();
+                renderMatches();
             } catch (e) {
-                document.getElementById("match-container").innerHTML = "<p>Szerver hiba.</p>";
+                console.error(e);
             }
         }
 
-        function autoSelectFirstLeague() {
+        function autoSelectFirst() {
             const filtered = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
             if (filtered.length > 0) {
-                // Kivesszük az első meccs bajnokság azonosítóját
                 selectedLeagueId = filtered[0].competition.id;
+                sessionStorage.setItem('lp_selected_league', selectedLeagueId);
             }
+        }
+
+        function setDate(date) {
+            selectedDate = date;
+            sessionStorage.setItem('lp_selected_date', date);
+            
+            // Új dátumnál keressük az első ligát, hacsak nem akarjuk megtartani a régit (ha létezik)
+            const matchesOnNewDate = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
+            const currentLeagueStillExists = matchesOnNewDate.some(m => m.competition.id == selectedLeagueId);
+            
+            if (!currentLeagueStillExists) {
+                selectedLeagueId = matchesOnNewDate.length > 0 ? matchesOnNewDate[0].competition.id : null;
+                sessionStorage.setItem('lp_selected_league', selectedLeagueId);
+            }
+
+            renderDateStrip();
             renderLeagues();
             renderMatches();
         }
 
-        function showSkeletons() {
-            const container = document.getElementById("match-container");
-            container.innerHTML = Array(3).fill(0).map(() => `<div class="match-card skeleton" style="height: 180px; opacity: 0.1;"></div>`).join('');
+        function selectLeague(id) {
+            selectedLeagueId = id;
+            sessionStorage.setItem('lp_selected_league', id); // Mentés a memóriába
+            renderLeagues();
+            renderMatches();
         }
 
         function renderDateStrip() {
@@ -235,19 +222,6 @@
             }).join('');
         }
 
-        function setDate(date) {
-            selectedDate = date;
-            sessionStorage.setItem('lp_selected_date', date);
-            renderDateStrip();
-            
-            // Dátumváltáskor is keressük meg az új nap első bajnokságát
-            const filtered = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
-            selectedLeagueId = filtered.length > 0 ? filtered[0].competition.id : null;
-            
-            renderLeagues();
-            renderMatches();
-        }
-
         function renderLeagues() {
             const sidebar = document.getElementById("sidebar-leagues");
             sidebar.innerHTML = '<div class="sidebar-header">Bajnokságok</div>';
@@ -257,7 +231,7 @@
 
             filtered.forEach(m => {
                 if (!leaguesMap.has(m.competition.id)) {
-                    leaguesMap.set(m.competition.id, { name: m.competition.name, count: 0, emblem: m.competition.emblem });
+                    leaguesMap.set(m.competition.id, { name: m.competition.name, emblem: m.competition.emblem, count: 0 });
                 }
                 leaguesMap.get(m.competition.id).count++;
             });
@@ -265,11 +239,11 @@
             leaguesMap.forEach((l, id) => {
                 const div = document.createElement("div");
                 div.className = `league-item ${selectedLeagueId == id ? 'active' : ''}`;
-                div.onclick = () => { selectedLeagueId = id; renderLeagues(); renderMatches(); };
+                div.onclick = () => selectLeague(id);
                 div.innerHTML = `
                     <img src="${l.emblem}" width="24" height="24" onerror="this.src='https://via.placeholder.com/24'">
                     <span style="font-size: 13px; font-weight: 600;">${l.name}</span>
-                    <div class="league-badge">${l.count}</div>
+                    <div style="margin-left:auto; font-size:9px; opacity:0.6">${l.count}</div>
                 `;
                 sidebar.appendChild(div);
             });
@@ -280,16 +254,16 @@
             const matches = allMatches.filter(m => m.utcDate.startsWith(selectedDate) && m.competition.id == selectedLeagueId);
 
             if (matches.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:50px; opacity:0.5; font-family:'Orbitron'">${translations[currentLang].empty}</div>`;
+                container.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.5;">${translations[currentLang].empty}</p>`;
                 return;
             }
 
             container.innerHTML = matches.map((m, i) => {
-                const isLive = m.status === "IN_PLAY" || m.status === "LIVE" || m.status === "PAUSED";
+                const isLive = m.status === "IN_PLAY" || m.status === "LIVE";
                 return `
-                <div class="match-card" style="animation-delay: ${i * 0.1}s">
+                <div class="match-card" style="animation-delay: ${i * 0.05}s">
                     <div class="team">
-                        <img src="${m.homeTeam.crest}" onerror="this.src='https://via.placeholder.com/60'">
+                        <img src="${m.homeTeam.crest}" width="50" onerror="this.src='https://via.placeholder.com/50'">
                         <span>${m.homeTeam.shortName || m.homeTeam.name}</span>
                     </div>
                     <div class="score-center">
@@ -298,31 +272,25 @@
                         <a href="/elemzes?id=${m.id}" class="analyze-link">${translations[currentLang].analyze}</a>
                     </div>
                     <div class="team">
-                        <img src="${m.awayTeam.crest}" onerror="this.src='https://via.placeholder.com/60'">
+                        <img src="${m.awayTeam.crest}" width="50" onerror="this.src='https://via.placeholder.com/50'">
                         <span>${m.awayTeam.shortName || m.awayTeam.name}</span>
                     </div>
-                </div>
-            `}).join('');
+                </div>`;
+            }).join('');
         }
 
         function toggleTheme() {
-            const body = document.body;
-            const isLight = body.classList.toggle('light');
+            const isLight = document.body.classList.toggle('light');
             localStorage.setItem("theme", isLight ? "light" : "dark");
-            document.getElementById("theme-btn").innerText = isLight ? "🌙" : "☀️";
         }
 
         function toggleLang() {
             currentLang = currentLang === "hu" ? "en" : "hu";
             localStorage.setItem("lang", currentLang);
-            document.getElementById("lang-btn").innerText = currentLang === "hu" ? "EN 🇬🇧" : "HU 🇭🇺";
-            document.getElementById("back-btn").innerText = translations[currentLang].back;
-            renderDateStrip();
-            renderLeagues();
-            renderMatches();
+            location.reload(); // Nyelvváltásnál egyszerűbb frissíteni
         }
 
-        if(localStorage.getItem("theme") === "light") toggleTheme();
+        if(localStorage.getItem("theme") === "light") document.body.classList.add('light');
         init();
     </script>
 </body>
