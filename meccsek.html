@@ -8,128 +8,98 @@
   <style>
     :root {
         --bg: #020617;
-        --glass: rgba(15, 23, 42, 0.85);
+        --glass: rgba(15, 23, 42, 0.9);
         --neon-green: #00ff88;
         --neon-blue: #0ea5e9;
         --neon-red: #ff3e3e;
         --text: #f1f5f9;
         --border: rgba(255, 255, 255, 0.1);
-        --cl-gs: #0044ff;
     }
 
-    /* --- ALAP BEÁLLÍTÁSOK --- */
+    /* --- ALAPOK: Mobilon engedjük a görgetést! --- */
     body { 
         background: var(--bg); 
         color: var(--text); 
         font-family: 'Inter', sans-serif; 
-        margin: 0; 
-        padding: 0;
+        margin: 0; padding: 0;
         min-height: 100vh;
-        overflow-x: hidden;
+        overflow-x: hidden; /* Oldalirányú csúszkálás tiltása */
     }
 
-    /* --- LÁVALÁMPA (Z-index fixálva) --- */
+    /* --- LÁVALÁMPA: Pointer-events none, hogy ne blokkolja a gombokat --- */
     .bg-animation {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        z-index: -1; overflow: hidden; filter: blur(80px); opacity: 0.4;
-        pointer-events: none;
-    }
-    .blob {
-        position: absolute; width: 400px; height: 400px; border-radius: 50%;
-        animation: move 20s infinite alternate;
-    }
-    .blob-1 { background: var(--cl-gs); top: -10%; left: -10%; animation-duration: 25s; }
-    .blob-2 { background: var(--neon-green); bottom: -10%; right: -10%; animation-duration: 30s; }
-    .blob-3 { background: var(--neon-blue); top: 40%; left: 30%; animation-duration: 22s; }
-    
-    @keyframes move {
-        0% { transform: translate(0, 0) scale(1); }
-        100% { transform: translate(150px, 50px) scale(1.2); }
+        z-index: -1; filter: blur(80px); opacity: 0.3;
+        pointer-events: none; 
     }
 
-    /* --- NAVIGÁCIÓ & TICKER --- */
+    /* --- NAVIGÁCIÓ: Fix és reszponzív --- */
     nav { 
-        position: fixed; top: 0; left: 0; right: 0; height: 65px; 
+        position: fixed; top: 0; left: 0; right: 0; height: 60px; 
         display: flex; justify-content: space-between; align-items: center; 
-        padding: 0 20px; background: var(--glass); backdrop-filter: blur(20px); 
-        border-bottom: 1px solid var(--border); z-index: 1000; 
+        padding: 0 15px; background: var(--glass); backdrop-filter: blur(20px); 
+        border-bottom: 1px solid var(--border); z-index: 1100; 
     }
-    .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.2rem; color: var(--neon-blue); letter-spacing: 2px; }
+    .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1rem; color: var(--neon-blue); letter-spacing: 1px; }
 
-    .ticker-wrap { background: rgba(0, 0, 0, 0.6); border-bottom: 1px solid var(--neon-blue); padding: 8px 0; overflow: hidden; margin-top: 65px; }
-    .ticker { display: flex; animation: ticker-scroll 30s linear infinite; white-space: nowrap; }
-    .ticker-item { margin-right: 40px; font-size: 10px; font-family: 'Orbitron'; color: var(--neon-blue); }
-    @keyframes ticker-scroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+    /* --- FORDÍTÓ GOMBOK FIXÁLÁSA --- */
+    .nav-tools { display: flex; gap: 8px; z-index: 1200; position: relative; }
+    .tool-btn { 
+        background: rgba(255,255,255,0.05); border: 1px solid var(--neon-blue);
+        color: var(--text); padding: 6px 10px; border-radius: 8px;
+        cursor: pointer; font-family: 'Orbitron'; font-size: 10px;
+        pointer-events: auto !important; /* Kattinthatóság kényszerítése */
+    }
 
-    /* --- LAYOUT STRUKTÚRA --- */
+    /* --- TICKER: A menü alá --- */
+    .ticker-wrap { margin-top: 60px; background: rgba(0,0,0,0.8); padding: 8px 0; border-bottom: 1px solid var(--border); }
+    
+    /* --- FŐ TARTALOM: Mobilon oszlop, PC-n sor --- */
     .main-wrapper { 
         display: flex; 
         flex-direction: column; 
-        padding: 15px;
-        gap: 20px;
+        padding: 10px;
+        gap: 15px;
     }
 
     @media (min-width: 1100px) {
-        .main-wrapper { 
-            flex-direction: row; 
-            padding-top: 20px;
-        }
-        .sidebar { width: 300px; }
+        .main-wrapper { flex-direction: row; padding: 20px; }
+        .sidebar { width: 280px; }
         .content-area { flex: 1; }
-        .standings-sidebar { width: 400px; }
+        .standings-sidebar { width: 380px; }
     }
 
-    /* --- KÁRTYÁK ÉS PAN ELEK --- */
-    .glass-panel { 
-        background: var(--glass); border: 1px solid var(--border); 
-        padding: 20px; border-radius: 24px; backdrop-filter: blur(15px); 
-    }
-
+    /* --- MATCH CARDS: Itt volt a hiba, fixáltam a szélességet --- */
     .match-card {
-        background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 24px;
-        padding: 20px; margin-bottom: 15px; display: flex; align-items: center;
-        transition: 0.3s; position: relative;
+        background: var(--glass); border: 1px solid var(--border); border-radius: 16px;
+        padding: 15px; display: flex; align-items: center; justify-content: space-between;
+        width: 100%; box-sizing: border-box;
     }
 
-    /* --- GÓL EFFEKTUSOK (Változatlanul hagytam) --- */
-    @keyframes goal-flash {
-        0% { background: rgba(255, 62, 62, 1); transform: scale(1.02); }
-        50% { background: rgba(255, 62, 62, 0.4); transform: scale(1); }
-        100% { background: rgba(255, 62, 62, 1); transform: scale(1.02); }
-    }
-    .match-card.goal-highlight {
-        animation: goal-flash 0.5s ease-in-out infinite !important;
-        z-index: 100; box-shadow: 0 0 50px rgba(255, 62, 62, 0.8);
-    }
-    #goal-banner {
-        position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
-        background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
-        color: #000; padding: 15px 40px; border-radius: 0 0 20px 20px;
-        font-family: 'Orbitron'; font-weight: 900; z-index: 2000;
-        transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    #goal-banner.show { top: 0; }
+    .team-link { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .team-link img { width: 35px; height: 35px; object-fit: contain; }
+    .team-link span { font-size: 10px; font-weight: bold; text-align: center; }
 
-    /* --- RESPONSIVE TÁBLÁZATOK --- */
+    .score-display { font-family: 'Orbitron'; font-size: 1.2rem; font-weight: 900; color: var(--neon-green); min-width: 50px; text-align: center; }
+
+    /* --- DÁTUMVÁLASZTÓ: Görgessen, de ne essen szét --- */
+    .date-strip { 
+        display: flex; gap: 8px; overflow-x: auto; 
+        padding-bottom: 5px; -webkit-overflow-scrolling: touch;
+    }
+    .date-pill { flex: 0 0 auto; padding: 8px 15px; font-size: 9px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); }
+
+    /* --- TABELLA: A mobilos rákfene javítása --- */
     .table-responsive { 
         width: 100%; overflow-x: auto; 
-        -webkit-overflow-scrolling: touch; 
+        background: var(--glass); border-radius: 16px;
     }
-    table { width: 100%; min-width: 500px; border-collapse: separate; border-spacing: 0 5px; }
+    table { width: 100%; min-width: 450px; border-collapse: collapse; }
+    td, th { padding: 10px 5px; font-size: 11px; text-align: center; }
 
-    /* --- FORMÁZÁS --- */
-    .score-display { 
-        font-family: 'Orbitron'; font-size: 1.8rem; font-weight: 900; 
-        color: var(--neon-green); text-align: center; min-width: 80px; 
-    }
-    .date-strip { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 10px; }
-    .date-pill { flex: 0 0 auto; padding: 12px 20px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); font-family: 'Orbitron'; font-size: 10px; cursor: pointer; }
-
-    @media (max-width: 600px) {
-        .score-display { font-size: 1.3rem; min-width: 60px; }
-        .match-card { padding: 15px 10px; }
-        .logo { font-size: 1rem; }
-    }
+    /* --- GÓL EFFEKT --- */
+    .match-card.goal-highlight { animation: goal-flash 0.5s infinite; border-color: var(--neon-red); }
+    @keyframes goal-flash { 0% { background: rgba(255, 62, 62, 0.4); } 100% { background: var(--glass); } }
 </style>
 </head>
 <body class="dark">
@@ -553,6 +523,7 @@ function updateSelectAllButton() {
     </script>
 </body>
 </html>
+
 
 
 
