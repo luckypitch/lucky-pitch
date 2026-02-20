@@ -258,58 +258,59 @@
 
     // --- ADATKEZELÉS ---
    async function updateData() {
-    const cached = sessionStorage.getItem('lp_matches_cache');
-    if (cached && allMatches.length === 0) {
-        allMatches = JSON.parse(cached);
-        renderMatches();
-    }
-
     try {
         const res = await fetch("/live-matches");
-        if (!res.ok) throw new Error("API hiba");
-        
         const data = await res.json();
         const newMatches = data.matches || [];
 
-        // GÓLFIGYELŐ LOGIKA
         newMatches.forEach(match => {
             const matchId = match.id;
-            const newScoreStr = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
-            
-            if (prevScores.has(matchId) && prevScores.get(matchId) !== newScoreStr) {
-                const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
-                const [newH, newA] = newScoreStr.split('-').map(Number);
-                
-                // Megnézzük ki lőtte a gólt
-                if (newH > oldH) {
-                    showGoal(match.homeTeam.name, match.id, `${newH}:${newA}`);
-                } else if (newA > oldA) {
-                    showGoal(match.awayTeam.name, match.id, `${newH}:${newA}`);
+            const newH = match.score.fullTime.home;
+            const newA = match.score.fullTime.away;
+            const newScoreStr = `${newH}-${newA}`;
+
+            if (prevScores.has(matchId)) {
+                const oldScoreStr = prevScores.get(matchId);
+                if (oldScoreStr !== newScoreStr) {
+                    const [oldH, oldA] = oldScoreStr.split('-').map(Number);
+                    
+                    // Csak akkor villogunk, ha nőtt a gólszám
+                    if (newH > oldH) showGoal(match.homeTeam.name, matchId, `${newH}:${newA}`);
+                    if (newA > oldA) showGoal(match.awayTeam.name, matchId, `${newH}:${newA}`);
                 }
             }
             prevScores.set(matchId, newScoreStr);
         });
 
-        const currentHash = JSON.stringify(newMatches.map(m => ({ id: m.id, s: m.score.fullTime })));
-        if (currentHash === lastDataHash) return;
-        
-        lastDataHash = currentHash;
         allMatches = newMatches;
-        sessionStorage.setItem('lp_matches_cache', JSON.stringify(allMatches));
         renderMatches();
+        // Itt hívd meg a ligák újrarajzolását is, ha eltűnnének
+        if (typeof renderLeagues === "function") renderLeagues(); 
+
     } catch (e) {
-        console.error("Lassú vagy sikertelen API hívás", e);
+        console.error("API hiba:", e);
     }
 }
 
-    function renderMatches() {
+   function renderMatches() {
     const cont = document.getElementById("match-container");
-    const matches = allMatches.filter(m => m.utcDate.startsWith(selectedDate) && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString())));
-    
+    if (!cont) return;
+
+    // Szűrés: Dátum ÉS (ha van kiválasztott liga, akkor az, különben minden)
+    const matches = allMatches.filter(m => {
+        const isSameDate = m.utcDate.startsWith(selectedDate);
+        const isSelectedLeague = selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString());
+        return isSameDate && isSelectedLeague;
+    });
+
+    if (matches.length === 0) {
+        cont.innerHTML = `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
+        return;
+    }
+
     cont.innerHTML = matches.map(m => {
         const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
         
-        // --- PERC KISZÁMÍTÁSA ---
         let matchMinute = "";
         if (m.status === "IN_PLAY") {
             const start = new Date(m.utcDate).getTime();
@@ -319,35 +320,30 @@
         } else if (m.status === "PAUSED") {
             matchMinute = `<span class="minute-tag">HT</span>`;
         } else if (m.status === "FINISHED") {
-            matchMinute = `<span class="minute-tag" style="color:var(--text); opacity:0.5;">FT</span>`;
-        } else {
-            // Helyfoglaló, hogy ne ugráljon a kártya
-            matchMinute = `<span style="height:20px; display:block;"></span>`;
+            matchMinute = `<span class="minute-tag" style="opacity:0.5;">FT</span>`;
         }
 
-        let score = isLive || m.status === 'FINISHED' ? 
-            m.score.fullTime.home + ':' + m.score.fullTime.away : 
-            new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
-        
+        let score = (isLive || m.status === 'FINISHED') 
+            ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
+            : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+
         return `
         <div class="match-card" id="match-${m.id}">
             <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
                 <img src="${m.homeTeam.crest}"><span>${m.homeTeam.name}</span>
             </div>
             <div style="text-align:center; width:140px;">
-                <div style="margin-bottom: 5px;">${matchMinute}</div>
-                
+                <div style="margin-bottom: 5px; height:20px;">${matchMinute}</div>
                 <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
-                
-                <a href="/elemzes?id=${m.id}" style="text-decoration:none; display:inline-block; margin-top:12px; background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding:4px 12px; border-radius:8px; color:var(--neon-green); font-family:'Orbitron'; font-size:9px; font-weight:800;">
-                    ${currentLang === 'HU' ? 'ELEMZÉS' : 'ANALYSIS'}
+                <a href="/elemzes?id=${m.id}" class="tool-btn" style="text-decoration:none; display:inline-block; margin-top:10px; font-size:9px;">
+                    ${currentLang==='HU'?'ELEMZÉS':'ANALYSIS'}
                 </a>
             </div>
             <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
                 <img src="${m.awayTeam.crest}"><span>${m.awayTeam.name}</span>
             </div>
         </div>`;
-    }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
+    }).join('');
 }
 
     // --- SEGÉDFÜGGVÉNYEK (TABELLA) ---
@@ -512,6 +508,7 @@
     </script>
 </body>
 </html>
+
 
 
 
