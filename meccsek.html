@@ -47,15 +47,17 @@
         #goal-banner.show { top: 75px; }
 
         @keyframes goal-flash {
-            0% { background: rgba(255, 62, 62, 0.4) !important; box-shadow: inset 0 0 20px #ff3e3e; }
-            50% { background: rgba(30, 41, 59, 0.4) !important; box-shadow: none; }
-            100% { background: rgba(255, 62, 62, 0.4) !important; box-shadow: inset 0 0 20px #ff3e3e; }
-        }
+    0% { background: rgba(255, 62, 62, 0.9) !important; }
+    50% { background: rgba(30, 41, 59, 0.4) !important; }
+    100% { background: rgba(255, 62, 62, 0.9) !important; }
+}
 
-        .goal-highlight {
-            animation: goal-flash 0.8s ease-in-out infinite !important;
-            border: 2px solid #ff3e3e !important;
-        }
+.goal-highlight {
+    animation: goal-flash 0.6s ease-in-out infinite !important;
+    border: 2px solid #ff3e3e !important;
+    position: relative;
+    z-index: 10;
+}
 
         /* --- NAV --- */
         nav { 
@@ -219,50 +221,58 @@
 
     // --- ADATKEZELÉS ---
     async function updateData() {
-        try {
-            // 1. Összes meccs lekérése (ez kell a naptárhoz és ligákhoz)
-            const res = await fetch('/live-matches');
-            const data = await res.json();
-            if (!data || !data.matches) return;
+    try {
+        const res = await fetch('/live-matches');
+        const data = await res.json();
+        if (!data || !data.matches) return;
 
-            // 2. Gól-figyelés logika az élő meccsekre
-            data.matches.forEach(match => {
-                const mId = match.id;
-                const curH = match.score.fullTime.home ?? 0;
-                const curA = match.score.fullTime.away ?? 0;
+        data.matches.forEach(match => {
+            const mId = String(match.id); // Stringként kezeljük az ID-t
+            const curH = match.score.fullTime.home ?? 0;
+            const curA = match.score.fullTime.away ?? 0;
 
-                if (prevScores[mId]) {
-                    const oldH = prevScores[mId].h;
-                    const oldA = prevScores[mId].a;
+            if (prevScores[mId]) {
+                const oldH = prevScores[mId].h;
+                const oldA = prevScores[mId].a;
 
-                    if (curH > oldH || curA > oldA) {
-                        triggerGoalEffect(match, curH, curA);
-                    }
+                if (curH > oldH || curA > oldA) {
+                    console.log("GÓL ÉRZÉKELVE:", match.homeTeam.name);
+                    triggerGoalEffect(match, curH, curA);
                 }
-                prevScores[mId] = { h: curH, a: curA };
-            });
+            }
+            prevScores[mId] = { h: curH, a: curA };
+        });
 
-            allMatches = data.matches;
-            renderDateStrip();
-            renderLeagues();
-            renderMatches();
+        allMatches = data.matches;
+        renderDateStrip();
+        renderLeagues();
+        renderMatches();
 
-        } catch (err) { console.error("Hiba:", err); }
+    } catch (err) { console.error("Hiba:", err); }
+}
+
+function triggerGoalEffect(match, h, a) {
+    const mId = String(match.id);
+    flashingMatches.add(mId);
+    
+    // Hang lejátszása
+    goalSound.currentTime = 0;
+    const playPromise = goalSound.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(e => console.log("Hang tiltva. Kattints az oldalra!"));
     }
+    
+    const team = h > prevScores[mId].h ? match.homeTeam.name : match.awayTeam.name;
+    showGoal(team, mId, `${h}:${a}`);
 
-    function triggerGoalEffect(match, h, a) {
-        flashingMatches.add(match.id);
-        goalSound.currentTime = 0;
-        goalSound.play().catch(() => console.log("Kattints az oldalra a hanghoz!"));
-        
-        const team = h > prevScores[match.id].h ? match.homeTeam.name : match.awayTeam.name;
-        showGoal(team, match.id, `${h}:${a}`);
+    // Frissítjük a felületet, hogy látszódjon a villogás
+    renderMatches();
 
-        setTimeout(() => {
-            flashingMatches.delete(match.id);
-            renderMatches();
-        }, 10000);
-    }
+    setTimeout(() => {
+        flashingMatches.delete(mId);
+        renderMatches();
+    }, 15000); // 15 másodpercig villogjon
+}
 
     function showGoal(teamName, matchId, newScore) {
         const banner = document.getElementById('goal-banner');
@@ -274,38 +284,37 @@
 
     // --- RENDERELÉS ---
     function renderMatches() {
-        const cont = document.getElementById("match-container");
-        if (!cont) return;
+    const cont = document.getElementById("match-container");
+    if (!cont) return;
 
-        const filtered = allMatches.filter(m => 
-            m.utcDate.startsWith(selectedDate) && 
-            (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString()))
-        );
+    const filtered = allMatches.filter(m => 
+        m.utcDate.startsWith(selectedDate) && 
+        (selectedLeagues.size === 0 || selectedLeagues.has(String(m.competition.id)))
+    );
 
-        cont.innerHTML = filtered.map(m => {
-            const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-            const isFlashing = flashingMatches.has(m.id);
-            const scoreText = isLive || m.status === 'FINISHED' 
-                ? `${m.score.fullTime.home ?? 0}:${m.score.fullTime.away ?? 0}`
-                : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+    cont.innerHTML = filtered.map(m => {
+        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+        const isFlashing = flashingMatches.has(String(m.id)); // JAVÍTVA
+        
+        const scoreText = (isLive || m.status === 'FINISHED') 
+            ? `${m.score.fullTime.home ?? 0}:${m.score.fullTime.away ?? 0}`
+            : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
 
-            return `
-            <div id="match-${m.id}" class="match-card ${isFlashing ? 'goal-highlight' : ''}">
-                <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
-                    <img src="${m.homeTeam.crest}"><span>${m.homeTeam.name}</span>
-                </div>
-                <div style="text-align:center; width:140px;">
-                    <div class="score-display ${isLive ? 'score-live' : ''}">${scoreText}</div>
-                    <a href="/elemzes?id=${m.id}" style="text-decoration:none; display:inline-block; margin-top:8px; background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding:4px 12px; border-radius:8px; color:var(--neon-green); font-family:'Orbitron'; font-size:9px; font-weight:800;">
-                        ${currentLang==='HU'?'ELEMZÉS':'ANALYSIS'}
-                    </a>
-                </div>
-                <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                    <img src="${m.awayTeam.crest}"><span>${m.awayTeam.name}</span>
-                </div>
-            </div>`;
-        }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
-    }
+        return `
+        <div id="match-${m.id}" class="match-card ${isFlashing ? 'goal-highlight' : ''}">
+            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
+                <img src="${m.homeTeam.crest || ''}"><span>${m.homeTeam.name}</span>
+            </div>
+            <div style="text-align:center; width:140px;">
+                <div class="score-display ${isLive ? 'score-live' : ''}">${scoreText}</div>
+                <a href="/elemzes?id=${m.id}" class="analysis-btn">ELEMZÉS</a>
+            </div>
+            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
+                <img src="${m.awayTeam.crest || ''}"><span>${m.awayTeam.name}</span>
+            </div>
+        </div>`;
+    }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px;">Nincs meccs erre a napra.</p>`;
+}
 
     function renderDateStrip() {
         const strip = document.getElementById("date-strip");
@@ -500,6 +509,7 @@
     </script>
 </body>
 </html>
+
 
 
 
