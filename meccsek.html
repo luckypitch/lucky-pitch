@@ -132,28 +132,25 @@
             transition: 0.3s; position: relative;
         }
 
-       @keyframes goal-flash {
-    0% { 
-        background-color: rgba(255, 62, 62, 0.9) !important; 
-        box-shadow: 0 0 40px rgba(255, 62, 62, 0.8);
-        transform: scale(1.02);
-    }
-    50% { 
-        background-color: rgba(30, 41, 59, 0.4) !important; 
-        box-shadow: none;
-        transform: scale(1);
-    }
-    100% { 
-        background-color: rgba(255, 62, 62, 0.9) !important; 
-        box-shadow: 0 0 40px rgba(255, 62, 62, 0.8);
-        transform: scale(1.02);
-    }
+      @keyframes goal-flash {
+    0% { background-color: rgba(255, 62, 62, 0.95); transform: scale(1.02); }
+    50% { background-color: rgba(255, 62, 62, 0.3); transform: scale(1); }
+    100% { background-color: rgba(255, 62, 62, 0.95); transform: scale(1.02); }
 }
 
-.goal-highlight { 
-    animation: goal-flash 0.5s ease-in-out infinite !important; 
-    z-index: 100;
-    border-color: #ff3e3e !important;
+/* Az egész kártya ÉS a benne lévő összes div villogjon */
+.match-card.goal-highlight, 
+.match-card.goal-highlight div, 
+.match-card.goal-highlight span {
+    animation: goal-flash 0.5s ease-in-out infinite !important;
+    color: white !important; /* Gól alatt legyen fehér a szöveg a jobb olvashatóságért */
+    border-color: #ffffff !important;
+}
+
+.match-card.goal-highlight {
+    z-index: 1000;
+    position: relative;
+    box-shadow: 0 0 50px rgba(255, 62, 62, 0.8);
 }
 
         #goal-banner {
@@ -201,7 +198,10 @@
 <body class="dark">
 
     <div id="goal-banner">GOOOAAAL!!!</div>
-    <audio id="goal-sound" src="https://www.soundjay.com/buttons/sounds/button-37a.mp3"></audio>
+    <audio id="goal-sound" preload="auto">
+    <source src="https://actions.google.com/sounds/v1/sports/football_crowd_goal.ogg" type="audio/ogg">
+    <source src="https://www.soundjay.com/buttons/sounds/button-37a.mp3" type="audio/mpeg">
+</audio>
 
     <div class="bg-animation">
         <div class="blob blob-1"></div>
@@ -220,8 +220,12 @@
 
     <div class="main-wrapper">
         <aside class="sidebar" id="sidebar-leagues">
-            <div class="sidebar-header" id="h-leagues">🏆 Bajnokságok</div>
-            <div id="league-list"></div>
+            <<div style="padding: 0 15px 10px 15px;">
+    <button class="tool-btn" style="width: 100%;" onclick="selectAllLeagues()" id="select-all-btn">
+        MIND KIJELÖL
+    </button>
+</div>
+<div id="league-list"></div>
         </aside>
 
         <main class="content-area">
@@ -270,6 +274,33 @@
         }).catch(() => {});
     }, { once: true });
 
+        function triggerGoalEffect(match, h, a) {
+    const mId = String(match.id);
+    flashingMatches.add(mId);
+    
+    // HANG JAVÍTÁS
+    const goalSound = document.getElementById('goal-sound');
+    goalSound.pause(); 
+    goalSound.currentTime = 0;
+    goalSound.volume = 1.0; // Max hangerő
+    
+    // A lejátszás csak akkor fog menni, ha már kattintottál valahová az oldalon!
+    goalSound.play().catch(e => console.log("Hang blokkolva, várj egy kattintásra:", e));
+    
+    // Banner és villogás indítása...
+    const banner = document.getElementById('goal-banner');
+    banner.innerText = `GOAL! ${match.homeTeam.name} ${h}:${a} ${match.awayTeam.name}`;
+    banner.classList.add('show');
+    renderMatches();
+    
+    setTimeout(() => {
+        banner.classList.remove('show');
+        flashingMatches.delete(mId);
+        renderMatches();
+    }, 10000);
+}
+
+        
     function toggleTheme() {
         const isLight = document.body.classList.toggle('light');
         document.getElementById('theme-btn').innerText = isLight ? '🌙' : '☀️';
@@ -309,6 +340,38 @@
     }
 
     // --- LIGA SZŰRŐ ---
+function selectAllLeagues() {
+    // Megnézzük az összes elérhető ligát a meccsek között
+    const allLeagueIds = [...new Set(allMatches.map(m => String(m.competition.id)))];
+
+    // Ha már mindenki ki van választva, akkor ürítsük ki (invertálás)
+    if (selectedLeagues.size === allLeagueIds.length) {
+        selectedLeagues.clear();
+    } else {
+        // Különben adjunk hozzá minden ID-t a Set-hez
+        allLeagueIds.forEach(id => selectedLeagues.add(id));
+    }
+
+    // Mentés és újrarajzolás
+    saveState();
+    renderLeagues();
+    renderMatches();
+    updateSelectAllButton(); // Gomb feliratának frissítése
+}
+
+// Opcionális: gomb szövegének változtatása (Mind kijelöl / Mind töröl)
+function updateSelectAllButton() {
+    const btn = document.getElementById('select-all-btn');
+    if (!btn) return;
+    
+    const allLeagueIds = [...new Set(allMatches.map(m => String(m.competition.id)))];
+    if (selectedLeagues.size === allLeagueIds.length && allLeagueIds.length > 0) {
+        btn.innerText = currentLang === 'HU' ? 'MIND TÖRÖL' : 'DESELECT ALL';
+    } else {
+        btn.innerText = currentLang === 'HU' ? 'MIND KIJELÖL' : 'SELECT ALL';
+    }
+}
+        
     function toggleLeague(id) {
         id = String(id);
         if (selectedLeagues.has(id)) {
@@ -361,6 +424,7 @@
             renderDateStrip();
             renderLeagues();
             renderMatches();
+            updateSelectAllButton();
         } catch (e) { 
             console.error("Hiba:", e);
         }
@@ -526,6 +590,7 @@
     </script>
 </body>
 </html>
+
 
 
 
