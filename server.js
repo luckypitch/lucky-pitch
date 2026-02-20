@@ -7,11 +7,9 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 app.use(cors());
-
-// Kiszolgálja a HTML fájlokat és a képeket a főkönyvtárból
 app.use(express.static(__dirname));
 
-// --- API ÁLLAPOT ELLENŐRZÉS ---
+// --- API STÁTUSZ ---
 app.get("/api/status", (req, res) => {
     res.json({
         status: "ONLINE",
@@ -24,16 +22,27 @@ app.get("/api/status", (req, res) => {
 app.get("/live-matches", async (req, res) => {
     const FD_KEY = process.env.FOOTBALL_DATA_API_KEY;
     const date = req.query.date || new Date().toISOString().split('T')[0];
-    // Ingyenes ligák: Premier League, La Liga, Bundesliga, Serie A, Ligue 1
-    const leagues = "PL,PD,BL1,SA1,FL1"; 
-    const url = `https://api.football-data.org/v4/matches?dateFrom=${date}&dateTo=${date}&competitions=${leagues}`;
+    
+    // Nincs ligaszűrés, hogy minden elérhető adatot megkapjunk
+    const url = `https://api.football-data.org/v4/matches?dateFrom=${date}&dateTo=${date}`;
 
     try {
-        const response = await fetch(url, { headers: { "X-Auth-Token": FD_KEY } });
+        const response = await fetch(url, { 
+            headers: { "X-Auth-Token": FD_KEY } 
+        });
+        
         const data = await response.json();
+        
+        // Hibakezelés az API válaszhoz
+        if (data.errorCode) {
+            console.error("API Hiba:", data.message);
+            return res.status(data.errorCode === 429 ? 429 : 500).json(data);
+        }
+
         res.json(data);
     } catch (err) {
-        res.status(500).json({ matches: [] });
+        console.error("Szerver hiba:", err);
+        res.status(500).json({ matches: [], error: "Szerver hiba történt." });
     }
 });
 
@@ -61,11 +70,12 @@ app.post('/create-checkout-session', async (req, res) => {
     }
 });
 
-// Fix útvonalak a fájlokhoz
+// Útvonalak
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
+app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 SZERVER ELINDULT A ${PORT} PORTON`);
+    console.log(`🚀 LuckyPitch Server fut a ${PORT} porton`);
 });
