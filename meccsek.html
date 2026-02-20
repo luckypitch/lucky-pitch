@@ -147,83 +147,59 @@
     .pos-col { border-left-width: 5px !important; border-left-style: solid !important; }
     .pos-num-box { width: 28px; height: 28px; line-height: 28px; margin: 0 auto; border-radius: 6px; font-weight: bold; font-family: 'Orbitron'; font-size: 11px; }
     .zone-tag { font-size: 7px; font-family: 'Orbitron'; display: block; margin-bottom: 3px; font-weight: 900; text-transform: uppercase; }
+/* --- NAVIGATION --- */
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            text-decoration: none; color: var(--neon-blue); font-family: 'Orbitron'; font-size: 10px;
+            padding: 8px 15px; background: rgba(14, 165, 233, 0.1); border: 1px solid var(--neon-blue);
+            border-radius: 50px; margin-bottom: 15px; font-weight: bold;
+        }
 
+        .ticker-wrap { background: rgba(0, 0, 0, 0.6); border-bottom: 1px solid var(--neon-blue); padding: 8px 0; overflow: hidden; margin-bottom: 20px; }
+        .ticker { display: flex; animation: ticker-scroll 30s linear infinite; white-space: nowrap; }
+        .ticker-item { margin-right: 40px; font-size: 10px; font-family: 'Orbitron'; color: var(--neon-blue); }
+        @keyframes ticker-scroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        /* --- HERO CARD (MOBILE FIXED) --- */
+        .hero-card {
+            background: var(--glass); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid var(--border);
+            padding: 25px 15px; display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; gap: 10px;
+        }
+        .score-display { font-family: 'Orbitron'; font-size: 1.8rem; font-weight: 900; color: var(--neon-green); flex-shrink: 0; text-align: center; min-width: 80px; }
+        .team-box { flex: 1; text-align: center; }
+        .team-box img { width: 45px; height: 45px; object-fit: contain; margin-bottom: 8px; }
+        .team-box h2 { font-family: 'Orbitron'; font-size: 0.85rem; margin: 0; line-height: 1.2; }
+
+        /* --- GRID LAYOUT --- */
+        .grid-layout { display: flex; flex-direction: column; gap: 20px; }
+        @media (min-width: 1100px) { .grid-layout { display: grid; grid-template-columns: 2fr 1fr; } }
+
+        .glass-panel { background: var(--glass); border: 1px solid var(--border); padding: 20px; border-radius: 24px; backdrop-filter: blur(15px); }
     /* --- LEAGUE ITEMS --- */
     .league-item { margin: 8px 15px; padding: 12px 15px; border-radius: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.3s; border: 1px solid transparent; background: rgba(255,255,255,0.02); }
     .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); }
+/* --- TABLES (SCROLLABLE ON MOBILE) --- */
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 15px; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 5px; min-width: 600px; } /* Min szélesség, hogy ne nyomódjon össze */
+        th { font-family: 'Orbitron'; font-size: 9px; color: #64748b; padding: 5px; text-align: center; }
+        td { padding: 10px 5px; background: rgba(255,255,255,0.03); text-align: center; font-size: 12px; }
 
-    /* --- MOBIL NÉZET JAVÍTÁSA (FIXED) --- */
-  /* --- MOBIL FIX (MINDENRE KITERJEDŐ) --- */
-@media (max-width: 1024px) {
-    /* Megakadályozzuk, hogy a panelek eltolják a tartalmat */
-    .main-wrapper { 
-        display: block !important; 
-        height: auto !important;
-        overflow-y: auto !important;
-        padding-top: 80px;
-    }
+        .pos-num-box { width: 24px; height: 24px; line-height: 24px; margin: 0 auto; border-radius: 4px; font-weight: bold; font-family: 'Orbitron'; font-size: 10px; }
+        .zone-tag { font-size: 7px; font-family: 'Orbitron'; display: block; margin-bottom: 2px; }
+        /* --- ODDS --- */
+        .market-table { min-width: 100%; }
+        .market-table td { font-size: 11px; }
+        .odd-val { color: var(--neon-green); font-weight: bold; background: rgba(0,255,136,0.1); padding: 4px 6px; border-radius: 4px; border: 1px solid rgba(0,255,136,0.2); }
 
-    /* A panelek (Ligák és Tabella) rögzítése */
-    .sidebar, .standings-sidebar {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important; /* Teljes szélesség mobilon */
-        height: 100% !important;
-        background: var(--bg) !important; /* Nem átlátszó, hogy olvasható legyen */
-        z-index: 9999 !important;
-        transform: translateY(-100%); /* Alapból fent "bújik meg" */
-        transition: transform 0.4s ease-in-out !important;
-        display: block !important;
-        padding-top: 80px !important;
-    }
+        .momentum-wrap { height: 8px; background: rgba(0,0,0,0.5); border-radius: 10px; margin: 15px 0; overflow: hidden; }
+        .momentum-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-green)); transition: 1s ease; }
 
-    /* Tabella jöhet alulról vagy maradjon ez is fenti */
-    .standings-sidebar {
-        transform: translateY(100%); /* A tabella alulról jön be */
-    }
+        .chart-container { position: relative; height: 180px; }
 
-    /* NYITOTT ÁLLAPOT: Amikor rányomsz a gombra */
-    .sidebar.open, .standings-sidebar.open {
-        transform: translateY(0) !important;
-    }
-
-    /* A gombok elérhetősége a felső Nav-ban */
-    .nav-tools {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 75px;
-        background: var(--glass);
-        display: flex;
-        justify-content: space-around; /* Gombok egyenlő elosztása */
-        padding: 0 10px;
-        z-index: 10000; /* Mindig a panelek felett maradjanak a gombok! */
-    }
-
-    .tool-btn {
-        flex: 1; /* Legyenek nagyok a gombok, hogy könnyű legyen rájuk nyomni */
-        margin: 5px;
-        height: 50px;
-        font-size: 14px !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .content-area {
-        width: 100% !important;
-        padding: 10px !important;
-    }
-
-    /* A kártyák mobilon */
-    .match-card {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-    }
-}
+        @media (max-width: 600px) {
+            .score-display { font-size: 1.4rem; min-width: 60px; }
+            .team-box h2 { font-size: 0.75rem; }
+            .glass-panel { padding: 15px; }
 </style>
 </head>
 <body class="dark">
@@ -647,6 +623,7 @@ function updateSelectAllButton() {
     </script>
 </body>
 </html>
+
 
 
 
