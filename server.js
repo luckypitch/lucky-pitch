@@ -25,23 +25,34 @@ let standingsCache = {};
 // MECCSEK (1 perces cache)
 app.get("/live-matches", async (req, res) => {
     const now = Date.now();
-    if (matchCache.data && (now - matchCache.lastFetch < 30000)) return res.json(matchCache.data);
+    // 30 másodperces cache marad, ez korrekt
+    if (matchCache.data && (now - matchCache.lastFetch < 30000)) {
+        return res.json(matchCache.data);
+    }
+
     try {
-        const today = new Date();
-        const dFrom = new Date(today); dFrom.setDate(today.getDate() - 4);
-        const dTo = new Date(today); dTo.setDate(today.getDate() + 4);
-        const url = `https://api.football-data.org/v4/matches?dateFrom=${dFrom.toISOString().split('T')[0]}&dateTo=${dTo.toISOString().split('T')[0]}`;
-        const response = await fetch(url, { headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY } });
+        // Ahelyett, hogy +/- 4 napot kérnél le, kérjük le az aktuális napot 
+        // és az összes élő meccset. Ez sokkal gyorsabb.
+        const url = `https://api.football-data.org/v4/matches`; 
+        
+        const response = await fetch(url, { 
+            headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY } 
+        });
+
+        if (!response.ok) throw new Error("API hiba");
+
         const data = await response.json();
-        
-        // Ellenőrizzük, hogy az API nem dobott-e hibaüzenetet (pl. korlátozás miatt)
-        if (data.errorCode) throw new Error(data.message);
-        
-        matchCache = { data: data, lastFetch: now };
+
+        // Cache frissítése
+        matchCache.data = data;
+        matchCache.lastFetch = now;
+
         res.json(data);
-    } catch (err) { 
-        console.error("Meccsek hiba:", err.message);
-        res.status(500).json({ error: "Szerver hiba a meccsek lekérésekor" }); 
+    } catch (error) {
+        console.error("Szerver hiba:", error);
+        // Hiba esetén küldjük a régi cache-t, ha van
+        if (matchCache.data) res.json(matchCache.data);
+        else res.status(500).json({ error: "Nem sikerült lekérni az adatokat" });
     }
 });
 
@@ -121,4 +132,5 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: ${ODDS_API_KEY ? "AKTÍV" : "HIÁNYZIK"}
     `);
 });
+
 
