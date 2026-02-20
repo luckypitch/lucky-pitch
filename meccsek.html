@@ -34,8 +34,40 @@
             height: 100vh; 
             overflow: hidden;
             position: relative;
-        }
+/* --- CSAPAT LOGÓ VILÁGÍTÁS (JAVÍTOTT) --- */
+.team-link { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 8px; 
+    cursor: pointer; 
+    position: relative;
+    z-index: 5;
+}
 
+.team-link img { 
+    width: 55px; 
+    height: 55px; 
+    object-fit: contain; 
+    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* Alapból tiszta logó, fény nélkül */
+    filter: drop-shadow(0 0 0px transparent);
+}
+
+/* Amikor rávisszük az egeret a logóra vagy a névre */
+.team-link:hover img { 
+    transform: scale(1.15) rotate(8deg); 
+    /* Neon kék aura a logó körvonalánál */
+    filter: drop-shadow(0 0 8px var(--neon-blue)) drop-shadow(0 0 20px rgba(14, 165, 233, 0.6)); 
+}
+
+/* A csapatnév is kap egy kis ragyogást */
+.team-link:hover span { 
+    color: var(--neon-blue); 
+    text-shadow: 0 0 10px var(--neon-blue); 
+    transition: 0.3s;
+}
         /* --- LÁVALÁMPA ANIMÁCIÓ --- */
         .bg-animation {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
