@@ -2,89 +2,74 @@
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LuckyPitch | Meccsek</title>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --primary: #00ff88; --text: #f8fafc; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 20px; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; }
         .container { max-width: 800px; margin: 0 auto; }
-        .date-bar { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; overflow-x: auto; padding: 10px; }
+        .date-bar { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
         .date-btn { background: var(--card); border: 1px solid #334155; color: white; padding: 10px; border-radius: 8px; cursor: pointer; }
         .date-btn.active { border-color: var(--primary); color: var(--primary); }
-        .match-card { background: var(--card); padding: 15px; border-radius: 12px; display: flex; align-items: center; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .match-card { background: var(--card); padding: 15px; border-radius: 12px; display: flex; align-items: center; margin-bottom: 10px; }
         .team { flex: 1; text-align: center; }
-        .team img { width: 30px; display: block; margin: 0 auto 5px; }
         .score { flex: 1; text-align: center; font-size: 1.5rem; color: var(--primary); font-weight: bold; }
         .btn-anal { background: var(--primary); color: black; text-decoration: none; padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; display: block; margin-top: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1 style="text-align:center;">Mérkőzések</h1>
+        <div class="date-bar" id="date-bar"></div>
+        <div id="match-list"></div>
+    </div>
 
-<div class="container">
-    <h1 style="text-align:center; color:var(--primary);">Mérkőzések</h1>
-    <div class="date-bar" id="date-bar"></div>
-    <div id="match-list"></div>
-</div>
+    <script>
+        let selectedDate = new Date().toISOString().split('T')[0];
 
-<script>
-    let currentDay = new Date().toISOString().split('T')[0];
+        async function loadMatches() {
+            const list = document.getElementById('match-list');
+            list.innerHTML = '<p style="text-align:center;">Betöltés...</p>';
+            try {
+                // FONTOS: Az abszolút útvonal használata a / jellel
+                const res = await fetch(`/live-matches?date=${selectedDate}`);
+                const data = await res.json();
+                
+                if (!data.matches || data.matches.length === 0) {
+                    list.innerHTML = '<p style="text-align:center;">Nincs elérhető meccs ezen a napon.</p>';
+                    return;
+                }
 
-    function renderDates() {
-        const bar = document.getElementById('date-bar');
-        bar.innerHTML = '';
-        for (let i = -3; i <= 3; i++) {
-            const d = new Date();
-            d.setDate(d.getDate() + i);
-            const iso = d.toISOString().split('T')[0];
-            const btn = document.createElement('button');
-            btn.className = `date-btn ${iso === currentDay ? 'active' : ''}`;
-            btn.innerText = i === 0 ? "MA" : d.toLocaleDateString('hu-HU', {month:'short', day:'numeric'});
-            btn.onclick = () => { currentDay = iso; renderDates(); loadMatches(); };
-            bar.appendChild(btn);
-        }
-    }
-
-    async function loadMatches() {
-        const list = document.getElementById('match-list');
-        list.innerHTML = '<p style="text-align:center; opacity:0.5;">Betöltés...</p>';
-        
-        try {
-            const res = await fetch(`/live-matches?date=${currentDay}`);
-            const data = await res.json();
-
-            if (!data.matches || data.matches.length === 0) {
-                list.innerHTML = `
-                    <div style="text-align:center; opacity:0.5; margin-top:30px;">
-                        <p>Nincs meccs az ingyenes ligákban ezen a napon.</p>
-                        <p style="font-size:0.8rem;">(API státusz: OK, Adat: Üres)</p>
-                        <p style="font-size:0.8rem; color:var(--primary);">Próbáld ki a SZOMBATOT!</p>
-                    </div>`;
-                return;
+                list.innerHTML = data.matches.map(m => `
+                    <div class="match-card">
+                        <div class="team">${m.homeTeam.name}</div>
+                        <div class="score">
+                            ${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}
+                            <a href="/elemzes" class="btn-anal">ELEMZÉS</a>
+                        </div>
+                        <div class="team">${m.awayTeam.name}</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                list.innerHTML = '<p style="text-align:center;">Szerver hiba történt.</p>';
             }
-
-            list.innerHTML = data.matches.map(m => `
-                <div class="match-card">
-                    <div class="team">
-                        <img src="${m.homeTeam.crest}" onerror="this.src='https://via.placeholder.com/30'">
-                        ${m.homeTeam.shortName || m.homeTeam.name}
-                    </div>
-                    <div class="score">
-                        ${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}
-                        <a href="elemzes.html" class="btn-anal">ELEMZÉS</a>
-                    </div>
-                    <div class="team">
-                        <img src="${m.awayTeam.crest}" onerror="this.src='https://via.placeholder.com/30'">
-                        ${m.awayTeam.shortName || m.awayTeam.name}
-                    </div>
-                </div>
-            `).join('');
-        } catch (e) {
-            list.innerHTML = '<p style="text-align:center; color:red;">Hiba a szerverkapcsolatban.</p>';
         }
-    }
 
-    renderDates();
-    loadMatches();
-</script>
+        function renderDates() {
+            const bar = document.getElementById('date-bar');
+            bar.innerHTML = '';
+            for (let i = -3; i <= 3; i++) {
+                const d = new Date(); d.setDate(d.getDate() + i);
+                const iso = d.toISOString().split('T')[0];
+                const btn = document.createElement('button');
+                btn.className = `date-btn ${iso === selectedDate ? 'active' : ''}`;
+                btn.innerText = i === 0 ? "MA" : d.toLocaleDateString('hu-HU', {day:'numeric', month:'short'});
+                btn.onclick = () => { selectedDate = iso; renderDates(); loadMatches(); };
+                bar.appendChild(btn);
+            }
+        }
+
+        renderDates();
+        loadMatches();
+    </script>
 </body>
 </html>
