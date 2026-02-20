@@ -2,26 +2,25 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const fetch = require('node-fetch');
-require('dotenv').config(); 
+require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Ez a sor gondoskodik róla, hogy a képek, CSS és JS fájlok bárhonnan elérhetőek legyenek
-app.use(express.static(path.join(__dirname)));
+// Minden fájlt (képek, html) kiszolgálunk a főkönyvtárból
+app.use(express.static(__dirname));
 
-// --- API VÉGPONTOK ---
-
-app.get("/api/debug", (req, res) => {
-    res.json({
-        status: "Szerver fut",
-        football_key: !!process.env.FOOTBALL_DATA_API_KEY,
-        stripe_key: !!process.env.STRIPE_SECRET_KEY,
-        current_dir: __dirname
+// --- API: DEBUG (Hogy lásd, él-e a szerver) ---
+app.get("/api/test", (req, res) => {
+    res.json({ 
+        üzenet: "A szerver él és mozog!",
+        football_kulcs: !!process.env.FOOTBALL_DATA_API_KEY,
+        stripe_kulcs: !!process.env.STRIPE_SECRET_KEY
     });
 });
 
+// --- API: MECCSEK ---
 app.get("/live-matches", async (req, res) => {
     const FD_KEY = process.env.FOOTBALL_DATA_API_KEY;
     const date = req.query.date || new Date().toISOString().split('T')[0];
@@ -32,30 +31,17 @@ app.get("/live-matches", async (req, res) => {
         const data = await response.json();
         res.json(data);
     } catch (err) {
-        res.status(500).json({ error: "API hiba" });
+        res.status(500).json({ matches: [], hiba: "API hiba történt" });
     }
 });
 
-// --- OLDALAK KISZOLGÁLÁSA (Fix útvonalakkal) ---
+// --- OLDALAK ÚTVONALAI ---
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
+app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
+app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
 
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "Home.html"));
-});
-
-app.get("/meccsek", (req, res) => {
-    res.sendFile(path.join(__dirname, "meccsek.html"));
-});
-
-app.get("/elemzes", (req, res) => {
-    res.sendFile(path.join(__dirname, "elemzes.html"));
-});
-
-// Ha bármi mást írnak be, dobja vissza a főoldalra, ne legyen 404
-app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "Home.html"));
-});
-
+// --- PORT BEÁLLÍTÁS ---
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 LuckyPitch Szerver Elindult! Port: ${PORT}`);
+    console.log(`🚀 LuckyPitch elindult a ${PORT} porton!`);
 });
