@@ -93,6 +93,7 @@
             width: 32px; height: 32px; line-height: 32px; margin: 0 auto;
             background: #000; border: 1px solid var(--neon-blue); color: var(--neon-blue);
             border-radius: 10px; font-family: 'Orbitron'; font-weight: bold; font-size: 12px;
+            transition: all 0.3s ease;
         }
 
         .highlight td { background: rgba(0, 255, 136, 0.08) !important; border-color: var(--neon-green) !important; }
@@ -167,7 +168,6 @@
     const matchId = new URLSearchParams(window.location.search).get('id');
     let currentOdds = 1.0;
 
-    // --- SEGÉDFÜGGVÉNYEK ---
     function getStatusColor(text) {
         if (!text) return "transparent";
         text = text.toLowerCase();
@@ -253,12 +253,19 @@
                 const color = getStatusColor(status);
                 const isMatchTeam = (home.includes(r.team.name) || away.includes(r.team.name));
 
+                // Dinamikus kocka színek és olvashatóság
+                const backgroundColor = (color !== "transparent") ? color : "#000";
+                const textColor = (color !== "transparent") ? "#000" : "var(--neon-blue)";
+                const borderColor = (color !== "transparent") ? "rgba(255,255,255,0.3)" : "var(--neon-blue)";
+
                 html += `
                     <tr class="${isMatchTeam ? 'highlight' : ''}">
                         <td class="status-border" style="border-left-color: ${color}">
                             <div style="display:flex; flex-direction:column; align-items:center;">
                                 ${status ? `<span class="zone-label" style="color:${color}">${translateStatus(status)}</span>` : ''}
-                                <div class="pos-neon" style="${status ? 'width:26px; height:26px; line-height:26px; font-size:10px;' : ''}">${pos}</div>
+                                <div class="pos-neon" style="background-color: ${backgroundColor}; color: ${textColor}; border-color: ${borderColor}; ${status ? 'width:26px; height:26px; line-height:26px; font-size:10px;' : ''}">
+                                    ${pos}
+                                </div>
                             </div>
                         </td>
                         <td style="text-align:left; font-weight:800; font-size:14px;">
