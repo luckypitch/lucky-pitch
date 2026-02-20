@@ -1,81 +1,88 @@
-<!DOCTYPE html>
-<html lang="hu">
-<head>
-    <meta charset="UTF-8">
-    <title>LuckyPitch | Elemzés</title>
-    <style>
-        :root { --primary: #00ff88; --text: white; --box-bg: rgba(0,0,0,0.8); }
-        body { background: #0f172a; color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .match-card { background: var(--box-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--primary); display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px; text-align: center; }
-        .team-box img { width: 60px; height: 60px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        .back-btn { display: inline-block; margin-bottom: 20px; color: var(--primary); text-decoration: none; font-weight: bold; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        td, th { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .highlight { background: rgba(0, 255, 136, 0.1); color: var(--primary); font-weight: bold; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <a href="/meccsek" class="back-btn">← VISSZA A MECCSEKHEZ</a>
-        
-        <div id="header">Betöltés...</div>
+<style>
+    /* ... (a többi stílusod marad, ezeket add hozzá vagy írd felül) ... */
+    
+    table { width: 100%; border-collapse: separate; border-spacing: 0 4px; font-size: 14px; }
+    th { text-align: left; padding: 10px; opacity: 0.7; font-size: 12px; text-transform: uppercase; }
+    td { padding: 12px 10px; background: rgba(255,255,255,0.03); }
+    
+    /* Sorok kerekítése */
+    tr td:first-child { border-radius: 8px 0 0 8px; }
+    tr td:last-child { border-radius: 0 8px 8px 0; }
 
-        <div class="grid">
-            <div class="card">
-                <h3 style="color:var(--primary); margin-bottom:15px;">Tabella</h3>
-                <div id="standings">...</div>
-            </div>
-            <div class="card">
-                <h3 style="color:var(--primary); margin-bottom:15px;">Esélyek (Odds)</h3>
-                <div id="odds">...</div>
-            </div>
-        </div>
-    </div>
+    /* Zónák színei */
+    .cl-zone { border-left: 4px solid #007bff; } /* Bajnokok Ligája - Kék */
+    .el-zone { border-left: 4px solid #f39c12; } /* Európa Liga - Narancs */
+    .relegation-zone { border-left: 4px solid #e74c3c; } /* Kieső zóna - Piros */
+    
+    .highlight { 
+        background: rgba(0, 255, 136, 0.15) !important; 
+        color: var(--primary); 
+        font-weight: bold;
+        outline: 1px solid var(--primary);
+    }
+    
+    .pos-circle {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        line-height: 24px;
+        text-align: center;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.1);
+        font-size: 11px;
+    }
+</style>
 
-    <script>
-        const matchId = new URLSearchParams(window.location.search).get('id');
+<script>
+// ... (a kód eleje marad) ...
 
-        async function init() {
-            const res = await fetch('/live-matches');
-            const data = await res.json();
-            const match = data.matches.find(m => m.id == matchId);
-            if(!match) return;
+async function loadStandings(code, home, away) {
+    try {
+        const res = await fetch(`/api/standings/${code}`);
+        const data = await res.json();
+        const table = data.standings[0].table;
+        const totalTeams = table.length;
 
-            document.getElementById('header').innerHTML = `
-                <div class="match-card">
-                    <div class="team-box"><img src="${match.homeTeam.crest}"><h3>${match.homeTeam.name}</h3></div>
-                    <div style="font-size:40px; font-weight:bold; color:var(--primary)">${match.score.fullTime.home ?? 0} : ${match.score.fullTime.away ?? 0}</div>
-                    <div class="team-box"><img src="${match.awayTeam.crest}"><h3>${match.awayTeam.name}</h3></div>
-                </div>`;
+        let html = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Csapat</th>
+                        <th>M</th>
+                        <th>P</th>
+                    </tr>
+                </thead>
+                <tbody>`;
 
-            loadStandings(match.competition.code, match.homeTeam.name, match.awayTeam.name);
-            loadOdds(match.homeTeam.name, match.awayTeam.name);
-        }
+        table.forEach((r, index) => {
+            let zoneClass = "";
+            const pos = r.position;
 
-        async function loadStandings(code, home, away) {
-            try {
-                const res = await fetch(`/api/standings/${code}`);
-                const data = await res.json();
-                const table = data.standings[0].table;
-                document.getElementById('standings').innerHTML = `<table>` + 
-                    table.map(r => `<tr class="${(r.team.name==home || r.team.name==away)?'highlight':''}"><td>${r.position}.</td><td>${r.team.name}</td><td>${r.points}p</td></tr>`).join('') + `</table>`;
-            } catch(e) { document.getElementById('standings').innerText = "Tabella nem elérhető."; }
-        }
+            // Zóna logika (Általános európai ligák alapján)
+            if (pos <= 4) zoneClass = "cl-zone";        // BL helyek
+            else if (pos === 5) zoneClass = "el-zone";   // EL hely
+            else if (pos >= totalTeams - 2) zoneClass = "relegation-zone"; // Utolsó 3 kieső
 
-        async function loadOdds(home, away) {
-            try {
-                const res = await fetch('/api/odds-data');
-                const data = await res.json();
-                const mOdds = data.find(o => o.home_team.includes(home.split(' ')[0]) || o.away_team.includes(away.split(' ')[0]));
-                if(!mOdds) throw new Error();
-                const o = mOdds.bookmakers[0].markets[0].outcomes;
-                document.getElementById('odds').innerHTML = `<p>H: <b>${o[0].price}</b> | D: <b>${o[1].price}</b> | V: <b>${o[2].price}</b></p>`;
-            } catch(e) { document.getElementById('odds').innerText = "Oddsok nem elérhetők ehhez a meccshez."; }
-        }
-        init();
-    </script>
-</body>
-</html>
+            const isMatchTeam = (r.team.name === home || r.team.name === away);
+
+            html += `
+                <tr class="${isMatchTeam ? 'highlight' : ''}">
+                    <td class="${zoneClass}">
+                        <span class="pos-circle">${pos}</span>
+                    </td>
+                    <td style="display:flex; align-items:center; gap:8px;">
+                        <img src="${r.team.crest}" style="width:20px;"> ${r.team.name}
+                    </td>
+                    <td>${r.playedGames}</td>
+                    <td style="font-weight:bold;">${r.points}</td>
+                </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        document.getElementById('standings').innerHTML = html;
+    } catch(e) { 
+        document.getElementById('standings').innerText = "Tabella nem elérhető."; 
+    }
+}
+</script>
