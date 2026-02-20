@@ -212,34 +212,54 @@
         }
 
         async function showStandings(leagueId, teamId, leagueCode) {
-            if(window.innerWidth <= 1100) toggleM('sidebar-standings');
-            const target = document.getElementById("standings-target");
-            target.innerHTML = `<p style="text-align:center; padding:50px; font-family:'Orbitron'; font-size:10px;">BETÖLTÉS...</p>`;
+    if(window.innerWidth <= 1100) toggleM('sidebar-standings');
+    const target = document.getElementById("standings-target");
+    target.innerHTML = `<p style="text-align:center; padding:50px; font-family:'Orbitron'; font-size:10px;">BETÖLTÉS...</p>`;
+    
+    try {
+        const res = await fetch(`/api/standings/${leagueCode || leagueId}`);
+        const data = await res.json();
+        const tableData = data.standings.find(s => s.type === 'TOTAL').table;
+
+        let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">CSAPAT</th><th>P</th></tr></thead><tbody>`;
+
+        tableData.forEach(r => {
+            let status = r.description || "";
+            // Ha az API nem küld leírást, manuális logika (PL, BL, stb. alapján)
+            if (!status) {
+                if (['PL', 'PD', 'SA'].includes(leagueCode)) {
+                    if (r.position <= 4) status = "Champions League";
+                    else if (r.position === 5) status = "Europa League";
+                    else if (r.position >= tableData.length - 2) status = "Relegation";
+                }
+            }
+
+            const color = getStatusColor(status);
+            const isTarget = r.team.id == teamId;
             
-            try {
-                const res = await fetch(`/api/standings/${leagueCode || leagueId}`);
-                const data = await res.json();
-                const tableData = data.standings.find(s => s.type === 'TOTAL').table;
+            // Meghatározzuk a doboz háttérszínét és a szöveg színét
+            const boxBg = color !== 'transparent' ? color : 'rgba(255,255,255,0.05)';
+            const boxText = color !== 'transparent' ? '#000' : 'var(--neon-blue)';
 
-                let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">CSAPAT</th><th>P</th></tr></thead><tbody>`;
-
-                tableData.forEach(r => {
-                    let status = r.description || "";
-                    const color = getStatusColor(status);
-                    const isTarget = r.team.id == teamId;
-
-                    html += `<tr class="${isTarget ? 'highlight' : ''}">
-                        <td class="pos-col" style="border-left-color: ${color}">
-                            ${status ? `<span class="zone-tag" style="color:${color}">${translateStatus(status)}</span>` : ''}
-                            <div class="pos-num-box" style="background:${color!=='transparent'?color:'#000'}; color:${color!=='transparent'?'#000':'var(--neon-blue)'}">${r.position}</div>
-                        </td>
-                        <td style="text-align:left; font-weight:800;"><img src="${r.team.crest}" width="18" style="vertical-align:middle; margin-right:8px;">${r.team.shortName || r.team.name}</td>
-                        <td style="font-weight:bold; color:var(--neon-green); font-family:'Orbitron';">${r.points}</td>
-                    </tr>`;
-                });
-                target.innerHTML = html + "</tbody></table>";
-            } catch (e) { target.innerHTML = `<p style="text-align:center; font-size:10px; margin-top:50px;">NEM ELÉRHETŐ</p>`; }
-        }
+            html += `<tr class="${isTarget ? 'highlight' : ''}">
+                <td class="pos-col" style="border-left-color: ${color}">
+                    ${status ? `<span class="zone-tag" style="color:${color}">${translateStatus(status)}</span>` : ''}
+                    <div class="pos-num-box" style="background:${boxBg}; color:${boxText};">
+                        ${r.position}
+                    </div>
+                </td>
+                <td style="text-align:left; font-weight:800;">
+                    <img src="${r.team.crest}" width="18" style="vertical-align:middle; margin-right:8px;">
+                    ${r.team.shortName || r.team.name}
+                </td>
+                <td style="font-weight:bold; color:var(--neon-green); font-family:'Orbitron';">${r.points}</td>
+            </tr>`;
+        });
+        target.innerHTML = html + "</tbody></table>";
+    } catch (e) { 
+        target.innerHTML = `<p style="text-align:center; font-size:10px; margin-top:50px; color:var(--neon-red);">ADAT HIBA</p>`; 
+    }
+}
 
         async function init() {
             if(localStorage.getItem('lp-theme') === 'light') toggleTheme();
@@ -301,3 +321,4 @@
     </script>
 </body>
 </html>
+
