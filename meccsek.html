@@ -187,12 +187,47 @@
         /* --- MOBILE --- */
         .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: none; justify-content: space-around; align-items: center; z-index: 1100; }
 
-        @media (max-width: 1100px) {
-            .sidebar, .standings-sidebar { position: fixed; top: 75px; bottom: 70px; width: 85%; z-index: 1050; transform: translateX(-105%); background: var(--bg); }
-            .standings-sidebar { right: 0; transform: translateX(105%); }
-            .sidebar.open, .standings-sidebar.open { transform: translateX(0); }
-            .mobile-nav { display: flex; }
-        }
+        /* --- MOBIL NÉZET JAVÍTÁSA --- */
+@media (max-width: 1024px) {
+    /* Az alap layoutot oszloposra állítjuk */
+    .main-wrapper { display: block; }
+
+    /* Mindkét oldalsávot rögzítjük és elrejtjük a képernyőn kívülre */
+    .sidebar, .standings-sidebar {
+        position: fixed;
+        top: 75px;
+        bottom: 0;
+        width: 85% !important; /* Felülírjuk a 300px/420px-et */
+        z-index: 2000;
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: block !important;
+        border: 1px solid var(--neon-blue);
+    }
+
+    /* Bal oldali menü (Bajnokságok) */
+    .sidebar {
+        left: 0;
+        transform: translateX(-101%); /* Alapból kint balra */
+    }
+
+    /* Jobb oldali menü (Tabella) */
+    .standings-sidebar {
+        right: 0;
+        transform: translateX(101%); /* Alapból kint jobbra */
+    }
+
+    /* Amikor megnyitod őket a gombbal */
+    .sidebar.open, .standings-sidebar.open {
+        transform: translateX(0);
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+    }
+
+    /* A tartalom terület mobilon ne legyen korlátozva */
+    .content-area {
+        width: 100%;
+        padding: 15px;
+    }
+}
     </style>
 </head>
 <body class="dark">
@@ -220,7 +255,7 @@
 
     <div class="main-wrapper">
         <aside class="sidebar" id="sidebar-leagues">
-            <div style="padding: 0 15px 10px 15px;">
+            <div style="padding: 0 15px 30px 15px;">
     <button class="tool-btn" style="width: 100%;" onclick="selectAllLeagues()" id="select-all-btn">
         MIND KIJELÖL
     </button></div>
@@ -340,7 +375,31 @@
             return `<div class="date-pill ${d === selectedDate ? 'active' : ''}" onclick="setDate('${d}')">${label}</div>`;
         }).join('');
     }
+// MOBIL NAVIGÁCIÓ KEZELÉSE
+function toggleM(id) {
+    // Ha már nyitva van, csukjuk be (toggle)
+    const element = document.getElementById(id);
+    if (element.classList.contains('open')) {
+        closeM();
+    } else {
+        closeM(); // Előbb minden mást becsukunk
+        element.classList.add('open');
+        // Megakadályozzuk a háttér görgetését, amíg nyitva a menü
+        document.body.style.overflow = 'hidden';
+    }
+}
 
+function closeM() {
+    document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => {
+        s.classList.remove('open');
+    });
+    document.body.style.overflow = 'auto';
+}
+
+// Ha a kijelzőt átméretezik, csukjuk be a menüket
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 1024) closeM();
+});
     // --- LIGA SZŰRŐ ---
 function selectAllLeagues() {
     // Megnézzük az összes elérhető ligát a meccsek között
@@ -592,6 +651,7 @@ function updateSelectAllButton() {
     </script>
 </body>
 </html>
+
 
 
 
