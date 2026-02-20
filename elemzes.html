@@ -3,18 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuckyPitch | Profi Elemzés</title>
+    <title>LuckyPitch | Valós idejű Elemzés</title>
     <style>
         :root { 
             --primary: #00ff88; 
             --text: #f8fafc; 
             --box-bg: rgba(15, 23, 42, 0.95);
-            --cl-main: #007bff;     /* Feljutás / BL Főtábla */
-            --cl-qual: #55aaff;     /* BL Selejtező / Direkt Feljutás 2. */
-            --el-main: #f39c12;     /* EL / Play-off kezdete */
-            --ecl-po: #9b59b6;      /* KL Rájátszás / Play-off végig */
-            --play-off: #e67e22;    /* Osztályozó */
-            --relegation: #e74c3c;  /* Kiesés */
+            --accent: #38bdf8;
         }
 
         body { background: #0f172a; color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
@@ -25,7 +20,7 @@
             background: var(--box-bg); padding: 30px; border-radius: 20px; border: 1px solid rgba(0, 255, 136, 0.3); 
             display: flex; justify-content: space-around; align-items: center; margin-bottom: 30px; text-align: center;
         }
-        .team-box img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px; }
+        .team-box img { width: 60px; height: 60px; object-fit: contain; }
         .score { font-size: 2.2rem; font-weight: 800; color: var(--primary); }
 
         .grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
@@ -35,38 +30,42 @@
         h3 { color: var(--primary); margin: 0 0 15px 0; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
 
         table { width: 100%; border-collapse: separate; border-spacing: 0 4px; font-size: 12px; }
-        td { padding: 10px; background: rgba(255,255,255,0.03); vertical-align: middle; }
+        td { padding: 12px 10px; background: rgba(255,255,255,0.03); vertical-align: middle; }
         
-        /* Zóna csíkok */
-        .cl-main { border-left: 4px solid var(--cl-main); }
-        .cl-qual { border-left: 4px solid var(--cl-qual); }
-        .el-main { border-left: 4px solid var(--el-main); }
-        .ecl-po { border-left: 4px solid var(--ecl-po); }
-        .play-off { border-left: 4px solid var(--play-off); }
-        .relegation { border-left: 4px solid var(--relegation); }
+        /* Dinamikus Zóna Csík */
+        .status-cell { border-left: 4px solid transparent; }
+        
+        .zone-label { 
+            font-size: 8px; 
+            font-weight: 900; 
+            display: block; 
+            margin-bottom: 3px; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-        .zone-label { font-size: 7px; font-weight: 900; display: block; margin-bottom: 2px; text-transform: uppercase; }
-        .pos-circle { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: rgba(255,255,255,0.1); font-size: 10px; }
+        .pos-circle { 
+            display: inline-block; width: 22px; height: 22px; line-height: 22px; 
+            text-align: center; border-radius: 50%; background: rgba(255,255,255,0.1); 
+            font-size: 10px; font-weight: bold;
+        }
+
         .highlight { background: rgba(0, 255, 136, 0.15) !important; outline: 1px solid var(--primary); }
-
-        .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 10px; }
-        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 10px; }
-        .dot { width: 8px; height: 8px; border-radius: 2px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <a href="/meccsek" class="back-btn">← VISSZA</a>
+    <a href="/meccsek" class="back-btn">← VISSZA A MECCSEKHEZ</a>
     <div id="header-target"></div>
 
     <div class="grid">
         <div class="card">
-            <h3>Bajnoki Tabella & Státusz</h3>
-            <div id="standings-target">Betöltés...</div>
+            <h3>Hivatalos Bajnoki Rangsor</h3>
+            <div id="standings-target">Adatok szinkronizálása...</div>
         </div>
         <div class="card">
-            <h3>Oddsok</h3>
+            <h3>Élő Oddsok</h3>
             <div id="odds-target">Keresés...</div>
         </div>
     </div>
@@ -97,62 +96,64 @@
             </div>`;
     }
 
+    // Szín meghatározása a szöveg alapján (Dinamikus)
+    function getStatusColor(text) {
+        if (!text) return "transparent";
+        text = text.toLowerCase();
+        if (text.includes("champions league")) return "#007bff";
+        if (text.includes("europa league")) return "#f39c12";
+        if (text.includes("conference league")) return "#00ff88";
+        if (text.includes("play-off") || text.includes("promotion")) return "#9b59b6";
+        if (text.includes("relegation")) return "#e74c3c";
+        return "#64748b";
+    }
+
+    // Magyarítás a leíráshoz
+    function translateStatus(text) {
+        if (!text) return "";
+        return text
+            .replace("Promotion", "Feljutás")
+            .replace("Relegation", "Kiesés")
+            .replace("Champions League", "BL")
+            .replace("Europa League", "EL")
+            .replace("Conference League", "KL")
+            .replace("Group Stage", "Főtábla")
+            .replace("Qualifiers", "Selejtező")
+            .replace("Play-offs", "Rájátszás");
+    }
+
     async function loadStandings(code, home, away) {
         try {
             const res = await fetch(`/api/standings/${code}`);
             const data = await res.json();
-            const table = data.standings[0].table;
-            const total = table.length;
+            
+            // Az API "standings" tömbjében keressük a "TOTAL" típusút
+            const standings = data.standings.find(s => s.type === 'TOTAL');
+            const table = standings.table;
 
             let html = `<table><tbody>`;
             table.forEach(r => {
-                let zCls = "", zTxt = "", zCol = "";
-                const pos = r.position;
-
-                // --- DINAMIKUS LIGA LOGIKA ---
-                if (code === 'ELC') { // CHAMPIONSHIP (Angol 2.)
-                    if (pos <= 2) { zCls = "cl-main"; zTxt = "Feljutás - Premier League"; zCol = "var(--cl-main)"; }
-                    else if (pos <= 6) { zCls = "ecl-po"; zTxt = "Play-off (Championship)"; zCol = "var(--ecl-po)"; }
-                    else if (pos >= total - 2) { zCls = "relegation"; zTxt = "Kiesés - League One"; zCol = "var(--relegation)"; }
-                } 
-                else if (code === 'DED') { // HOLLAND (Eredivisie)
-                    if (pos === 1) { zCls = "cl-main"; zTxt = "BL (Főtábla)"; zCol = "var(--cl-main)"; }
-                    else if (pos === 2) { zCls = "cl-qual"; zTxt = "BL (Selejtező)"; zCol = "var(--cl-qual)"; }
-                    else if (pos === 3) { zCls = "el-main"; zTxt = "EL (Selejtező)"; zCol = "var(--el-main)"; }
-                    else if (pos >= 4 && pos <= 7) { zCls = "ecl-po"; zTxt = "KL Play-off"; zCol = "var(--ecl-po)"; }
-                    else if (pos === 16) { zCls = "play-off"; zTxt = "Osztályozó"; zCol = "var(--play-off)"; }
-                    else if (pos >= 17) { zCls = "relegation"; zTxt = "Kiesés - Eerste Div."; zCol = "var(--relegation)"; }
-                }
-                else if (code === 'FL1') { // FRANCIA (Ligue 1)
-                    if (pos <= 3) { zCls = "cl-main"; zTxt = "BL (Főtábla)"; zCol = "var(--cl-main)"; }
-                    else if (pos === 4) { zCls = "cl-qual"; zTxt = "BL (Selejt)"; zCol = "var(--cl-qual)"; }
-                    else if (pos === 16) { zCls = "play-off"; zTxt = "Osztályozó"; zCol = "var(--play-off)"; }
-                    else if (pos >= 17) { zCls = "relegation"; zTxt = "Kiesés - Ligue 2"; zCol = "var(--relegation)"; }
-                }
-                else if (['PL', 'PD', 'SA', 'BL1'].includes(code)) { // TOP 4
-                    if (pos <= 4) { zCls = "cl-main"; zTxt = "Bajnokok Ligája"; zCol = "var(--cl-main)"; }
-                    else if (pos >= total - 2) { zCls = "relegation"; zTxt = "Kiesés"; zCol = "var(--relegation)"; }
-                }
-                else { // ALAPÉRTELMEZETT
-                    if (pos === 1) { zCls = "cl-main"; zTxt = "Bajnok / Feljutó"; zCol = "var(--cl-main)"; }
-                    else if (pos >= total - 2) { zCls = "relegation"; zTxt = "Kieső zóna"; zCol = "var(--relegation)"; }
-                }
-
+                // Itt a kulcs: r.description tartalmazza a HIVATALOS kupahelyet
+                const statusText = r.description || ""; 
+                const color = getStatusColor(statusText);
                 const isM = (r.team.name === home || r.team.name === away);
+
                 html += `
                     <tr class="${isM ? 'highlight' : ''}">
-                        <td class="${zCls}">
-                            ${zTxt ? `<span class="zone-label" style="color:${zCol}">${zTxt}</span>` : ''}
-                            <span class="pos-circle">${pos}</span>
+                        <td class="status-cell" style="border-left-color: ${color}">
+                            ${statusText ? `<span class="zone-label" style="color:${color}">${translateStatus(statusText)}</span>` : ''}
+                            <span class="pos-circle">${r.position}</span>
                         </td>
-                        <td><img src="${r.team.crest}" width="16"> ${r.team.name}</td>
-                        <td>${r.playedGames}</td>
-                        <td><b>${r.points}</b></td>
+                        <td><img src="${r.team.crest}" width="18" style="margin-right:8px; vertical-align:middle;"> ${r.team.name}</td>
+                        <td style="text-align:center">${r.playedGames}</td>
+                        <td style="text-align:right"><b>${r.points}p</b></td>
                     </tr>`;
             });
 
             document.getElementById('standings-target').innerHTML = html + `</tbody></table>`;
-        } catch (e) { document.getElementById('standings-target').innerHTML = "Adat hiba."; }
+        } catch (e) { 
+            document.getElementById('standings-target').innerHTML = "A tabella jelenleg nem érhető el ehhez a ligához."; 
+        }
     }
 
     async function loadOdds(home, away) {
