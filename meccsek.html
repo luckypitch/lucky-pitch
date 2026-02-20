@@ -128,12 +128,12 @@
         <div class="blob blob-3"></div>
     </div>
 
-    <nav>
+   <nav>
         <div class="logo">LUCKYPITCH</div>
         <div class="nav-tools">
             <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
-            <a href="/home" class="tool-btn" style="text-decoration:none;">VISSZA</a>
+            <a href="/home" class="tool-btn" id="back-link" style="text-decoration:none;">VISSZA</a>
         </div>
     </nav>
 
@@ -149,21 +149,22 @@
         <aside class="standings-sidebar" id="sidebar-standings">
             <div class="sidebar-header" id="h-table">📊 Élő Tabella</div>
             <div id="standings-target">
-                <p style="text-align:center; opacity:0.3; margin-top:100px; font-family:'Orbitron'; font-size:10px;">VÁLASSZ EGY CSAPATOT</p>
+                <p id="standings-placeholder" style="text-align:center; opacity:0.3; margin-top:100px; font-family:'Orbitron'; font-size:10px;">VÁLASSZ EGY CSAPATOT</p>
             </div>
         </aside>
     </div>
 
     <div class="mobile-nav">
-        <button class="tool-btn" onclick="toggleM('sidebar-leagues')">LIGÁK</button>
-        <button class="tool-btn" onclick="closeM()">MECCSEK</button>
-        <button class="tool-btn" onclick="toggleM('sidebar-standings')">TABELLA</button>
+        <button class="tool-btn" id="m-leagues" onclick="toggleM('sidebar-leagues')">LIGÁK</button>
+        <button class="tool-btn" id="m-matches" onclick="closeM()">MECCSEK</button>
+        <button class="tool-btn" id="m-table" onclick="toggleM('sidebar-standings')">TABELLA</button>
     </div>
 
     <script>
         // --- MEMÓRIA (STATE MANAGEMENT) ---
         let currentLang = localStorage.getItem('lp_lang') || 'HU';
-        let selectedDate = localStorage.getItem('lp_selectedDate') || new Date().toLocaleDateString('sv');
+        const todayStr = new Date().toLocaleDateString('sv');
+        let selectedDate = localStorage.getItem('lp_selectedDate') || todayStr;
         let savedLeagues = localStorage.getItem('lp_selectedLeagues');
         let selectedLeagues = savedLeagues ? new Set(JSON.parse(savedLeagues)) : new Set();
         let allMatches = [];
@@ -187,18 +188,32 @@
             updateStaticTexts();
             saveState();
             renderMatches();
+            renderDateStrip();
+            renderLeagues();
         }
 
         function updateStaticTexts() {
+            const isHU = currentLang === 'HU';
             document.getElementById('lang-btn').innerText = currentLang;
-            document.getElementById('h-leagues').innerText = currentLang === 'HU' ? '🏆 Bajnokságok' : '🏆 Leagues';
-            document.getElementById('h-table').innerText = currentLang === 'HU' ? '📊 Élő Tabella' : '📊 Live Standings';
+            document.getElementById('h-leagues').innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
+            document.getElementById('h-table').innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
+            document.getElementById('back-link').innerText = isHU ? 'VISSZA' : 'BACK';
+            
+            // Mobil gombok
+            document.getElementById('m-leagues').innerText = isHU ? 'LIGÁK' : 'LEAGUES';
+            document.getElementById('m-matches').innerText = isHU ? 'MECCSEK' : 'MATCHES';
+            document.getElementById('m-table').innerText = isHU ? 'TABELLA' : 'TABLE';
+
+            // Placeholder szöveg
+            const placeholder = document.getElementById('standings-placeholder');
+            if (placeholder) {
+                placeholder.innerText = isHU ? 'VÁLASSZ EGY CSAPATOT' : 'CHOOSE A TEAM';
+            }
         }
 
         function toggleM(id) { closeM(); document.getElementById(id).classList.add('open'); }
         function closeM() { document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => s.classList.remove('open')); }
 
-        // --- GOAL NOTIFICATION ---
         function showGoal(teamName) {
             const banner = document.getElementById('goal-banner');
             document.getElementById('goal-team').innerText = teamName.toUpperCase();
@@ -206,14 +221,12 @@
             setTimeout(() => banner.classList.remove('show'), 5000);
         }
 
-        // --- API & DATA ---
         async function updateData() {
             try {
                 const res = await fetch("/live-matches");
                 const data = await res.json();
                 const newMatches = data.matches || [];
 
-                // Gól figyelés
                 newMatches.forEach(match => {
                     const matchId = match.id;
                     const newScore = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
@@ -233,7 +246,6 @@
             } catch (e) { console.error("Update error", e); }
         }
 
-        // --- STANDINGS LOGIC (AZ ÖSSZES SZABÁLLYAL) ---
         function getStatusColor(text) {
             if (!text) return "transparent";
             text = text.toLowerCase();
@@ -267,13 +279,12 @@
                 const tableData = data.standings.find(s => s.type === 'TOTAL').table;
                 const total = tableData.length;
 
-                let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">CSAPAT</th><th>P</th></tr></thead><tbody>`;
+                let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">${currentLang==='HU'?'CSAPAT':'TEAM'}</th><th>P</th></tr></thead><tbody>`;
                 
                 tableData.forEach(r => {
                     let status = r.description || "";
                     let pos = r.position;
 
-                    // Komplett bajnoki logika beépítve
                     if (!status || status === "") {
                         if (['PL', 'PD', 'SA'].includes(code)) {
                             if (pos <= 4) status = "Champions League";
@@ -285,23 +296,6 @@
                             else if (pos === 5) status = "Europa League";
                             else if (pos === 16) status = "Osztályozó";
                             else if (pos >= 17) status = "Relegation";
-                        } else if (code === 'DED') { 
-                            if (pos <= 2) status = "Champions League";
-                            else if (pos === 3) status = "Champions League Q";
-                            else if (pos === 4) status = "Europa League Q";
-                            else if (pos >= 5 && pos <= 8) status = "Conference Play-offs";
-                            else if (pos === 16) status = "Osztályozó";
-                            else if (pos >= 17) status = "Relegation";
-                        } else if (code === 'PPL') {
-                            if (pos === 1) status = "Champions League";
-                            else if (pos === 2) status = "Champions League Q";
-                            else if (pos === 3) status = "Europa League Q";
-                            else if (pos === 16) status = "Osztályozó";
-                            else if (pos >= 17) status = "Relegation";
-                        } else if (code === 'ELC') {
-                            if (pos <= 2) status = "Feljutás";
-                            else if (pos <= 6) status = "Play-off";
-                            else if (pos >= total - 2) status = "Relegation";
                         }
                     }
 
@@ -326,11 +320,17 @@
             } catch (e) { target.innerHTML = "Error loading standings."; }
         }
 
-        // --- RENDERING ---
         function renderDateStrip() {
             const strip = document.getElementById("date-strip");
             const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
-            strip.innerHTML = dates.map(d => `<div class="date-pill ${d === selectedDate ? 'active' : ''}" onclick="selectedDate='${d}';saveState();renderMatches();renderLeagues();renderDateStrip();">${d.split('-')[1]+'.'+d.split('-')[2]}</div>`).join('');
+            strip.innerHTML = dates.map(d => {
+                const isToday = d === todayStr;
+                const label = isToday ? (currentLang === 'HU' ? 'MA' : 'TODAY') : d.split('-')[1]+'.'+d.split('-')[2];
+                return `<div class="date-pill ${d === selectedDate ? 'active' : ''} ${isToday ? 'is-today' : ''}" 
+                             onclick="selectedDate='${d}';saveState();renderMatches();renderLeagues();renderDateStrip();">
+                            ${label}
+                        </div>`;
+            }).join('');
         }
 
         function renderLeagues() {
@@ -371,13 +371,12 @@
                         <img src="${m.awayTeam.crest}"><span>${m.awayTeam.name}</span>
                     </div>
                 </div>`;
-            }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">NINCS MECCS</p>`;
+            }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
         }
 
-        // --- INIT ---
         updateStaticTexts();
         updateData();
-        setInterval(updateData, 30000); // 30 mp-es auto frissítés
+        setInterval(updateData, 30000);
     </script>
 </body>
 </html>
