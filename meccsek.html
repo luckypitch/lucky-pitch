@@ -233,24 +233,31 @@
     function closeM() { document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => s.classList.remove('open')); }
 
     // --- GÓL EFFEKT ---
-    function showGoal(teamName, matchId) {
-        // 1. Banner
-        const banner = document.getElementById('goal-banner');
-        document.getElementById('goal-team').innerText = teamName.toUpperCase();
-        banner.classList.add('show');
-        setTimeout(() => banner.classList.remove('show'), 5000);
-
-        // 2. Kártya villogtatás
-        const card = document.getElementById(`match-${matchId}`);
-        if (card) {
-            card.classList.add('goal-highlight');
-            setTimeout(() => card.classList.remove('goal-highlight'), 6000);
-        }
+   function showGoal(teamName, matchId, newScore) {
+    const banner = document.getElementById('goal-banner');
+    const goalTeamSpan = document.getElementById('goal-team');
+    
+    // Beállítjuk a szöveget: Csapatnév + Új eredmény
+    goalTeamSpan.innerHTML = `<br><span style="color:#000; font-size:1.2rem;">${teamName.toUpperCase()}</span><br><span style="font-size:2rem;">${newScore}</span>`;
+    
+    // Megjelenítés
+    banner.classList.add('show');
+    
+    // Kártya villogtatása
+    const card = document.getElementById(`match-${matchId}`);
+    if (card) {
+        card.classList.add('goal-highlight');
+        setTimeout(() => card.classList.remove('goal-highlight'), 8000);
     }
+
+    // Eltüntetés 5 másodperc után
+    setTimeout(() => {
+        banner.classList.remove('show');
+    }, 5000);
+}
 
     // --- ADATKEZELÉS ---
    async function updateData() {
-    // 1. Ha van elmentett adatunk, azt azonnal mutassuk meg (Azonnali betöltés érzet)
     const cached = sessionStorage.getItem('lp_matches_cache');
     if (cached && allMatches.length === 0) {
         allMatches = JSON.parse(cached);
@@ -264,16 +271,31 @@
         const data = await res.json();
         const newMatches = data.matches || [];
 
-        // 2. Hash ellenőrzés (csak ha tényleg van változás, akkor rajzolunk újra)
+        // GÓLFIGYELŐ LOGIKA
+        newMatches.forEach(match => {
+            const matchId = match.id;
+            const newScoreStr = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
+            
+            if (prevScores.has(matchId) && prevScores.get(matchId) !== newScoreStr) {
+                const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
+                const [newH, newA] = newScoreStr.split('-').map(Number);
+                
+                // Megnézzük ki lőtte a gólt
+                if (newH > oldH) {
+                    showGoal(match.homeTeam.name, match.id, `${newH}:${newA}`);
+                } else if (newA > oldA) {
+                    showGoal(match.awayTeam.name, match.id, `${newH}:${newA}`);
+                }
+            }
+            prevScores.set(matchId, newScoreStr);
+        });
+
         const currentHash = JSON.stringify(newMatches.map(m => ({ id: m.id, s: m.score.fullTime })));
         if (currentHash === lastDataHash) return;
         
         lastDataHash = currentHash;
         allMatches = newMatches;
-        
-        // Mentés a gyorsítótárba
         sessionStorage.setItem('lp_matches_cache', JSON.stringify(allMatches));
-        
         renderMatches();
     } catch (e) {
         console.error("Lassú vagy sikertelen API hívás", e);
@@ -290,19 +312,22 @@
         // --- PERC KISZÁMÍTÁSA ---
         let matchMinute = "";
         if (m.status === "IN_PLAY") {
-            const startTime = new Date(m.utcDate).getTime();
+            const start = new Date(m.utcDate).getTime();
             const now = new Date().getTime();
-            // Kiszámoljuk az eltelt perceket (ms -> perc)
-            let diff = Math.floor((now - startTime) / 60000);
-            
-            // Korrigáljuk, ha félidő után vagyunk (levonjuk a 15p szünetet kb.)
-            // Megjegyzés: Ez egy becslés, az API 'lastUpdated' mezője segíthet pontosítani
-            matchMinute = `<span class="minute-tag">${diff > 90 ? '90+' : diff}'</span>`;
+            let mins = Math.floor((now - start) / 60000);
+            matchMinute = `<span class="minute-tag live-time">${mins > 90 ? '90+' : mins}'</span>`;
         } else if (m.status === "PAUSED") {
             matchMinute = `<span class="minute-tag">HT</span>`;
+        } else if (m.status === "FINISHED") {
+            matchMinute = `<span class="minute-tag" style="color:var(--text); opacity:0.5;">FT</span>`;
+        } else {
+            // Helyfoglaló, hogy ne ugráljon a kártya
+            matchMinute = `<span style="height:20px; display:block;"></span>`;
         }
 
-        let score = isLive || m.status === 'FINISHED' ? m.score.fullTime.home+':'+m.score.fullTime.away : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+        let score = isLive || m.status === 'FINISHED' ? 
+            m.score.fullTime.home + ':' + m.score.fullTime.away : 
+            new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
         
         return `
         <div class="match-card" id="match-${m.id}">
@@ -310,17 +335,20 @@
                 <img src="${m.homeTeam.crest}"><span>${m.homeTeam.name}</span>
             </div>
             <div style="text-align:center; width:140px;">
+                <div style="margin-bottom: 5px;">${matchMinute}</div>
+                
                 <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
-                ${matchMinute} <br>
-                <a href="/elemzes?id=${m.id}"
-                    </a>
-                </div>
-                <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                    <img src="${m.awayTeam.crest}"><span>${m.awayTeam.name}</span>
-                </div>
-            </div>`;
-        }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
-    }
+                
+                <a href="/elemzes?id=${m.id}" style="text-decoration:none; display:inline-block; margin-top:12px; background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding:4px 12px; border-radius:8px; color:var(--neon-green); font-family:'Orbitron'; font-size:9px; font-weight:800;">
+                    ${currentLang === 'HU' ? 'ELEMZÉS' : 'ANALYSIS'}
+                </a>
+            </div>
+            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
+                <img src="${m.awayTeam.crest}"><span>${m.awayTeam.name}</span>
+            </div>
+        </div>`;
+    }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
+}
 
     // --- SEGÉDFÜGGVÉNYEK (TABELLA) ---
     function getStatusColor(text) {
@@ -484,6 +512,7 @@
     </script>
 </body>
 </html>
+
 
 
 
