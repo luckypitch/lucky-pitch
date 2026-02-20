@@ -3,9 +3,7 @@ const cors = require("cors");
 const path = require("path");
 const fetch = require('node-fetch');
 const fs = require('fs');
-const { ClerkExpressRequireAuth } = require('@clerk/clerk-sdk-node');
 
-// Környezeti változók: Prioritás a Render (process.env), majd a fájl (api.env)
 if (fs.existsSync('./api.env')) {
     require('dotenv').config({ path: './api.env' });
 } else {
@@ -13,53 +11,44 @@ if (fs.existsSync('./api.env')) {
 }
 
 const FD_KEY = process.env.FOOTBALL_DATA_API_KEY;
-const ODDS_KEY = process.env.ODDS_API_KEY;
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || '');
-
 const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(express.static(__dirname));
 
-// API: Meccsek lekérése dátum szerint
 app.get("/live-matches", async (req, res) => {
     const date = req.query.date || new Date().toISOString().split('T')[0];
-    const url = `https://api.football-data.org/v4/matches?dateFrom=${date}&dateTo=${date}`;
+    
+    // FONTOS: Csak ezeket a ligákat látja az ingyenes kulcs!
+    // PL: Angol, PD: Spanyol, BL1: Német, SA1: Olasz, FL1: Francia, CL: BL, DED: Holland, PPL: Portugál
+    const freeLeagues = "PL,PD,BL1,SA1,FL1,CL,DED,PPL,EL"; 
+
+    // A szűrést a competitions paraméterrel kell megadni az ingyenes kulcshoz!
+    const url = `https://api.football-data.org/v4/matches?dateFrom=${date}&dateTo=${date}&competitions=${freeLeagues}`;
 
     try {
+        console.log(`Lekérés indítása: ${date}`);
         const response = await fetch(url, { 
             headers: { "X-Auth-Token": FD_KEY } 
         });
+
         const data = await response.json();
-        
-        // Ha az API korlátozásba ütközünk vagy nincs meccs
-        if (!data.matches) {
-            return res.json({ matches: [], message: data.message || "Nincs adat" });
+
+        // Ha hibát dob az API (pl. 429 - túl sok kérés)
+        if (data.errorCode) {
+            console.error("API hiba:", data.message);
+            return res.status(400).json({ matches: [], error: data.message });
         }
+
         res.json(data);
     } catch (err) {
-        res.status(500).json({ matches: [], error: "Szerver hiba" });
+        res.status(500).json({ matches: [] });
     }
 });
 
-// API: Odds adatok az elemzéshez
-app.get('/api/odds-data', ClerkExpressRequireAuth(), async (req, res) => {
-    try {
-        const url = `https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey=${ODDS_KEY}&regions=eu&markets=h2h`;
-        const response = await fetch(url);
-        const data = await response.json();
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: "Odds lekérési hiba" });
-    }
-});
-
-// Oldalak kiszolgálása
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
 app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 LuckyPitch szerver elindult a ${PORT} porton`);
-});
+app.listen(PORT, '0.0.0.0', () => console.log(`Szerver fut: ${PORT}`));
