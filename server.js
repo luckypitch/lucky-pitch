@@ -8,22 +8,26 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Kiszolgáljuk a statikus fájlokat
+// Kiszolgálja a HTML fájlokat és a képeket a főkönyvtárból
 app.use(express.static(__dirname));
 
-// --- EZ A RÉSZ KELL AZ /api/status-hoz ---
+// --- API ÁLLAPOT ELLENŐRZÉS ---
 app.get("/api/status", (req, res) => {
-    res.status(200).json({
-        status: "Szerver él!",
+    res.json({
+        status: "ONLINE",
         football_key: !!process.env.FOOTBALL_DATA_API_KEY,
         stripe_key: !!process.env.STRIPE_SECRET_KEY
     });
 });
 
+// --- MECCSEK LEKÉRÉSE ---
 app.get("/live-matches", async (req, res) => {
     const FD_KEY = process.env.FOOTBALL_DATA_API_KEY;
     const date = req.query.date || new Date().toISOString().split('T')[0];
-    const url = `https://api.football-data.org/v4/matches?dateFrom=${date}&dateTo=${date}`;
+    // Ingyenes ligák: Premier League, La Liga, Bundesliga, Serie A, Ligue 1
+    const leagues = "PL,PD,BL1,SA1,FL1"; 
+    const url = `https://api.football-data.org/v4/matches?dateFrom=${date}&dateTo=${date}&competitions=${leagues}`;
+
     try {
         const response = await fetch(url, { headers: { "X-Auth-Token": FD_KEY } });
         const data = await response.json();
@@ -33,12 +37,35 @@ app.get("/live-matches", async (req, res) => {
     }
 });
 
-// Útvonalak a HTML fájlokhoz
+// --- STRIPE TÁMOGATÁS ---
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+app.post('/create-checkout-session', async (req, res) => {
+    try {
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [{
+                price_data: {
+                    currency: 'huf',
+                    product_data: { name: 'LuckyPitch Támogatás' },
+                    unit_amount: 100000,
+                },
+                quantity: 1,
+            }],
+            mode: 'payment',
+            success_url: `${req.headers.origin}/Home.html?success=true`,
+            cancel_url: `${req.headers.origin}/Home.html?cancel=true`,
+        });
+        res.json({ id: session.id });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Fix útvonalak a fájlokhoz
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
-app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Szerver elindult a ${PORT} porton`);
+    console.log(`🚀 SZERVER ELINDULT A ${PORT} PORTON`);
 });
