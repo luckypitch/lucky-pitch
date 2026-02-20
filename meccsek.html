@@ -2,53 +2,149 @@
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
-    <title>LuckyPitch | Matches</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuckyPitch | Live Matches</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* A TE EREDETI STÍLUSOD */
-        :root { --primary: #00ff88; --text: white; --box-bg: rgba(0,0,0,0.7); --btn-bg: #cde1e3; --btn-text: black; }
-        body.light { --text: #111; --box-bg: rgba(255,255,255,0.85); --btn-bg: #111; --btn-text: white; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { min-height: 100vh; background: url("meccsekfoci.jpg") center/cover no-repeat fixed; color: var(--text); transition: 0.3s; padding-bottom: 50px; }
-        body.light { background: url("meccsekfocivil.jpg") center/cover no-repeat fixed; }
-        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
-        nav { display: flex; justify-content: space-between; align-items: center; padding: 25px 0; }
-        .nav-controls { display: flex; gap: 10px; align-items: center; }
-        .date-selector { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; padding: 15px; background: var(--box-bg); border-radius: 12px; border: 1px solid var(--text); }
-        .date-btn { background: transparent; border: 1px solid var(--text); color: var(--text); padding: 10px; border-radius: 8px; cursor: pointer; min-width: 75px; text-align: center; }
-        .date-btn.active { background: var(--btn-bg); color: var(--btn-text); }
-        .league-section { background: var(--box-bg); border-radius: 12px; margin-bottom: 25px; overflow: hidden; border: 1px solid var(--text); }
-        .league-header { padding: 15px; background: rgba(255,255,255,0.1); font-weight: bold; }
-        .match-row { padding: 15px; display: grid; grid-template-columns: 1fr 120px 1fr; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
-        .score-box { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; border: 1px solid var(--text); }
-        .analyze-btn { width: 100%; margin-top: 8px; padding: 6px; font-size: 10px; background: var(--primary); color: black; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .crest { width: 30px; height: 30px; object-fit: contain; }
-        .team-box { display: flex; align-items: center; gap: 12px; }
+        :root {
+            --bg: #020617;
+            --glass: rgba(15, 23, 42, 0.85);
+            --neon-green: #00ff88;
+            --neon-blue: #0ea5e9;
+            --text: #f1f5f9;
+            --border: rgba(255, 255, 255, 0.1);
+            --primary: var(--neon-green);
+        }
+
+        /* Világos mód felülbírálása az új stílusban */
+        body.light {
+            --bg: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.9);
+            --text: #0f172a;
+            --border: rgba(0, 0, 0, 0.1);
+            --neon-blue: #0284c7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            background: radial-gradient(circle at center, #0f172a 0%, var(--bg) 100%); 
+            color: var(--text); 
+            font-family: 'Inter', sans-serif; 
+            min-height: 100vh;
+            transition: 0.3s;
+        }
+
+        .container { width: 100%; max-width: 1000px; margin: 0 auto; padding: 15px; }
+
+        /* --- NAV --- */
+        nav { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 20px 0; margin-bottom: 20px;
+        }
+        .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.5rem; color: var(--neon-blue); letter-spacing: 2px; }
+        
+        .nav-controls { display: flex; gap: 10px; }
+        button, .btn-link { 
+            padding: 10px 15px; border-radius: 50px; cursor: pointer; font-weight: bold; 
+            background: var(--glass); color: var(--text); text-decoration: none; 
+            border: 1px solid var(--border); font-family: 'Orbitron'; font-size: 10px;
+            transition: 0.3s;
+        }
+        button:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(14, 165, 233, 0.3); }
+
+        /* --- DÁTUM VÁLASZTÓ --- */
+        .date-selector { 
+            display: flex; gap: 10px; overflow-x: auto; padding: 15px 5px; 
+            margin-bottom: 30px; scrollbar-width: none; 
+        }
+        .date-selector::-webkit-scrollbar { display: none; }
+
+        .date-btn { 
+            flex: 0 0 auto; background: var(--glass); border: 1px solid var(--border);
+            color: var(--text); padding: 12px 20px; border-radius: 15px; cursor: pointer;
+            text-align: center; transition: 0.3s; min-width: 80px;
+        }
+        .date-btn.active { 
+            border-color: var(--neon-green); 
+            background: rgba(0, 255, 136, 0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+        .date-btn span { font-size: 10px; font-family: 'Orbitron'; display: block; margin-top: 4px; opacity: 0.7; }
+
+        /* --- LIGA SZEKCIÓ --- */
+        .league-section { 
+            background: var(--glass); border-radius: 24px; border: 1px solid var(--border);
+            margin-bottom: 25px; backdrop-filter: blur(15px); overflow: hidden;
+        }
+        .league-header { 
+            padding: 15px 25px; background: rgba(255,255,255,0.03); 
+            font-family: 'Orbitron'; font-size: 12px; color: var(--neon-blue);
+            border-bottom: 1px solid var(--border); letter-spacing: 1px;
+        }
+
+        /* --- MECCS SOR --- */
+        .match-row { 
+            padding: 20px; display: grid; grid-template-columns: 1fr 100px 1fr; 
+            align-items: center; border-bottom: 1px solid var(--border);
+            transition: 0.2s;
+        }
+        .match-row:last-child { border-bottom: none; }
+        .match-row:hover { background: rgba(255,255,255,0.02); }
+
+        .team-box { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 14px; }
         .team-box.home { justify-content: flex-end; text-align: right; }
-        button, .btn-link { padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; background: var(--btn-bg); color: var(--btn-text); text-decoration: none; border: none; }
+        .crest { width: 35px; height: 35px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); }
+
+        .score-box { text-align: center; }
+        .score-num { 
+            font-family: 'Orbitron'; font-size: 1.2rem; font-weight: 900; 
+            color: var(--neon-green); margin-bottom: 5px; display: block;
+        }
+        .status-tag { font-size: 9px; font-family: 'Orbitron'; opacity: 0.6; text-transform: uppercase; }
+
+        .analyze-btn { 
+            margin-top: 10px; width: 100%; padding: 8px; font-size: 9px; 
+            background: transparent; color: var(--neon-green); 
+            border: 1px solid var(--neon-green); border-radius: 6px; 
+            cursor: pointer; font-family: 'Orbitron'; font-weight: bold;
+            transition: 0.3s;
+        }
+        .analyze-btn:hover { background: var(--neon-green); color: #000; }
+
+        /* MOBIL FINOMÍTÁS */
+        @media (max-width: 600px) {
+            .match-row { grid-template-columns: 1fr 80px 1fr; padding: 15px 10px; }
+            .team-box { font-size: 11px; gap: 6px; }
+            .crest { width: 25px; height: 25px; }
+            .score-num { font-size: 1rem; }
+            .logo { font-size: 1.2rem; }
+        }
     </style>
 </head>
 <body class="dark">
     <div class="container">
         <nav>
-            <div style="font-size: 24px; font-weight: bold;">LuckyPitch</div>
+            <div class="logo">LUCKYPITCH</div>
             <div class="nav-controls">
                 <button id="theme-btn" onclick="toggleTheme()">☀️</button>
                 <button id="lang-btn" onclick="toggleLang()">EN 🇬🇧</button>
-                <a href="/home" id="back-btn" class="btn-link">← VISSZA</a>
+                <a href="/home" id="back-btn" class="btn-link">BACK</a>
             </div>
         </nav>
+
         <div id="date-selector" class="date-selector"></div>
-        <div id="app">Betöltés...</div>
+        <div id="app">
+            </div>
     </div>
 
     <script>
         const translations = {
-            hu: { today: "MA", back: "← VISSZA", analyze: "ELEMZÉS", days: ["Vas", "Hét", "Ked", "Sze", "Csüt", "Pén", "Szo"], empty: "Nincs meccs ezen a napon." },
-            en: { today: "TODAY", back: "← BACK", analyze: "ANALYZE", days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], empty: "No matches for this day." }
+            hu: { today: "MA", back: "VISSZA", analyze: "ELEMZÉS", days: ["VAS", "HÉTFŐ", "KEDD", "SZE", "CSÜT", "PÉN", "SZO"], empty: "Nincs mérkőzés ezen a napon." },
+            en: { today: "TODAY", back: "BACK", analyze: "ANALYZE", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"], empty: "No matches for this day." }
         };
 
         let allMatches = [];
-        // DÁTUM MEGJEGYZÉSE: Megnézi a memóriát, ha üres, akkor MA.
         let selectedDate = sessionStorage.getItem('lp_selected_date') || new Date().toLocaleDateString('sv');
         let currentLang = localStorage.getItem("lang") || "hu";
 
@@ -83,24 +179,28 @@
                 const data = await res.json();
                 allMatches = data.matches || [];
                 updateUI();
-            } catch (e) { document.getElementById("app").innerText = "Szerver hiba."; }
+            } catch (e) { document.getElementById("app").innerHTML = "<p style='text-align:center'>Szerver hiba.</p>"; }
         }
 
         function renderAll() {
             const selector = document.getElementById("date-selector");
             selector.innerHTML = "";
             const todayStr = new Date().toLocaleDateString('sv');
+            
+            // Dátumok kigyűjtése
             const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
 
             dates.forEach(date => {
                 const d = new Date(date);
-                const label = (date === todayStr) ? translations[currentLang].today : translations[currentLang].days[d.getDay()];
+                const isToday = date === todayStr;
+                const label = isToday ? translations[currentLang].today : translations[currentLang].days[d.getDay()];
+                
                 const btn = document.createElement("button");
                 btn.className = `date-btn ${date === selectedDate ? 'active' : ''}`;
-                btn.innerHTML = `${label}<br><span>${d.getMonth()+1}.${d.getDate()}</span>`;
+                btn.innerHTML = `${label} <span>${d.getMonth()+1}.${d.getDate()}</span>`;
                 btn.onclick = () => { 
                     selectedDate = date; 
-                    sessionStorage.setItem('lp_selected_date', date); // ELMENTÉS
+                    sessionStorage.setItem('lp_selected_date', date);
                     renderAll(); 
                 };
                 selector.appendChild(btn);
@@ -108,8 +208,9 @@
 
             const app = document.getElementById("app");
             const filtered = allMatches.filter(m => m.utcDate.startsWith(selectedDate));
+            
             if (filtered.length === 0) {
-                app.innerHTML = `<p style="text-align:center; padding:20px;">${translations[currentLang].empty}</p>`;
+                app.innerHTML = `<div class="league-section" style="padding:40px; text-align:center; opacity:0.5">${translations[currentLang].empty}</div>`;
                 return;
             }
 
@@ -121,20 +222,29 @@
 
             app.innerHTML = "";
             Object.values(leagues).forEach(league => {
-                const div = document.createElement("div");
-                div.className = "league-section";
-                div.innerHTML = `<div class="league-header">${league.name}</div>` + 
-                league.matches.map(m => `
+                const section = document.createElement("div");
+                section.className = "league-section";
+                
+                let matchesHtml = league.matches.map(m => `
                     <div class="match-row">
-                        <div class="team-box home">${m.homeTeam.shortName || m.homeTeam.name} <img src="${m.homeTeam.crest}" class="crest"></div>
+                        <div class="team-box home">
+                            ${m.homeTeam.shortName || m.homeTeam.name} 
+                            <img src="${m.homeTeam.crest}" class="crest" onerror="this.src='https://via.placeholder.com/30'">
+                        </div>
                         <div class="score-box">
-                            <div style="font-size:10px; opacity:0.6;">${m.status}</div>
-                            ${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}
+                            <span class="status-tag">${m.status}</span>
+                            <span class="score-num">${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}</span>
                             <button class="analyze-btn" onclick="location.href='/elemzes?id=${m.id}'">${translations[currentLang].analyze}</button>
                         </div>
-                        <div class="team-box away"><img src="${m.awayTeam.crest}" class="crest"> ${m.awayTeam.shortName || m.awayTeam.name}</div>
-                    </div>`).join('');
-                app.appendChild(div);
+                        <div class="team-box away">
+                            <img src="${m.awayTeam.crest}" class="crest" onerror="this.src='https://via.placeholder.com/30'">
+                            ${m.awayTeam.shortName || m.awayTeam.name}
+                        </div>
+                    </div>
+                `).join('');
+
+                section.innerHTML = `<div class="league-header">${league.name.toUpperCase()}</div>` + matchesHtml;
+                app.appendChild(section);
             });
         }
         init();
