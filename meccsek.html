@@ -236,30 +236,43 @@
 
         // --- DÁTUMVÁLASZTÓ (FIX 7 NAP) ---
         function renderDateStrip() {
-            const strip = document.getElementById("date-strip");
-            const dates = [];
-            const today = new Date();
-            for (let i = -3; i <= 3; i++) {
-                const d = new Date();
-                d.setDate(today.getDate() + i);
-                dates.push(d.toISOString().split('T')[0]);
-            }
-            strip.innerHTML = dates.map(d => {
-                const isToday = d === todayStr;
-                const dateObj = new Date(d);
-                let label = `${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
-                if (isToday) label = currentLang === 'HU' ? 'MA' : 'TODAY';
-                return `<div class="date-pill ${d === selectedDate ? 'active' : ''}" onclick="setDate('${d}')">${label}</div>`;
-            }).join('');
-        }
+    const strip = document.getElementById("date-strip");
+    if (!strip || allMatches.length === 0) return;
+
+    // Kiszedjük az összes egyedi dátumot a meccsekből
+    const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
+
+    strip.innerHTML = dates.map(d => {
+        const isToday = d === todayStr;
+        const dateObj = new Date(d);
+        
+        // Formázás: MM.DD vagy MA
+        let label = `${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
+        if (isToday) label = currentLang === 'HU' ? 'MA' : 'TODAY';
+
+        return `
+            <div class="date-pill ${d === selectedDate ? 'active' : ''}" 
+                 onclick="setDate('${d}')">
+                ${label}
+            </div>`;
+    }).join('');
+}
 
         function setDate(d) { selectedDate = d; renderDateStrip(); renderLeagues(); renderMatches(); }
 
         // --- ADATKEZELÉS ---
-        async function init() {
-            await updateData();
-            setInterval(updateData, 30000);
-        }
+       async function init() {
+    await updateData();
+    // Első betöltéskor állítsuk be a dátumot a maira, ha van olyan adatunk
+    if (allMatches.some(m => m.utcDate.startsWith(todayStr))) {
+        selectedDate = todayStr;
+    } else if (allMatches.length > 0) {
+        selectedDate = allMatches[0].utcDate.split('T')[0];
+    }
+    renderDateStrip();
+    renderMatches();
+    setInterval(updateData, 30000);
+}
 
         async function updateData() {
             try {
@@ -448,3 +461,4 @@
     </script>
 </body>
 </html>
+
