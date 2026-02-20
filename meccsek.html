@@ -6,37 +6,29 @@
     <title>LuckyPitch | Mérkőzések</title>
     <script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_YWxsb3dlZC1pbnNlY3QtOTguY2xlcmsuYWNjb3VudHMuZGV2JA" src="https://allowed-insect-98.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --primary: #00ff88; --text: #f8fafc; --secondary: #94a3b8; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
-        nav { display: flex; justify-content: space-between; padding: 1rem 5%; background: rgba(0,0,0,0.3); align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #00ff88; --text: #f8fafc; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 0; }
+        nav { display: flex; justify-content: space-between; padding: 1rem 5%; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); }
         .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-        
-        /* Dátum választó */
-        .date-bar { display: flex; gap: 10px; justify-content: center; margin-bottom: 30px; overflow-x: auto; padding: 10px; scrollbar-width: none; }
-        .date-btn { background: var(--card); border: 1px solid #334155; color: white; padding: 10px 18px; border-radius: 12px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-        .date-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(0, 255, 136, 0.1); }
-        
-        /* Meccs kártyák */
-        .match-card { background: var(--card); padding: 1.5rem; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
-        .match-card:hover { transform: translateY(-3px); border-color: rgba(0, 255, 136, 0.3); }
-        .team { width: 35%; text-align: center; font-weight: bold; }
-        .team img { width: 45px; height: 45px; display: block; margin: 0 auto 10px; object-fit: contain; }
-        .score-info { text-align: center; width: 30%; }
-        .score { font-size: 2rem; font-weight: 900; color: var(--primary); line-height: 1; margin-bottom: 5px; }
-        .btn-anal { background: var(--primary); color: #000; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-top: 10px; transition: 0.2s; }
-        .btn-anal:hover { background: #00cc6e; }
-        .status-msg { text-align: center; opacity: 0.6; margin-top: 50px; font-style: italic; font-size: 1.1rem; }
+        .date-bar { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; overflow-x: auto; padding: 10px; }
+        .date-btn { background: var(--card); border: 1px solid #334155; color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+        .date-btn.active { border-color: var(--primary); color: var(--primary); }
+        .match-card { background: var(--card); padding: 1rem; border-radius: 12px; display: flex; align-items: center; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); }
+        .team { flex: 1; text-align: center; font-weight: bold; }
+        .score-info { flex: 1; text-align: center; }
+        .score { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        .status-msg { text-align: center; margin-top: 50px; opacity: 0.6; }
     </style>
 </head>
 <body>
 
 <nav>
-    <a href="/" style="color:var(--primary); text-decoration:none; font-size:1.6rem; font-weight:900;">LuckyPitch</a>
+    <a href="/" style="color:var(--primary); text-decoration:none; font-size:1.5rem; font-weight:bold;">LuckyPitch</a>
     <div id="user-button"></div>
 </nav>
 
 <div class="container">
-    <h2 style="text-align:center; margin-bottom:20px;">Mai és közelgő meccsek</h2>
+    <h2 style="text-align:center;">Mérkőzések</h2>
     <div class="date-bar" id="date-bar"></div>
     <div id="match-list"></div>
 </div>
@@ -54,62 +46,63 @@
     function renderDates() {
         const bar = document.getElementById('date-bar');
         bar.innerHTML = '';
-        for (let i = -2; i <= 4; i++) {
+        for (let i = -1; i <= 3; i++) {
             const d = new Date();
             d.setDate(d.getDate() + i);
             const iso = d.toISOString().split('T')[0];
             const btn = document.createElement('button');
             btn.className = `date-btn ${iso === selectedDate ? 'active' : ''}`;
-            
-            const label = i === 0 ? "Ma" : d.toLocaleDateString('hu-HU', {month:'short', day:'numeric'});
-            
-            btn.innerText = label;
-            btn.onclick = () => { 
-                selectedDate = iso; 
-                renderDates(); 
-                fetchMatches(); 
-            };
+            btn.innerText = i === 0 ? "Ma" : d.toLocaleDateString('hu-HU', {day:'numeric', month:'short'});
+            btn.onclick = () => { selectedDate = iso; renderDates(); fetchMatches(); };
             bar.appendChild(btn);
         }
     }
 
     async function fetchMatches() {
         const list = document.getElementById('match-list');
-        list.innerHTML = '<p class="status-msg">Adatok lekérése a szervertől...</p>';
+        list.innerHTML = '<p class="status-msg">Betöltés...</p>';
 
         try {
-            // FONTOS: A perjel (/) az elején garantálja, hogy a jó útvonalat hívja
+            console.log("Lekérés indítása dátumra:", selectedDate);
             const res = await fetch(`/live-matches?date=${selectedDate}`);
+            
+            // Hibakeresés: Megnézzük a nyers választ
+            if (!res.ok) {
+                const errorText = await res.text();
+                alert("Szerver hiba! Kód: " + res.status + "\nÜzenet: " + errorText);
+                return;
+            }
+
             const data = await res.json();
+            console.log("API válasz:", data);
+
+            // FELUGRÓ ABLAK A TESZTHEZ
+            if (data.matches && data.matches.length > 0) {
+                alert("Siker! " + data.matches.length + " meccset találtam.");
+            } else {
+                alert("Az API válaszolt, de 0 meccset küldött erre a napra.");
+            }
 
             if (!data.matches || data.matches.length === 0) {
-                list.innerHTML = `
-                    <div class="status-msg">
-                        <p>Ezen a napon nincs meccs az ingyenesen követhető ligákban.</p>
-                        <p style="color:var(--primary); font-size:0.9rem; margin-top:10px;">Tipp: Kattints a hétvégi dátumokra!</p>
-                    </div>`;
+                list.innerHTML = '<p class="status-msg">Nincs meccs ezen a napon az ingyenes ligákban.</p>';
                 return;
             }
 
             list.innerHTML = data.matches.map(m => `
                 <div class="match-card">
-                    <div class="team">
-                        <img src="${m.homeTeam.crest || 'https://via.placeholder.com/45?text=?'}" onerror="this.src='https://via.placeholder.com/45?text=?'">
-                        <span>${m.homeTeam.shortName || m.homeTeam.name}</span>
-                    </div>
+                    <div class="team">${m.homeTeam.name}</div>
                     <div class="score-info">
-                        <div class="score">${m.score.fullTime.home ?? 0}:${m.score.fullTime.away ?? 0}</div>
-                        <a href="/elemzes" class="btn-anal">ELEMZÉS</a>
+                        <div class="score">${m.score.fullTime.home ?? 0} : ${m.score.fullTime.away ?? 0}</div>
+                        <a href="/elemzes" style="color:var(--primary); font-size:0.8rem;">ELEMZÉS</a>
                     </div>
-                    <div class="team">
-                        <img src="${m.awayTeam.crest || 'https://via.placeholder.com/45?text=?'}" onerror="this.src='https://via.placeholder.com/45?text=?'">
-                        <span>${m.awayTeam.shortName || m.awayTeam.name}</span>
-                    </div>
+                    <div class="team">${m.awayTeam.name}</div>
                 </div>
             `).join('');
+
         } catch (e) {
-            console.error("Hiba:", e);
-            list.innerHTML = '<p class="status-msg" style="color:#ff4444;">Hiba történt a kapcsolódáskor. Próbáld frissíteni az oldalt!</p>';
+            console.error("Hiba történt:", e);
+            alert("Hiba a lekérés során: " + e.message);
+            list.innerHTML = '<p class="status-msg" style="color:red;">Hiba a kapcsolódáskor.</p>';
         }
     }
 
