@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LuckyPitch | Live Match Universe</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #020617;
@@ -22,11 +22,12 @@
             font-family: 'Inter', sans-serif;
             margin: 0;
             overflow-x: hidden;
+            min-height: 100vh;
         }
 
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
 
-        /* --- ⚡ GOAL FLASH --- */
+        /* --- ⚡ GOAL FLASH OVERLAY --- */
         #goal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255, 62, 62, 0.85);
@@ -35,9 +36,9 @@
             animation: flashAnim 0.4s infinite alternate;
         }
         @keyframes flashAnim { from { opacity: 0.6; } to { opacity: 1; } }
-        .goal-text { font-family: 'Orbitron'; font-size: clamp(4rem, 15vw, 10rem); color: white; text-shadow: 0 0 50px #ff0000; }
+        .goal-text { font-family: 'Orbitron'; font-size: clamp(3rem, 12vw, 8rem); color: white; text-shadow: 0 0 50px #ff0000; font-weight: 900; }
 
-        /* --- 🎬 SMART TICKER --- */
+        /* --- 🎬 SMART INSIGHT TICKER --- */
         .ticker-wrap {
             background: rgba(0, 0, 0, 0.6); border-bottom: 1px solid var(--neon-blue);
             padding: 12px 0; overflow: hidden; margin-bottom: 25px;
@@ -54,58 +55,61 @@
             margin-bottom: 30px; position: relative; box-shadow: 0 0 50px rgba(0,0,0,0.6);
             overflow: hidden;
         }
-
         .hero-card::after {
             content: ''; position: absolute; width: 100%; height: 1px; bottom: 0;
             background: linear-gradient(90deg, transparent, var(--neon-green), transparent);
         }
 
-        .score-display { font-family: 'Orbitron'; font-size: 5.5rem; font-weight: 900; color: var(--neon-green); text-shadow: 0 0 25px rgba(0,255,136,0.6); }
+        .score-display { font-family: 'Orbitron'; font-size: clamp(3rem, 8vw, 5.5rem); font-weight: 900; color: var(--neon-green); text-shadow: 0 0 25px rgba(0,255,136,0.6); }
         .team-box { flex: 1; text-align: center; }
-        .team-box img { width: 120px; height: 120px; object-fit: contain; filter: drop-shadow(0 0 20px rgba(255,255,255,0.15)); }
-        .team-box h2 { font-family: 'Orbitron'; font-size: 1.6rem; margin-top: 15px; letter-spacing: 1px; }
+        .team-box img { width: 100px; height: 100px; object-fit: contain; filter: drop-shadow(0 0 20px rgba(255,255,255,0.15)); }
+        .team-box h2 { font-family: 'Orbitron'; font-size: 1.4rem; margin-top: 15px; letter-spacing: 1px; }
 
-        /* --- 📊 DASHBOARD --- */
+        /* --- 📊 DASHBOARD LAYOUT --- */
         .grid-layout { display: grid; grid-template-columns: 2.5fr 1fr; gap: 30px; }
-        @media (max-width: 1000px) { .grid-layout { grid-template-columns: 1fr; } }
+        @media (max-width: 1100px) { .grid-layout { grid-template-columns: 1fr; } }
 
         .glass-panel {
             background: var(--glass); border: 1px solid var(--border);
             padding: 30px; border-radius: 28px; backdrop-filter: blur(15px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow-x: auto;
         }
 
         /* --- 🔋 MOMENTUM METER --- */
         .momentum-wrap { height: 14px; background: rgba(0,0,0,0.4); border-radius: 30px; margin: 20px 0; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
         .momentum-fill { height: 100%; width: 50%; background: linear-gradient(90deg, var(--neon-red), var(--neon-green)); transition: 2.5s cubic-bezier(0.17, 0.67, 0.83, 0.67); box-shadow: 0 0 20px var(--neon-green); }
 
-        /* --- 💎 BET SLIP --- */
-        .bet-input {
-            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--neon-blue);
-            padding: 15px; border-radius: 14px; color: white; font-family: 'Orbitron'; margin: 15px 0; outline: none;
-        }
-        .profit-preview { display: flex; justify-content: space-between; font-family: 'Orbitron'; color: var(--neon-green); font-size: 1.3rem; margin-bottom: 20px; }
-
-        /* --- 🏅 NEON TABLE --- */
-        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
-        td { padding: 18px; background: rgba(255,255,255,0.03); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        /* --- 🏅 LIVE TABLE --- */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; min-width: 800px; }
+        th { text-align: center; color: #64748b; font-family: 'Orbitron'; font-size: 10px; padding: 10px; }
+        td { padding: 15px; background: rgba(255,255,255,0.03); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); text-align: center; }
         td:first-child { border-left: 1px solid var(--border); border-radius: 15px 0 0 15px; }
         td:last-child { border-right: 1px solid var(--border); border-radius: 0 15px 15px 0; }
 
+        .status-border { border-left: 4px solid transparent !important; }
+        .zone-label { font-size: 8px; font-family: 'Orbitron'; display: block; margin-bottom: 4px; font-weight: 900; }
+        
         .pos-neon {
-            width: 38px; height: 38px; line-height: 38px; text-align: center;
+            width: 32px; height: 32px; line-height: 32px; margin: 0 auto;
             background: #000; border: 1px solid var(--neon-blue); color: var(--neon-blue);
-            border-radius: 10px; font-family: 'Orbitron'; font-weight: bold; box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+            border-radius: 10px; font-family: 'Orbitron'; font-weight: bold; font-size: 12px;
         }
 
-        .highlight td { background: rgba(0, 255, 136, 0.08) !important; border-color: var(--neon-green); }
+        .highlight td { background: rgba(0, 255, 136, 0.08) !important; border-color: var(--neon-green) !important; }
+        .pts-bold { color: var(--neon-green); font-family: 'Orbitron'; font-weight: bold; font-size: 15px; }
 
+        /* --- 💎 BET SLIP --- */
+        .bet-input {
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--neon-blue);
+            padding: 15px; border-radius: 14px; color: white; font-family: 'Orbitron'; margin: 15px 0; outline: none; box-sizing: border-box;
+        }
+        .profit-preview { display: flex; justify-content: space-between; font-family: 'Orbitron'; color: var(--neon-green); font-size: 1.3rem; margin-bottom: 20px; }
         .btn-bet {
             width: 100%; padding: 18px; background: var(--neon-green); color: black;
             border: none; border-radius: 14px; font-family: 'Orbitron'; font-weight: 900;
             cursor: pointer; transition: 0.4s; text-transform: uppercase;
         }
-        .btn-bet:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(0,255,136,0.4); background: #00ffaa; }
+        .btn-bet:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(0,255,136,0.4); }
 
         .back-link { text-decoration: none; color: var(--neon-blue); font-family: 'Orbitron'; font-size: 12px; margin-bottom: 20px; display: inline-block; }
     </style>
@@ -116,9 +120,9 @@
 
 <div class="ticker-wrap">
     <div class="ticker" id="ticker-content">
-        <span class="ticker-item">⚡ AI PREDICTION: HOME WIN PROBABILITY INCREASING (62%)</span>
-        <span class="ticker-item">🔥 LIVE TREND: 84% OF RECENT BETS ON "OVER 1.5 GOALS"</span>
-        <span class="ticker-item">⚠️ SYSTEM ALERT: HIGH PRESSURE DETECTED IN ATTACKING ZONE</span>
+        <span class="ticker-item">⚡ AI PREDICTION: HOME ATTACK PRESSURE HIGH (78%)</span>
+        <span class="ticker-item">🔥 LIVE TREND: 84% OF USERS EXPECT "OVER 1.5 GOALS"</span>
+        <span class="ticker-item">⚠️ SYSTEM ALERT: DEFENSIVE LINE WEAKNESS DETECTED</span>
     </div>
 </div>
 
@@ -128,31 +132,31 @@
 
     <div class="grid-layout">
         <div class="glass-panel">
-            <h3 style="font-family:'Orbitron'; color:var(--neon-blue); display:flex; justify-content:space-between; margin-top:0;">
-                ATTACK MOMENTUM <span>⚡ POWERED BY AI</span>
+            <h3 style="font-family:'Orbitron'; color:var(--neon-blue); display:flex; justify-content:space-between; margin:0;">
+                ATTACK MOMENTUM <span>⚡ LIVE ANALYTICS</span>
             </h3>
             <div class="momentum-wrap"><div class="momentum-fill" id="momentum-bar"></div></div>
             
             <h3 style="font-family:'Orbitron'; margin-top:40px; font-size: 1.1rem; letter-spacing: 2px;">LIVE TABLE RANKINGS</h3>
-            <div id="standings-target"></div>
+            <div id="standings-target">Betöltés...</div>
         </div>
 
         <div class="right-col">
             <div class="glass-panel">
-                <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:13px; margin-top:0;">WIN PROBABILITY</h3>
+                <h3 style="font-family:'Orbitron'; color:var(--neon-green); font-size:13px; margin:0;">WIN PROBABILITY</h3>
                 <canvas id="aiChart" style="margin-bottom: 25px;"></canvas>
                 
                 <div class="bet-slip">
                     <h4 style="font-family:'Orbitron'; font-size:11px; opacity:0.6; text-align:center;">NEON BET SLIP</h4>
-                    <input type="number" class="bet-input" id="stake" placeholder="ENTER STAKE €" oninput="calcProfit()">
+                    <input type="number" id="stake" class="bet-input" placeholder="ENTER STAKE €" oninput="calcProfit()">
                     <div class="profit-preview"><span>RETURN:</span><span id="profit">0.00 €</span></div>
                     <button class="btn-bet" onclick="triggerGoal()">SIMULATE GOAL</button>
                 </div>
             </div>
 
             <div class="glass-panel" style="margin-top: 25px;">
-                <h3 style="font-family:'Orbitron'; font-size:13px; margin-top:0;">MARKET HEATMAP</h3>
-                <div id="odds-target"></div>
+                <h3 style="font-family:'Orbitron'; font-size:13px; margin:0;">MARKET HEATMAP</h3>
+                <div id="odds-target">Keresés...</div>
             </div>
         </div>
     </div>
@@ -162,6 +166,28 @@
 <script>
     const matchId = new URLSearchParams(window.location.search).get('id');
     let currentOdds = 1.0;
+
+    // --- SEGÉDFÜGGVÉNYEK ---
+    function getStatusColor(text) {
+        if (!text) return "transparent";
+        text = text.toLowerCase();
+        if (text.includes("champions league")) return text.includes("qualifiers") ? "#6699ff" : "#0044ff";
+        if (text.includes("europa league")) return "#cc7a00";
+        if (text.includes("conference league")) return "#00cc6a";
+        if (text.includes("relegation") || text.includes("kiesés")) return "#ff3e3e";
+        if (text.includes("play-off") || text.includes("osztályozó")) return "#d35400";
+        return "transparent";
+    }
+
+    function translateStatus(text) {
+        if (!text) return "";
+        if (text.includes("Champions League")) return "BL";
+        if (text.includes("Europa League")) return "EL";
+        if (text.includes("Conference League")) return "KL";
+        if (text.includes("Relegation") || text.includes("Kiesés")) return "KIESŐ";
+        if (text.includes("Osztályozó") || text.includes("Play-off")) return "P.OFF";
+        return "ZÓNA";
+    }
 
     async function init() {
         try {
@@ -196,23 +222,62 @@
             const res = await fetch(`/api/standings/${code}`);
             const data = await res.json();
             const table = data.standings.find(s => s.type === 'TOTAL').table;
+            const total = table.length;
 
-            let html = `<table><tbody>`;
+            let html = `<table>
+                <thead>
+                    <tr>
+                        <th>POS</th><th style="text-align:left">TEAM</th>
+                        <th>MP</th><th>W</th><th>D</th><th>L</th><th>G</th><th>GK</th><th>PTS</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
             table.forEach(r => {
+                let status = r.description || "";
+                const pos = r.position;
+
+                // Manuális kupa logika
+                if (!status || status === "") {
+                    if (['PL', 'PD', 'SA'].includes(code)) {
+                        if (pos <= 4) status = "Champions League Group Stage";
+                        else if (pos === 5) status = "Europa League Group Stage";
+                        else if (pos >= total - 2) status = "Relegation";
+                    } else if (code === 'BL1' || code === 'FL1' || code === 'DED' || code === 'PPL') {
+                        if (pos <= 3) status = "Champions League Group Stage";
+                        else if (pos === 16) status = "Osztályozó";
+                        else if (pos >= 17) status = "Relegation";
+                    }
+                }
+
+                const color = getStatusColor(status);
                 const isMatchTeam = (home.includes(r.team.name) || away.includes(r.team.name));
+
                 html += `
                     <tr class="${isMatchTeam ? 'highlight' : ''}">
-                        <td style="width:40px;"><div class="pos-neon">${r.position}</div></td>
-                        <td style="font-weight:800; font-size:14px;">
+                        <td class="status-border" style="border-left-color: ${color}">
+                            <div style="display:flex; flex-direction:column; align-items:center;">
+                                ${status ? `<span class="zone-label" style="color:${color}">${translateStatus(status)}</span>` : ''}
+                                <div class="pos-neon" style="${status ? 'width:26px; height:26px; line-height:26px; font-size:10px;' : ''}">${pos}</div>
+                            </div>
+                        </td>
+                        <td style="text-align:left; font-weight:800; font-size:14px;">
                             <img src="${r.team.crest}" width="22" style="vertical-align:middle; margin-right:12px;">
                             ${r.team.name}
                         </td>
-                        <td style="font-family:'Orbitron'; font-size:12px; opacity:0.7;">${r.playedGames} MP</td>
-                        <td style="font-family:'Orbitron'; font-weight:bold; color:var(--neon-green); text-align:right;">${r.points} PTS</td>
+                        <td>${r.playedGames}</td>
+                        <td>${r.won}</td>
+                        <td>${r.draw}</td>
+                        <td>${r.lost}</td>
+                        <td>${r.goalsFor}:${r.goalsAgainst}</td>
+                        <td style="color:${r.goalDifference >= 0 ? 'var(--neon-green)' : 'var(--neon-red)'}">
+                            ${r.goalDifference > 0 ? '+' + r.goalDifference : r.goalDifference}
+                        </td>
+                        <td class="pts-bold">${r.points}</td>
                     </tr>`;
             });
             document.getElementById('standings-target').innerHTML = html + "</tbody></table>";
-        } catch (e) {}
+        } catch (e) { document.getElementById('standings-target').innerHTML = "Hiba az adatok betöltésekor."; }
     }
 
     async function loadOdds(home, away) {
@@ -221,14 +286,16 @@
             const data = await res.json();
             const homeBase = home.split(' ')[0];
             const m = data.find(o => o.home_team.includes(homeBase) || o.away_team.includes(homeBase));
-            if (m) {
+            if (m && m.bookmakers[0]) {
                 const price = m.bookmakers[0].markets[0].outcomes[0].price;
                 currentOdds = price;
                 document.getElementById('odds-target').innerHTML = `
                     <div style="padding:20px; border-radius:18px; background:rgba(0,255,136,0.05); border:1px solid var(--neon-green); display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-family:'Orbitron'; font-size:12px;">HOME (1)</span>
+                        <span style="font-family:'Orbitron'; font-size:12px;">HOME WIN (1)</span>
                         <span style="font-family:'Orbitron'; font-size:1.8rem; color:var(--neon-green); font-weight:bold;">${price}</span>
                     </div>`;
+            } else {
+                document.getElementById('odds-target').innerHTML = "Odds nem elérhető.";
             }
         } catch (e) {}
     }
@@ -251,18 +318,13 @@
             data: {
                 labels: ['Home', 'Draw', 'Away'],
                 datasets: [{
-                    data: [62, 18, 20],
+                    data: [65, 20, 15],
                     backgroundColor: ['#00ff88', '#0ea5e9', '#ff3e3e'],
                     borderColor: 'rgba(255,255,255,0.1)',
-                    borderWidth: 2,
-                    hoverOffset: 10
+                    borderWidth: 2
                 }]
             },
-            options: { 
-                cutout: '82%', 
-                plugins: { legend: { display: false } },
-                animation: { animateScale: true }
-            }
+            options: { cutout: '82%', plugins: { legend: { display: false } } }
         });
     }
 
