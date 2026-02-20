@@ -207,25 +207,34 @@
         } catch (e) { console.error(e); }
     }
 
-    function updateMomentum(status, utcDate) {
+   function updateMomentum(status, utcDate) {
     const bar = document.getElementById('momentum-bar');
     const title = document.getElementById('momentum-title');
     if (!bar || !title) return;
 
-    if (status === 'IN_PLAY') {
+    if (status === 'IN_PLAY' || status === 'LIVE') {
         const start = new Date(utcDate).getTime();
         const now = new Date().getTime();
-        // Alap perc számítás
-        let mins = Math.floor((now - start) / 60000);
         
-        // Logika a szebb kijelzéshez
-        let displayMins = mins;
-        if (mins > 45 && mins < 60) displayMins = "45+"; // Első félidő végi hosszabbítás körülbelül
-        if (mins >= 105) displayMins = "90+"; // Meccs végi hosszabbítás
+        // Kiszámoljuk a különbséget a kezdés óta (milliszekundumban)
+        let diffMs = now - start;
+        let mins = Math.floor(diffMs / 60000);
 
-        bar.style.width = Math.min(100, (mins / 95) * 100) + '%';
+        // KORREKCIÓ: Ha az API késik, a "percek" túl magasak lehetnek.
+        // Mivel az ingyenes API nem küldi a pontos percet a JSON-ben, 
+        // egy 4 perces "biztonsági tartalékot" vonunk le, hogy közelebb legyen a valósághoz
+        let adjustedMins = mins - 4; 
+        if (adjustedMins < 1) adjustedMins = 1;
+
+        // Szépségápolás a kijelzéshez
+        let displayMins = adjustedMins;
+        if (adjustedMins > 45 && adjustedMins < 50) displayMins = "45+";
+        if (adjustedMins >= 90) displayMins = "90+";
+
+        // Csík szélessége (max 100%)
+        bar.style.width = Math.min(100, (adjustedMins / 95) * 100) + '%';
         bar.style.background = 'linear-gradient(90deg, var(--neon-blue), var(--neon-green))';
-        title.innerHTML = `LIVE: <span style="color:var(--neon-red); animation: pulse 1s infinite;">${displayMins}'</span>`;
+        title.innerHTML = `LIVE: <span style="color:var(--neon-red); font-weight:900; animation: pulse 1s infinite;">${displayMins}'</span>`;
         
     } else if (status === 'PAUSED') {
         bar.style.width = '50%';
@@ -366,4 +375,5 @@
 </script>
 </body>
 </html>
+
 
