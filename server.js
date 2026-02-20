@@ -75,7 +75,10 @@ app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
 app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
 
-const PORT = process.env.PORT || 10000;
+// A PORT-ot a process.env.PORT-ból kell venni!
+const PORT = process.env.PORT || 10000; 
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 LuckyPitch Server fut a ${PORT} porton`);
 });
+
