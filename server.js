@@ -29,12 +29,27 @@ let standingsCache = {};
 // ⚽ MECCSEK (Optimalizált 30 mp-es cache az élő adatokhoz)
 app.get("/live-matches", async (req, res) => {
     const now = Date.now();
+    
+    // Ha van cache és friss (30mp), azt adjuk vissza
     if (matchCache.data && (now - matchCache.lastFetch < 30000)) {
         return res.json(matchCache.data);
     }
 
     try {
-        const url = `https://api.football-data.org/v4/matches`;
+        // Időintervallum kiszámítása (3 nap vissza, 3 nap előre)
+        const dateFrom = new Date();
+        dateFrom.setDate(dateFrom.getDate() - 3);
+        const dateTo = new Date();
+        dateTo.setDate(dateTo.getDate() + 3);
+
+        const fromStr = dateFrom.toISOString().split('T')[0];
+        const toStr = dateTo.toISOString().split('T')[0];
+
+        // URL kiegészítése az intervallummal
+        const url = `https://api.football-data.org/v4/matches?dateFrom=${fromStr}&dateTo=${toStr}`;
+        
+        console.log("Lekérés az API-ból:", url);
+
         const response = await fetch(url, { 
             headers: { 
                 "X-Auth-Token": FOOTBALL_DATA_API_KEY,
@@ -46,7 +61,7 @@ app.get("/live-matches", async (req, res) => {
 
         const data = await response.json();
 
-        if (data.matches && data.matches.length > 0) {
+        if (data.matches) {
             matchCache.data = data;
             matchCache.lastFetch = now;
         }
@@ -140,3 +155,4 @@ app.listen(PORT, '0.0.0.0', () => {
     💳 Stripe: ${STRIPE_SECRET_KEY ? "AKTÍV" : "HIÁNYZIK"}
     `);
 });
+
