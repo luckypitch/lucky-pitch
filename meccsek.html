@@ -47,16 +47,17 @@
         #goal-banner.show { top: 75px; }
 
         @keyframes goal-pulse {
-            0% { box-shadow: 0 0 0px var(--neon-green); border-color: var(--border); }
-            50% { box-shadow: 0 0 30px var(--neon-green); border-color: #fff; transform: scale(1.02); }
-            100% { box-shadow: 0 0 0px var(--neon-green); border-color: var(--border); }
-        }
+    0% { border-color: var(--border); box-shadow: 0 0 0px transparent; }
+    50% { border-color: var(--neon-green); box-shadow: 0 0 30px var(--neon-green); background: rgba(0, 255, 136, 0.2); }
+    100% { border-color: var(--border); box-shadow: 0 0 0px transparent; }
+}
 
-        .goal-highlight {
-            animation: goal-pulse 2s ease-in-out 3;
-            border: 2px solid var(--neon-green) !important;
-            background: rgba(0, 255, 136, 0.1) !important;
-        }
+.goal-highlight {
+    animation: goal-pulse 1.5s ease-in-out 5 !important;
+    position: relative;
+    z-index: 10;
+    border-width: 2px !important;
+}
 
         /* --- NAV --- */
         nav { 
@@ -508,6 +509,7 @@
     </script>
 </body>
 </html>
+
 
 
 
