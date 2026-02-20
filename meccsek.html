@@ -5,7 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LuckyPitch | Live Match Universe</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
- <style>
+Megértettelek, ne haragudj, benéztem a struktúrát. Túlbonyolítottam, miközben neked a három-szekciós (bal-közép-jobb) elrendezés kellett, ami mobilon egymás alá sorol be, nem pedig eltűnik oldalra vagy leragad egy képernyőnyi magasságban.
+
+Visszahoztam azt a szerkezetet, ami a "jó állapotban" volt: a Grid-layoutot. Ez az, ami PC-n szép széles, mobilon pedig végtelenül görgethető lefelé.
+
+Itt az eredeti stílusú, reszponzív kód, benne a lávalámpával és a javított gombokkal:
+HTML
+
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LuckyPitch | Live Match Universe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
         :root {
             --bg: #020617;
             --glass: rgba(15, 23, 42, 0.85);
@@ -16,91 +30,94 @@
             --border: rgba(255, 255, 255, 0.1);
         }
 
-        /* --- ALAPOK JAVÍTÁSA (GÖRGETHETŐSÉG) --- */
+        /* --- ALAPOK: GÖRGETHETŐSÉG VISSZAÁLLÍTÁSA --- */
         body { 
             background: var(--bg); 
             color: var(--text); 
             font-family: 'Inter', sans-serif; 
             margin: 0; padding: 0;
+            overflow-x: hidden;
             min-height: 100vh;
-            overflow-x: hidden; /* Megállítja az oldalra csúszkálást */
         }
 
         /* --- LÁVALÁMPA (Z-index és Pointer fix) --- */
         .bg-animation {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; overflow: hidden; filter: blur(80px); opacity: 0.3;
-            pointer-events: none; /* Átengedi a kattintást a gombokra! */
+            z-index: -1; filter: blur(80px); opacity: 0.3;
+            pointer-events: none;
         }
         .blob { position: absolute; width: 400px; height: 400px; border-radius: 50%; animation: move 20s infinite alternate; }
         .blob-1 { background: #0044ff; top: -10%; left: -10%; }
         .blob-2 { background: var(--neon-green); bottom: -10%; right: -10%; }
-        @keyframes move { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(100px, 50px) scale(1.1); } }
 
-        /* --- NAVIGÁCIÓ (Fixált HU/EN gombokkal) --- */
+        @keyframes move { 0% { transform: translate(0, 0); } 100% { transform: translate(100px, 50px); } }
+
+        /* --- NAVIGÁCIÓ (Eredeti stílus) --- */
         nav { 
-            position: sticky; top: 0; height: 70px; 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 20px; background: var(--glass); backdrop-filter: blur(20px); 
-            border-bottom: 1px solid var(--border); z-index: 1100; 
+            background: var(--glass); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
         }
-        .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.1rem; color: var(--neon-blue); letter-spacing: 2px; }
-        .nav-tools { display: flex; gap: 8px; z-index: 1200; }
+        .logo { font-family: 'Orbitron'; font-weight: 900; color: var(--neon-blue); letter-spacing: 2px; }
+        
+        /* --- GOMBOK FIXÁLÁSA --- */
+        .nav-tools { display: flex; gap: 10px; }
         .tool-btn { 
             background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            color: var(--text); padding: 8px 12px; border-radius: 10px;
-            cursor: pointer; font-family: 'Orbitron'; font-size: 10px;
-            pointer-events: auto !important;
+            color: var(--text); padding: 8px 15px; border-radius: 12px;
+            cursor: pointer; font-family: 'Orbitron'; font-size: 11px;
+            pointer-events: auto !important; /* Most már kattintható lesz! */
         }
 
-        /* --- LAYOUT (Ami régen jó volt) --- */
-        .main-wrapper { 
+        /* --- EREDETI GRID LAYOUT --- */
+        .grid-layout { 
             display: grid; 
             grid-template-columns: 1fr; 
             gap: 20px; 
-            padding: 15px;
-            max-width: 1400px;
+            padding: 20px;
+            max-width: 1600px;
             margin: 0 auto;
         }
 
         @media (min-width: 1100px) {
-            .main-wrapper { grid-template-columns: 280px 1fr 380px; }
+            .grid-layout { 
+                grid-template-columns: 300px 1fr 420px; 
+            }
         }
 
-        /* --- MATCH CARDS (Mobilra optimalizálva) --- */
+        /* --- KÁRTYÁK --- */
+        .glass-panel { background: var(--glass); border: 1px solid var(--border); padding: 20px; border-radius: 24px; backdrop-filter: blur(15px); }
+        
         .match-card {
-            background: var(--glass); border: 1px solid var(--border); border-radius: 20px;
-            padding: 15px; margin-bottom: 12px; display: flex; align-items: center;
-            justify-content: space-between; transition: 0.3s;
+            background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 24px;
+            padding: 20px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;
         }
-        .team-link img { width: 40px; height: 40px; object-fit: contain; }
-        .team-link span { font-size: 10px; font-family: 'Orbitron'; margin-top: 5px; text-align: center; }
-        .score-display { font-family: 'Orbitron'; font-size: 1.5rem; font-weight: 900; color: var(--neon-green); }
+        
+        .score-display { font-family: 'Orbitron'; font-size: 1.8rem; font-weight: 900; color: var(--neon-green); }
 
-        /* --- DÁTUM CSÍK --- */
-        .date-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none; }
-        .date-pill { flex: 0 0 auto; padding: 10px 18px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); font-size: 10px; font-family: 'Orbitron'; }
+        /* --- DÁTUMVÁLASZTÓ --- */
+        .date-strip { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; }
+        .date-pill { flex: 0 0 auto; padding: 12px 20px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); font-family: 'Orbitron'; font-size: 10px; }
         .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); }
 
         /* --- GOAL BANNER --- */
         #goal-banner {
             position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
             background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
-            color: #000; padding: 15px 30px; border-radius: 0 0 20px 20px;
+            color: #000; padding: 15px 40px; border-radius: 0 0 20px 20px;
             font-family: 'Orbitron'; font-weight: 900; z-index: 2000;
-            transition: 0.5s; width: 90%; text-align: center;
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         #goal-banner.show { top: 0; }
+        
+        /* VILLOGÁS */
+        .goal-highlight { animation: goal-flash 0.5s infinite !important; }
+        @keyframes goal-flash { 0% { background: rgba(255, 62, 62, 0.6); } 100% { background: transparent; } }
 
-        /* --- VILLOGÁS --- */
-        .goal-highlight { animation: goal-flash 0.6s infinite; border: 2px solid var(--neon-red) !important; }
-        @keyframes goal-flash { 0% { background: rgba(255, 62, 62, 0.4); } 100% { background: transparent; } }
-
-        /* --- SIDEBAROK MOBILON --- */
-        @media (max-width: 1099px) {
-            .sidebar, .standings-sidebar { background: var(--glass); border-radius: 20px; padding: 15px; }
-            .sidebar-header { font-size: 12px; margin-bottom: 15px; color: var(--neon-blue); font-family: 'Orbitron'; }
-        }
+        /* TABELLA MOBILON */
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; min-width: 400px; border-collapse: collapse; }
     </style>
 </head>
 <body class="dark">
@@ -524,6 +541,7 @@ function updateSelectAllButton() {
     </script>
 </body>
 </html>
+
 
 
 
