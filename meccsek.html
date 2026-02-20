@@ -287,34 +287,44 @@
 
                    if (!status || status === "") {
                         if (['PL', 'PD', 'SA'].includes(code)) {
-                            if (pos <= 4) status = "Champions League";
-                            else if (pos === 5) status = "Europa League";
-                            else if (pos === 6) status = "Conference League";
+                            if (pos <= 4) status = "Champions League Group Stage";
+                            else if (pos === 5) status = "Europa League Group Stage";
+                            else if (pos === 6) status = "Conference League Qualifiers";
                             else if (pos >= total - 2) status = "Relegation";
                         } else if (code === 'BL1') {
-                            if (pos <= 4) status = "Champions League";
-                            else if (pos === 5) status = "Europa League";
+                            if (pos <= 4) status = "Champions League Group Stage";
+                            else if (pos === 5) status = "Europa League Group Stage";
                             else if (pos === 16) status = "Osztályozó";
                             else if (pos >= 17) status = "Relegation";
                         } else if (code === 'DED') { 
-                            if (pos <= 2) status = "Champions League";
-                            else if (pos === 3) status = "Champions League Q";
-                            else if (pos === 4) status = "Europa League Q";
-                            else if (pos >= 5 && pos <= 8) status = "Conference Play-offs";
+                            if (pos <= 2) status = "Champions League Group Stage";
+                            else if (pos === 3) status = "Champions League Qualifiers";
+                            else if (pos === 4) status = "Europa League Qualifiers";
+                            else if (pos >= 5 && pos <= 8) status = "Conference League Play-offs";
                             else if (pos === 16) status = "Osztályozó";
                             else if (pos >= 17) status = "Relegation";
                         } else if (code === 'PPL') {
-                            if (pos === 1) status = "Champions League";
-                            else if (pos === 2) status = "Champions League Q";
-                            else if (pos === 3) status = "Europa League Q";
+                            if (pos === 1) status = "Champions League Group Stage";
+                            else if (pos === 2) status = "Champions League Qualifiers";
+                            else if (pos === 3) status = "Europa League Qualifiers";
+                            else if (pos === 4) status = "Conference League Qualifiers";
+                            else if (pos === 16) status = "Osztályozó";
+                            else if (pos >= 17) status = "Relegation";
+                        } else if (code === 'FL1') {
+                            if (pos <= 3) status = "Champions League Group Stage";
+                            else if (pos === 4) status = "Champions League Qualifiers";
+                            else if (pos === 5) status = "Europa League Group Stage";
                             else if (pos === 16) status = "Osztályozó";
                             else if (pos >= 17) status = "Relegation";
                         } else if (code === 'ELC') {
-                            if (pos <= 2) status = "Feljutás";
-                            else if (pos <= 6) status = "Play-off";
+                            if (pos <= 2) status = "Feljutás - Premier League";
+                            else if (pos <= 6) status = "Play-off (Championship)";
+                            else if (pos >= total - 2) status = "Relegation";
+                        } else {
+                            if (pos === 1) status = "Bajnok / Feljutó";
                             else if (pos >= total - 2) status = "Relegation";
                         }
-                    } 
+                    }
 
                     const color = getStatusColor(status);
                     const isTarget = r.team.id == teamId;
@@ -397,4 +407,5 @@
     </script>
 </body>
 </html>
+
 
