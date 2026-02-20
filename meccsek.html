@@ -37,7 +37,7 @@
         .blob-3 { background: var(--el-gs); top: 30%; left: 30%; animation-delay: -10s; }
         @keyframes move { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10vw, 10vh) scale(1.2); } }
 
-        /* --- GOAL BANNER --- */
+        /* --- GOAL EFFECTS --- */
         #goal-banner {
             position: fixed; top: -100px; left: 0; right: 0; height: 65px;
             background: var(--neon-green); color: #000; display: flex; align-items: center; justify-content: center;
@@ -45,6 +45,18 @@
             transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 0 50px rgba(0,255,136,0.6);
         }
         #goal-banner.show { top: 75px; }
+
+        @keyframes goal-pulse {
+            0% { box-shadow: 0 0 0px var(--neon-green); border-color: var(--border); }
+            50% { box-shadow: 0 0 30px var(--neon-green); border-color: #fff; transform: scale(1.02); }
+            100% { box-shadow: 0 0 0px var(--neon-green); border-color: var(--border); }
+        }
+
+        .goal-highlight {
+            animation: goal-pulse 2s ease-in-out 3;
+            border: 2px solid var(--neon-green) !important;
+            background: rgba(0, 255, 136, 0.1) !important;
+        }
 
         /* --- NAV --- */
         nav { 
@@ -73,7 +85,7 @@
 
         .content-area { flex: 1; overflow-y: auto; padding: 25px; scrollbar-width: none; }
         
-        /* --- MECCS KÁRTYÁK & FORGÓ LOGÓK --- */
+        /* --- MECCS KÁRTYÁK --- */
         .match-card {
             background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 24px;
             padding: 20px; margin-bottom: 15px; display: flex; align-items: center; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -89,7 +101,7 @@
         .score-live { color: var(--neon-red); animation: pulse 1s infinite; text-shadow: 0 0 15px var(--neon-red); }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* --- TABELLA # SZÍNEZÉS --- */
+        /* --- TABELLA --- */
         .standings-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
         .standings-table td { padding: 14px 8px; background: rgba(255,255,255,0.03); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 12px; }
         .pos-col { border-left-width: 5px !important; border-left-style: solid !important; }
@@ -110,6 +122,7 @@
         .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0,255,136,0.05); }
 
         .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
+        
         @media (max-width: 1100px) {
             .sidebar, .standings-sidebar { position: fixed; top: 75px; bottom: 70px; width: 85%; z-index: 1050; transform: translateX(-105%); background: var(--bg); }
             .standings-sidebar { right: 0; transform: translateX(105%); }
@@ -161,7 +174,7 @@
     </div>
 
     <script>
-    // --- MEMÓRIA (STATE MANAGEMENT) ---
+    // --- STATE ---
     let currentLang = localStorage.getItem('lp_lang') || 'HU';
     const todayStr = new Date().toLocaleDateString('sv');
     let selectedDate = localStorage.getItem('lp_selectedDate') || todayStr;
@@ -170,7 +183,7 @@
     
     let allMatches = [];
     let prevScores = new Map();
-    let lastDataHash = ""; // Az okos frissítéshez
+    let lastDataHash = "";
 
     function saveState() {
         localStorage.setItem('lp_selectedDate', selectedDate);
@@ -200,79 +213,100 @@
         document.getElementById('h-leagues').innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
         document.getElementById('h-table').innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
         document.getElementById('back-link').innerText = isHU ? 'VISSZA' : 'BACK';
-        
-        // Mobil gombok frissítése
         document.getElementById('m-leagues').innerText = isHU ? 'LIGÁK' : 'LEAGUES';
         document.getElementById('m-matches').innerText = isHU ? 'MECCSEK' : 'MATCHES';
         document.getElementById('m-table').innerText = isHU ? 'TABELLA' : 'TABLE';
-
-        // Placeholder szöveg a tabellánál
-        const placeholder = document.getElementById('standings-placeholder');
-        if (placeholder) {
-            placeholder.innerText = isHU ? 'VÁLASSZ EGY CSAPATOT' : 'CHOOSE A TEAM';
-        }
+        const pl = document.getElementById('standings-placeholder');
+        if (pl) pl.innerText = isHU ? 'VÁLASSZ EGY CSAPATOT' : 'CHOOSE A TEAM';
     }
 
     function toggleM(id) { closeM(); document.getElementById(id).classList.add('open'); }
     function closeM() { document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => s.classList.remove('open')); }
 
-    function showGoal(teamName) {
+    // --- GÓL EFFEKT ---
+    function showGoal(teamName, matchId) {
+        // 1. Banner
         const banner = document.getElementById('goal-banner');
         document.getElementById('goal-team').innerText = teamName.toUpperCase();
         banner.classList.add('show');
         setTimeout(() => banner.classList.remove('show'), 5000);
+
+        // 2. Kártya villogtatás
+        const card = document.getElementById(`match-${matchId}`);
+        if (card) {
+            card.classList.add('goal-highlight');
+            setTimeout(() => card.classList.remove('goal-highlight'), 6000);
+        }
     }
 
-    // --- ADAT LEKÉRÉS OKOS FRISSÍTÉSSEL ---
+    // --- ADATKEZELÉS ---
     async function updateData() {
         try {
             const res = await fetch("/live-matches");
             const data = await res.json();
             const newMatches = data.matches || [];
 
-            // 1. Hash generálás az állapot ellenőrzéséhez
-            const currentHash = JSON.stringify(newMatches.map(m => ({
-                id: m.id,
-                score: m.score.fullTime,
-                status: m.status
-            })));
-
-            // 2. Ha nem változott semmi az előző hívás óta, nem rajzolunk újra
+            const currentHash = JSON.stringify(newMatches.map(m => ({ id: m.id, score: m.score.fullTime, status: m.status })));
             if (currentHash === lastDataHash) return;
             lastDataHash = currentHash;
 
-            // 3. Gól figyelés
+            // Gól check
             newMatches.forEach(match => {
                 const matchId = match.id;
                 const newScore = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
                 if (prevScores.has(matchId) && prevScores.get(matchId) !== newScore) {
                     const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
                     const [newH, newA] = newScore.split('-').map(Number);
-                    if (newH > oldH) showGoal(match.homeTeam.name);
-                    if (newA > oldA) showGoal(match.awayTeam.name);
+                    if (newH > oldH) showGoal(match.homeTeam.name, match.id);
+                    if (newA > oldA) showGoal(match.awayTeam.name, match.id);
                 }
                 prevScores.set(matchId, newScore);
             });
 
             allMatches = newMatches;
-            
-            // 4. Felület frissítése
             renderDateStrip();
             renderLeagues();
             renderMatches();
         } catch (e) { console.error("Update error", e); }
     }
 
-        function getStatusColor(text) {
-            if (!text) return "transparent";
-            text = text.toLowerCase();
-            if (text.includes("champions league")) return "var(--cl-gs)";
-            if (text.includes("europa league")) return "var(--el-gs)";
-            if (text.includes("conference league")) return "var(--ecl-q)";
-            if (text.includes("relegation") || text.includes("kiesés")) return "var(--rel)";
-            if (text.includes("play-off") || text.includes("promotion") || text.includes("osztályozó") || text.includes("feljutás") || text.includes("bajnok")) return "var(--po)";
-            return "transparent";
-        }
+    function renderMatches() {
+        const cont = document.getElementById("match-container");
+        const matches = allMatches.filter(m => m.utcDate.startsWith(selectedDate) && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString())));
+        
+        cont.innerHTML = matches.map(m => {
+            const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+            let score = isLive || m.status === 'FINISHED' ? m.score.fullTime.home+':'+m.score.fullTime.away : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+            
+            return `
+            <div class="match-card" id="match-${m.id}">
+                <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
+                    <img src="${m.homeTeam.crest}"><span>${m.homeTeam.name}</span>
+                </div>
+                <div style="text-align:center; width:140px;">
+                    <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
+                    <a href="/elemzes?id=${m.id}" style="text-decoration:none; display:inline-block; margin-top:8px; background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding:4px 12px; border-radius:8px; color:var(--neon-green); font-family:'Orbitron'; font-size:9px; font-weight:800; transition:0.3s;">
+                        ${currentLang==='HU'?'ELEMZÉS':'ANALYSIS'}
+                    </a>
+                </div>
+                <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
+                    <img src="${m.awayTeam.crest}"><span>${m.awayTeam.name}</span>
+                </div>
+            </div>`;
+        }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
+    }
+
+    // --- SEGÉDFÜGGVÉNYEK (TABELLA) ---
+    function getStatusColor(text) {
+        if (!text) return "transparent";
+        text = text.toLowerCase();
+        if (text.includes("champions league")) return "var(--cl-gs)";
+        if (text.includes("europa league")) return "var(--el-gs)";
+        if (text.includes("conference league")) return "var(--ecl-q)";
+        if (text.includes("relegation") || text.includes("kiesés")) return "var(--rel)";
+        if (text.includes("play-off") || text.includes("promotion") || text.includes("osztályozó") || text.includes("feljutás") || text.includes("bajnok")) return "var(--po)";
+        return "transparent";
+    }
 
         function translateStatus(text) {
             if (!text) return "";
@@ -424,6 +458,7 @@
     </script>
 </body>
 </html>
+
 
 
 
