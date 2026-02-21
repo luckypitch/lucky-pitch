@@ -82,7 +82,31 @@
 
         .score-display { font-family: 'Orbitron'; font-size: 2.2rem; font-weight: 900; color: var(--neon-green); }
         .score-live { color: var(--neon-red); animation: pulse 1s infinite; text-shadow: 0 0 15px var(--neon-red); }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+      @keyframes goal-pulse {
+    0% { 
+        box-shadow: 0 0 5px #ff3e3e, inset 0 0 5px #ff3e3e; 
+        border-color: #ff3e3e;
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 40px #ff3e3e, inset 0 0 20px #ff3e3e; 
+        border-color: #ff4d4d;
+        transform: scale(1.02); /* Kicsit megugrik a kártya */
+    }
+    100% { 
+        box-shadow: 0 0 5px #ff3e3e, inset 0 0 5px #ff3e3e; 
+        border-color: #ff3e3e;
+        transform: scale(1);
+    }
+}
+
+.match-card.goal-highlight {
+    animation: goal-pulse 0.8s ease-in-out infinite !important;
+    border: 2px solid #ff3e3e !important;
+    background: rgba(255, 62, 62, 0.15) !important; /* Kap egy enyhe pirosas hátteret is */
+    z-index: 100; /* Hogy a többi kártya fölé emelkedjen */
+    position: relative;
+}
 
         .standings-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
         .standings-table td { padding: 14px 8px; background: rgba(255,255,255,0.03); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 12px; }
@@ -493,6 +517,7 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
     </script>
 </body>
 </html>
+
 
 
 
