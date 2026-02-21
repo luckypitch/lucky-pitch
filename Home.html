@@ -125,6 +125,44 @@
             .hero-box { padding: 40px 20px; }
             .stats-bar { flex-direction: column; gap: 20px; border-radius: 20px; }
         }
+        /* --- PLUSZ FEATURE: TICKER SÁV --- */
+    .ticker-wrap {
+        width: 100%; overflow: hidden; background: rgba(14, 165, 233, 0.1);
+        border-bottom: 1px solid var(--border); padding: 8px 0;
+        backdrop-filter: blur(5px);
+    }
+    .ticker {
+        display: inline-block; white-space: nowrap;
+        animation: ticker 30s linear infinite; font-family: 'Orbitron';
+        font-size: 12px; color: var(--neon-blue);
+    }
+    .ticker span { margin-right: 50px; }
+    @keyframes ticker {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+    }
+
+    /* --- PLUSZ FEATURE: EGÉR KÖVETŐ FÉNY --- */
+    .cursor-glow {
+        position: fixed; width: 400px; height: 400px;
+        background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
+        border-radius: 50%; pointer-events: none; z-index: -1;
+        transform: translate(-50%, -50%); transition: 0.1s;
+    }
+
+    /* --- ANIMÁLT SZÁMLÁLÓK STÍLUSA --- */
+    .stat-item b {
+        background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 2.2rem !important;
+    }
+
+    /* --- FOOTER --- */
+    footer {
+        padding: 40px; text-align: center; background: var(--glass);
+        margin-top: 100px; border-top: 1px solid var(--border);
+    }
     </style>
 </head>
 <body>
@@ -281,15 +319,73 @@ function updateUI() {
 function toggleLang() {
     localStorage.setItem("lang", (localStorage.getItem("lang") || "en") === "en" ? "hu" : "en");
     updateUI();
+    updateTicker();
 }
 
 function toggleTheme() {
     localStorage.setItem("theme", (localStorage.getItem("theme") || "dark") === "dark" ? "light" : "dark");
     updateUI();
 }
+// 1. Egér követése
+    document.addEventListener('mousemove', (e) => {
+        const cursor = document.getElementById('cursor');
+        if(window.innerWidth > 768) {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        }
+    });
+    // 2. Számláló animáció
+    function startCounters() {
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach(counter => {
+            const target = +counter.getAttribute('data-target');
+            const increment = target / 50; // Sebesség
 
+            const updateCount = () => {
+                const curr = +counter.innerText;
+                if(curr < target) {
+                    counter.innerText = Math.ceil(curr + increment);
+                    setTimeout(updateCount, 30);
+                } else {
+                    counter.innerText = target + (target === 98 ? "%" : "+");
+                }
+            };
+            updateCount();
+        });
+    }
+
+    // 3. Ticker tartalom fordítása
+    function updateTicker(lang) {
+        const ticker = document.getElementById('ticker-content');
+        if(lang === 'hu') {
+            ticker.innerHTML = `
+                <span>⚽ ÉLŐ KÖZVETÍTÉS: LIVERPOOL vs REAL MADRID</span>
+                <span>🔥 98%-OS SIKERRÁTA MA</span>
+                <span>🏆 BAJNOKOK LIGÁJA HÍREK</span>
+                <span>⚡ AZ ÚJ ALGORITMUS AKTÍV</span>
+            `;
+        } else {
+            ticker.innerHTML = `
+                <span>⚽ LIVERPOOL vs REAL MADRID - LIVE NOW</span>
+                <span>🔥 98% SUCCESS RATE TODAY</span>
+                <span>🏆 CHAMPIONS LEAGUE UPDATES</span>
+                <span>⚡ NEW SMART ALGORITHM ACTIVE</span>
+            `;
+        }
+    }
+
+    // Indításkor hívjuk meg
+    window.addEventListener('load', () => {
+        startApp();
+        startCounters();
+        const lang = localStorage.getItem("lang") || "en";
+        updateTicker(lang);
+    });
+
+    
 window.addEventListener('load', startApp);
 </script>
 
 </body>
 </html>
+
