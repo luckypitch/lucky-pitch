@@ -73,7 +73,23 @@ app.get("/live-matches", async (req, res) => {
         else res.status(500).json({ error: "API elérhetetlen" });
     }
 });
-
+// Szerver oldali Ticker végpont
+app.get('/api/live-ticker', async (req, res) => {
+    try {
+        const response = await fetch('https://api.football-data.org/v4/matches?status=IN_PLAY', {
+            headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY }
+        });
+        const data = await response.json();
+        
+        const liveMatches = data.matches.map(m => 
+            `${m.homeTeam.shortName} ${m.score.fullTime.home} - ${m.score.fullTime.away} ${m.awayTeam.shortName}`
+        );
+        
+        res.json(liveMatches);
+    } catch (err) {
+        res.status(500).json([]);
+    }
+});
 // 📊 TABELLA (10 perces cache)
 app.get("/api/standings/:leagueCode", async (req, res) => {
     const league = req.params.leagueCode;
@@ -155,4 +171,5 @@ app.listen(PORT, '0.0.0.0', () => {
     💳 Stripe: ${STRIPE_SECRET_KEY ? "AKTÍV" : "HIÁNYZIK"}
     `);
 });
+
 
