@@ -207,6 +207,11 @@
     <div class="main-wrapper">
         <aside class="sidebar" id="sidebar-leagues">
             <div class="sidebar-header" id="h-leagues">🏆 Bajnokságok</div>
+            <div style="padding: 15px 15px 10px 15px;">
+        <button class="tool-btn" style="width: 100%;" onclick="selectAllLeagues()" id="select-all-btn">
+        MIND KIJELÖL
+    </button>
+</div>
             <div id="league-list"></div>
         </aside>
 
@@ -294,6 +299,39 @@
     }
 
     // --- LIGA SZŰRŐ ---
+
+    function selectAllLeagues() {
+    // Megnézzük az összes elérhető ligát a meccsek között
+    const allLeagueIds = [...new Set(allMatches.map(m => String(m.competition.id)))];
+
+    // Ha már mindenki ki van választva, akkor ürítsük ki (invertálás)
+    if (selectedLeagues.size === allLeagueIds.length) {
+        selectedLeagues.clear();
+    } else {
+        // Különben adjunk hozzá minden ID-t a Set-hez
+        allLeagueIds.forEach(id => selectedLeagues.add(id));
+    }
+
+    // Mentés és újrarajzolás
+    saveState();
+    renderLeagues();
+    renderMatches();
+    updateSelectAllButton(); // Gomb feliratának frissítése
+}
+
+// Opcionális: gomb szövegének változtatása (Mind kijelöl / Mind töröl)
+function updateSelectAllButton() {
+    const btn = document.getElementById('select-all-btn');
+    if (!btn) return;
+    
+    const allLeagueIds = [...new Set(allMatches.map(m => String(m.competition.id)))];
+    if (selectedLeagues.size === allLeagueIds.length && allLeagueIds.length > 0) {
+        btn.innerText = currentLang === 'HU' ? 'MIND TÖRÖL' : 'DESELECT ALL';
+    } else {
+        btn.innerText = currentLang === 'HU' ? 'MIND KIJELÖL' : 'SELECT ALL';
+    }
+}
+        
     function toggleLeague(id) {
         id = String(id);
         if (selectedLeagues.has(id)) {
@@ -342,10 +380,11 @@
                 }
                 prevScores[m.id] = { h: s.home, a: s.away };
             });
-
+            updateSelectAllButton();
             renderDateStrip();
             renderLeagues();
             renderMatches();
+            
         } catch (e) { 
             console.error("Hiba:", e);
         }
@@ -512,6 +551,7 @@
 </html>
 </body>
 </html>
+
 
 
 
