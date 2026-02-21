@@ -189,7 +189,8 @@
         let selectedLeagues = savedLeagues ? new Set(JSON.parse(savedLeagues)) : new Set();
         let allMatches = [];
         let prevScores = new Map();
-
+        let flashingMatches = new Set(); // Itt tároljuk a villogó meccsek ID-it
+        
         function saveState() {
             localStorage.setItem('lp_selectedDate', selectedDate);
             localStorage.setItem('lp_selectedLeagues', JSON.stringify([...selectedLeagues]));
@@ -289,32 +290,40 @@
         }
 
 
-        function triggerGoalEffect(match, h, a) {
-    const mId = String(match.id);
-    flashingMatches.add(mId);
-    
-    // HANG JAVÍTÁS
-    const goalSound = document.getElementById('goal-sound');
-    goalSound.pause(); 
-    goalSound.currentTime = 0;
-    goalSound.volume = 1.0; // Max hangerő
-    
-    // A lejátszás csak akkor fog menni, ha már kattintottál valahová az oldalon!
-    goalSound.play().catch(e => console.log("Hang blokkolva, várj egy kattintásra:", e));
-    
-    // Banner és villogás indítása...
+       function triggerGoalEffect(matchId) {
+    // 1. Megkeressük a meccskártyát a DOM-ban
+    // Feltételezve, hogy a kártyáidnak van id="match-123" attribútuma
+    const matchCard = document.getElementById(`match-${matchId}`);
     const banner = document.getElementById('goal-banner');
-    banner.innerText = `GOAL! ${match.homeTeam.name} ${h}:${a} ${match.awayTeam.name}`;
-    banner.classList.add('show');
-    renderMatches();
+    const sound = document.getElementById('goal-sound');
+
+    // Ha már villog, nem indítjuk újra
+    if (flashingMatches.has(matchId)) return;
+
+    // Banner megjelenítése
+    if (banner) banner.classList.add('show');
     
+    // Hang lejátszása (ha a böngésző engedi)
+    if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log("Audio play blocked"));
+    }
+
+    // Villogás hozzáadása
+    if (matchCard) {
+        matchCard.classList.add('goal-highlight');
+        flashingMatches.add(matchId);
+    }
+
+    // 5 másodperc után minden visszaáll
     setTimeout(() => {
-        banner.classList.remove('show');
-        flashingMatches.delete(mId);
-        renderMatches();
-    }, 10000);
+        if (banner) banner.classList.remove('show');
+        if (matchCard) {
+            matchCard.classList.remove('goal-highlight');
+            flashingMatches.delete(matchId);
+        }
+    }, 5000);
 }
-        
        async function showStandings(leagueId, teamId, code) {
             if(window.innerWidth <= 1100) toggleM('sidebar-standings');
             const target = document.getElementById("standings-target");
@@ -454,4 +463,5 @@
     </script>
 </body>
 </html>
+
 
