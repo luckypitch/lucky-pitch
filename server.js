@@ -73,20 +73,40 @@ app.get("/live-matches", async (req, res) => {
         else res.status(500).json({ error: "API elérhetetlen" });
     }
 });
-// Szerver oldali Ticker végpont
+// --- JAVÍTOTT TICKER VÉGPONT (Összes mai meccs) ---
 app.get('/api/live-ticker', async (req, res) => {
     try {
-        const response = await fetch('https://api.football-data.org/v4/matches?status=IN_PLAY', {
-            headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY }
+        const today = new Date().toISOString().split('T')[0];
+        // Lekérjük az összes mai meccset
+        const url = `https://api.football-data.org/v4/matches?dateFrom=${today}&dateTo=${today}`;
+        
+        const response = await fetch(url, {
+            headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY }
         });
+        
         const data = await response.json();
         
-        const liveMatches = data.matches.map(m => 
-            `${m.homeTeam.shortName} ${m.score.fullTime.home} - ${m.score.fullTime.away} ${m.awayTeam.shortName}`
-        );
+        if (!data.matches || data.matches.length === 0) {
+            return res.json(["No more matches scheduled for today"]);
+        }
+
+        // Formázzuk az adatokat: "Hazai - Vendég (Időpont vagy Eredmény)"
+        const formattedMatches = data.matches.map(m => {
+            const home = m.homeTeam.shortName || m.homeTeam.name;
+            const away = m.awayTeam.shortName || m.awayTeam.name;
+            
+            if (m.status === "IN_PLAY" || m.status === "FINISHED") {
+                return `${home} ${m.score.fullTime.home} - ${m.score.fullTime.away} ${away}`;
+            } else {
+                // Ha még nem kezdődött el, kiírjuk a kezdési időt (UTC-ről magyar időre +1-2 óra)
+                const time = new Date(m.utcDate).toLocaleTimeString('hu-HU', { hour: '2d-digit', minute: '2d-digit' });
+                return `${home} vs ${away} (${time})`;
+            }
+        });
         
-        res.json(liveMatches);
+        res.json(formattedMatches);
     } catch (err) {
+        console.error("Ticker hiba:", err.message);
         res.status(500).json([]);
     }
 });
@@ -171,5 +191,6 @@ app.listen(PORT, '0.0.0.0', () => {
     💳 Stripe: ${STRIPE_SECRET_KEY ? "AKTÍV" : "HIÁNYZIK"}
     `);
 });
+
 
 
