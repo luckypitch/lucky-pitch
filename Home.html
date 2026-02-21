@@ -22,53 +22,54 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; transition: 0.3s; }
 
-        /* EFFEKTEK */
-        .cursor-glow {
-            position: fixed; width: 400px; height: 400px; background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
-            border-radius: 50%; pointer-events: none; z-index: -1; transform: translate(-50%, -50%);
-        }
-        .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; filter: blur(100px); opacity: 0.5; }
-        .blob { position: absolute; width: 600px; height: 600px; border-radius: 50%; animation: move 25s infinite alternate; }
-        .blob-1 { background: #0044ff; top: -10%; left: -10%; }
-        .blob-2 { background: var(--neon-green); bottom: -10%; right: -10%; }
-        @keyframes move { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(300px, 200px) scale(1.3); } }
+        /* HÁTTÉR ÉS CANVAS */
+        #neuralCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; opacity: 0.4; }
+        .cursor-glow { position: fixed; width: 400px; height: 400px; background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%); border-radius: 50%; pointer-events: none; z-index: -1; transform: translate(-50%, -50%); }
 
-        /* NAV & TICKER */
+        /* NAVIGÁCIÓ */
         nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: var(--glass); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; }
         .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.5rem; color: var(--neon-blue); letter-spacing: 2px; }
         .nav-buttons { display: flex; gap: 10px; align-items: center; }
         button, .btn-link { border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; font-family: 'Orbitron'; font-size: 11px; transition: 0.3s; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); text-decoration: none; }
         button:hover { transform: translateY(-3px); border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(14, 165, 233, 0.3); }
-        
+
+        /* TICKER */
         .ticker-wrap { width: 100%; overflow: hidden; background: rgba(14, 165, 233, 0.1); border-bottom: 1px solid var(--border); padding: 8px 0; }
         .ticker { display: inline-block; white-space: nowrap; animation: ticker 40s linear infinite; font-family: 'Orbitron'; font-size: 12px; color: var(--neon-blue); }
         .ticker span { margin-right: 50px; font-weight: bold; }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* HERO */
-        .hero { padding: 60px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-        .hero-box { background: var(--glass); padding: 50px; border-radius: 40px; border: 1px solid var(--border); backdrop-filter: blur(30px); max-width: 850px; animation: float 6s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        /* HERO ÉS PREDICTION CARD */
+        .hero { padding: 40px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .hero-box { background: var(--glass); padding: 40px; border-radius: 40px; border: 1px solid var(--border); backdrop-filter: blur(30px); max-width: 850px; position: relative; }
         
-        h1 { font-family: 'Orbitron'; font-size: clamp(32px, 5vw, 60px); margin-bottom: 20px; }
-        .btn-cta { background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); color: white; padding: 18px 50px; font-size: 1.2rem; border-radius: 50px; border: none; font-family: 'Orbitron'; margin-top: 20px; display: inline-block; cursor: pointer; }
+        h1 { font-family: 'Orbitron'; font-size: clamp(28px, 5vw, 54px); margin-bottom: 20px; }
+        
+        .prediction-card { background: rgba(0,0,0,0.4); border: 1px solid var(--neon-blue); border-radius: 25px; padding: 25px; margin: 30px auto; max-width: 450px; border-left: 5px solid var(--neon-blue); }
+        .card-badge { font-family: 'Orbitron'; font-size: 9px; color: var(--neon-blue); display: block; margin-bottom: 10px; }
+        .locked-content { position: relative; margin-top: 15px; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 15px; }
+        .blur-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; backdrop-filter: blur(7px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; border-radius: 15px; }
+        .btn-unlock { background: var(--neon-green); color: #000; border: none; padding: 10px 20px; border-radius: 10px; font-family: 'Orbitron'; font-weight: 900; font-size: 11px; cursor: pointer; }
+        .fake-data { opacity: 0.1; filter: blur(2px); user-select: none; font-size: 12px; }
 
-        .stats-bar { display: flex; gap: 40px; margin-top: 40px; padding: 20px 40px; background: rgba(0,0,0,0.2); border-radius: 100px; border: 1px solid var(--border); }
-        .stat-item b { display: block; font-size: 2rem; color: var(--neon-green); }
-        .stat-item span { font-size: 10px; opacity: 0.7; font-family: 'Orbitron'; }
+        .btn-cta { background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); color: white; padding: 18px 50px; font-size: 1.1rem; border-radius: 50px; border: none; font-family: 'Orbitron'; cursor: pointer; display: inline-block; margin-top: 10px; }
+
+        .stats-bar { display: flex; gap: 30px; margin-top: 40px; padding: 20px 40px; background: rgba(0,0,0,0.2); border-radius: 100px; border: 1px solid var(--border); }
+        .stat-item b { display: block; font-size: 1.8rem; color: var(--neon-green); }
+        .stat-item span { font-size: 9px; opacity: 0.7; font-family: 'Orbitron'; }
 
         /* FOOTER */
         footer { width: 100%; padding: 40px; background: var(--glass); border-top: 1px solid var(--border); margin-top: 60px; text-align: center; }
         .fb-link { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-family: 'Orbitron'; font-size: 12px; transition: 0.3s; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); }
-        .fb-link:hover { color: var(--neon-blue); border-color: var(--neon-blue); }
+        .fb-link:hover { color: var(--neon-blue); border-color: var(--neon-blue); transform: translateY(-3px); }
 
         @media (max-width: 768px) { .stats-bar { flex-direction: column; border-radius: 20px; } }
     </style>
 </head>
 <body>
 
+<canvas id="neuralCanvas"></canvas>
 <div class="cursor-glow" id="cursor"></div>
-<div class="bg-animation"><div class="blob blob-1"></div><div class="blob blob-2"></div></div>
 
 <nav>
     <div class="logo">LuckyPitch</div>
@@ -84,13 +85,32 @@
 </nav>
 
 <div class="ticker-wrap">
-    <div class="ticker" id="ticker-content"><span>Loading live data...</span></div>
+    <div class="ticker" id="ticker-content"><span>Loading live football data...</span></div>
 </div>
 
 <section class="hero">
     <div class="hero-box">
         <h1 id="title">Let the Wins Begin</h1>
-        <p id="text1" style="opacity: 0.8; margin-bottom: 25px;">Elite strategy meets real-time football data.</p>
+        
+        <div class="prediction-card">
+            <span class="card-badge" id="badge-text">🔥 TOP ANALYSIS TODAY</span>
+            <h3 id="daily-match-name">Finding best match...</h3>
+            <p id="daily-match-time" style="font-size: 10px; color: var(--neon-green); margin-bottom: 15px;">AI CALCULATION IN PROGRESS</p>
+            
+            <div class="locked-content">
+                <div class="blur-overlay">
+                    <span style="font-size: 24px; margin-bottom: 10px;">🔒</span>
+                    <button onclick="handleSupport()" class="btn-unlock" id="unlock-btn">Unlock Prediction</button>
+                </div>
+                <div class="fake-data">
+                    <p>PICK: OVER 2.5 GOALS</p>
+                    <p>PROBABILITY: 91.2%</p>
+                    <p>VALUE: HIGH</p>
+                </div>
+            </div>
+        </div>
+
+        <p id="text1" style="opacity: 0.8; margin-bottom: 25px; max-width: 600px; margin-left: auto; margin-right: auto;">Master the game with our neural network-driven analysis and real-time data feeds.</p>
         <a href="/meccsek" class="btn-cta" id="cta-link">Matches</a>
     </div>
 
@@ -104,9 +124,9 @@
 <footer>
     <a href="https://www.facebook.com/profile.php?id=61588443053104" target="_blank" class="fb-link">
         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-        <span>Facebook</span>
+        <span>Follow our Facebook</span>
     </a>
-    <p style="font-size: 10px; margin-top: 20px; opacity: 0.5; font-family: 'Orbitron';">© 2026 LUCKYPITCH | Play Responsibly</p>
+    <p style="font-size: 10px; margin-top: 25px; opacity: 0.4; font-family: 'Orbitron';">© 2026 LUCKYPITCH | ANALYTICS ENGINE V3.4</p>
 </footer>
 
 <script>
@@ -114,27 +134,66 @@ const stripe = Stripe('pk_test_51T2qaQQkKVs47hkTqXwOVadi0o1GiBortnh6rNLqLxHMS7E6
 
 const translations = {
     hu: {
-        title: "Kezdődjenek a Győzelmek", text1: "Profi stratégia találkozik az élő adatokkal.", cta: "Meccsek",
-        s1: "Élő Meccs", s2: "Pontosság %", s3: "Nyerő Tipp", login: "BELÉPÉS", donate: "Támogatás", lang: "EN 🇬🇧"
+        title: "Kezdődjenek a Győzelmek", text1: "Urald a játékot neurális hálózat alapú elemzéseinkkel és élő adatfolyamainkkal.", 
+        cta: "Meccsek megtekintése", s1: "Élő Meccs", s2: "Pontosság %", s3: "Nyerő Tipp", 
+        login: "BELÉPÉS", donate: "Támogatás", lang: "EN 🇬🇧", badge: "🔥 MAI KIEMELT TIPPEK", 
+        unlock: "Tipp Feloldása", loading: "Legjobb meccs keresése..."
     },
     en: {
-        title: "Let the Wins Begin", text1: "Elite strategy meets real-time football data.", cta: "Matches",
-        s1: "Live Matches", s2: "Accuracy %", s3: "Winning Tips", login: "LOGIN", donate: "Donate", lang: "HU 🇭🇺"
+        title: "Let the Wins Begin", text1: "Master the game with our neural network-driven analysis and real-time data feeds.", 
+        cta: "View Matches", s1: "Live Matches", s2: "Accuracy %", s3: "Winning Tips", 
+        login: "LOGIN", donate: "Donate", lang: "HU 🇭🇺", badge: "🔥 TOP ANALYSIS TODAY", 
+        unlock: "Unlock Prediction", loading: "Finding best match..."
     }
 };
 
-async function handleSupport() {
-    if (!window.Clerk || !Clerk.user) {
-        Clerk.openSignIn();
-        return;
+// NEURAL NETWORK ANIMATION
+const canvas = document.getElementById('neuralCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function initNeural() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    particles = [];
+    for(let i=0; i<70; i++) {
+        particles.push({
+            x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4
+        });
     }
+}
+
+function drawNeural() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#0ea5e9'; ctx.strokeStyle = 'rgba(14, 165, 233, 0.1)';
+    particles.forEach((p, i) => {
+        p.x += p.vx; p.y += p.vy;
+        if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, Math.PI*2); ctx.fill();
+        for(let j=i+1; j<particles.length; j++) {
+            let p2 = particles[j];
+            let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+            if(dist < 160) {
+                ctx.lineWidth = 1 - dist/160;
+                ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+            }
+        }
+    });
+    requestAnimationFrame(drawNeural);
+}
+
+// APP LOGIC
+async function handleSupport() {
+    if (!window.Clerk || !Clerk.user) { Clerk.openSignIn(); return; }
     const btn = document.getElementById('support-btn');
-    btn.innerText = "Loading...";
+    btn.innerText = "...";
     try {
         const res = await fetch('/create-checkout-session', { method: 'POST' });
         const session = await res.json();
         if (session.id) await stripe.redirectToCheckout({ sessionId: session.id });
-    } catch (e) { alert("Stripe error"); btn.innerText = "Donate"; }
+    } catch (e) { btn.innerText = "Donate"; }
 }
 
 function updateUI() {
@@ -149,6 +208,8 @@ function updateUI() {
     document.getElementById("login-text").innerText = t.login;
     document.getElementById("support-btn").innerText = t.donate;
     document.getElementById("lang-btn").innerText = t.lang;
+    document.getElementById("badge-text").innerText = t.badge;
+    document.getElementById("unlock-btn").innerText = t.unlock;
     
     const theme = localStorage.getItem("theme") || "dark";
     document.body.classList.toggle("light", theme === "light");
@@ -171,21 +232,25 @@ async function fetchLiveTicker() {
         const res = await fetch('/api/live-ticker');
         const matches = await res.json();
         const ticker = document.getElementById('ticker-content');
+        const predName = document.getElementById('daily-match-name');
+        
         if(matches.length > 0) {
             ticker.innerHTML = matches.map(m => `<span>⚽ ${m}</span>`).join("");
+            predName.innerText = matches[0]; // Legfelső meccs a prediction cardba
         } else {
-            ticker.innerHTML = "<span>🔥 NO LIVE MATCHES - CHECK LATER</span><span>⚡ ALGO ACTIVE</span>";
+            ticker.innerHTML = "<span>🔥 98% SUCCESS RATE TODAY</span><span>⚡ SYSTEM ACTIVE</span>";
+            predName.innerText = "Real Madrid vs Barcelona";
         }
-    } catch(e) { /* fallback fix text */ }
+    } catch(e) { }
 }
 
 function startCounters() {
     document.querySelectorAll('.counter').forEach(c => {
         const target = +c.getAttribute('data-target');
         const update = () => {
-            const cur = +c.innerText;
+            const cur = +c.innerText.replace(/[+%,]/g, '');
             if (cur < target) {
-                c.innerText = Math.ceil(cur + target/50);
+                c.innerText = Math.ceil(cur + target/60);
                 setTimeout(update, 30);
             } else { c.innerText = target.toLocaleString() + (target > 100 ? "+" : "%"); }
         };
@@ -203,15 +268,16 @@ async function startApp() {
     if (Clerk.user) {
         Clerk.mountUserButton(document.getElementById('user-button'));
         document.getElementById('auth-links').style.display = 'none';
-    } else {
-        document.getElementById('auth-links').style.display = 'block';
     }
     updateUI();
+    initNeural();
+    drawNeural();
     fetchLiveTicker();
     startCounters();
 }
 
 window.addEventListener('load', startApp);
+window.addEventListener('resize', initNeural);
 </script>
 </body>
 </html>
