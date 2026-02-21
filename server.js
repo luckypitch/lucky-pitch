@@ -76,38 +76,36 @@ app.get("/live-matches", async (req, res) => {
 // --- JAVÍTOTT TICKER VÉGPONT (Összes mai meccs) ---
 app.get('/api/live-ticker', async (req, res) => {
     try {
-        const today = new Date().toISOString().split('T')[0];
-        // Lekérjük az összes mai meccset
-        const url = `https://api.football-data.org/v4/matches?dateFrom=${today}&dateTo=${today}`;
+        // Ma - tegnap - holnap intervallum, hogy biztosan legyen adat a tickerben
+        const d = new Date();
+        const from = new Date(d); from.setDate(d.getDate() - 1);
+        const to = new Date(d); to.setDate(d.getDate() + 1);
         
-        const response = await fetch(url, {
+        const fromStr = from.toISOString().split('T')[0];
+        const toStr = to.toISOString().split('T')[0];
+
+        const response = await fetch(`https://api.football-data.org/v4/matches?dateFrom=${fromStr}&dateTo=${toStr}`, {
             headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY }
         });
-        
         const data = await response.json();
         
         if (!data.matches || data.matches.length === 0) {
-            return res.json(["No more matches scheduled for today"]);
+            return res.json(["LuckyPitch Engine Online - Analyzing Markets"]);
         }
 
-        // Formázzuk az adatokat: "Hazai - Vendég (Időpont vagy Eredmény)"
-        const formattedMatches = data.matches.map(m => {
+        const formattedMatches = data.matches.slice(0, 15).map(m => {
             const home = m.homeTeam.shortName || m.homeTeam.name;
             const away = m.awayTeam.shortName || m.awayTeam.name;
-            
             if (m.status === "IN_PLAY" || m.status === "FINISHED") {
                 return `${home} ${m.score.fullTime.home} - ${m.score.fullTime.away} ${away}`;
-            } else {
-                // Ha még nem kezdődött el, kiírjuk a kezdési időt (UTC-ről magyar időre +1-2 óra)
-                const time = new Date(m.utcDate).toLocaleTimeString('hu-HU', { hour: '2d-digit', minute: '2d-digit' });
-                return `${home} vs ${away} (${time})`;
             }
+            const time = new Date(m.utcDate).toLocaleTimeString('hu-HU', { hour: '2d-digit', minute: '2d-digit' });
+            return `${home} vs ${away} (${time})`;
         });
         
         res.json(formattedMatches);
     } catch (err) {
-        console.error("Ticker hiba:", err.message);
-        res.status(500).json([]);
+        res.status(500).json(["Neural Link Stable - Fetching Data..."]);
     }
 });
 // 📊 TABELLA (10 perces cache)
@@ -191,6 +189,7 @@ app.listen(PORT, '0.0.0.0', () => {
     💳 Stripe: ${STRIPE_SECRET_KEY ? "AKTÍV" : "HIÁNYZIK"}
     `);
 });
+
 
 
 
