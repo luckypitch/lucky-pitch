@@ -164,50 +164,48 @@ nav {
 </head>
 <body class="dark">
     <div id="goal-banner">GOOOAAAL!!!</div>
-    <audio id="goal-sound" preload="auto">
-        <source src="https://www.soundjay.com/buttons/sounds/button-37a.mp3" type="audio/mpeg">
-    </audio>
 
-    <div class="bg-animation">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
+<div class="bg-animation">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+</div>
+
+<div class="mobile-quick-nav">
+    <button class="tool-btn" onclick="openMobileMenu('sidebar-leagues')">🏆 LIGÁK</button>
+    <button class="tool-btn" onclick="closeAllMobileMenus()">⚽ MECCSEK</button>
+    <button class="tool-btn" onclick="openMobileMenu('sidebar-standings')">📊 TABELLA</button>
+</div>
+
+<nav>
+    <div class="logo">LUCKYPITCH</div>
+    <div class="nav-tools">
+        <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
+        <a href="/home" class="tool-btn" style="text-decoration:none;">VISSZA</a>
     </div>
+</nav>
 
-    <div class="mobile-quick-nav" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; gap: 10px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
-        <button class="tool-btn" onclick="openMobileMenu('sidebar-leagues')" style="border-color: var(--neon-blue);">🏆 LIGÁK</button>
-        <button class="tool-btn" onclick="closeAllMobileMenus()" style="border-color: #fff;">⚽ MECCSEK</button>
-        <button class="tool-btn" onclick="openMobileMenu('sidebar-standings')" style="border-color: var(--neon-green);">📊 TABELLA</button>
-    </div>
+<div class="main-wrapper">
+    <aside class="sidebar" id="sidebar-leagues">
+        <button class="close-sidebar-btn" onclick="closeAllMobileMenus()">✖</button>
+        <div class="sidebar-header">BAJNOKSÁGOK</div>
+        <button class="tool-btn" style="width:calc(100% - 30px); margin: 15px;" onclick="selectAllLeagues()">MIND KIJELÖL</button>
+        <div id="league-list"></div>
+    </aside>
 
-    <nav>
-        <div class="logo">LUCKYPITCH</div>
-        <div class="nav-tools">
-            <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
-            <a href="/home" class="tool-btn" style="text-decoration:none;">VISSZA</a>
+    <main class="content-area">
+        <div id="date-strip" class="date-strip"></div>
+        <div id="match-container"></div>
+    </main>
+
+    <aside class="standings-sidebar" id="sidebar-standings">
+        <button class="close-sidebar-btn" onclick="closeAllMobileMenus()">✖</button>
+        <div class="sidebar-header">ÉLŐ TABELLA</div>
+        <div id="standings-target">
+            <p style="text-align:center; opacity:0.3; margin-top:50px; font-family:'Orbitron'; font-size:10px;">VÁLASSZ EGY MECCSET</p>
         </div>
-    </nav>
-
-    <div class="grid-layout">
-        <aside class="glass-panel sidebar" id="sidebar-leagues">
-            <button class="close-sidebar-btn" onclick="closeAllMobileMenus()">✖</button>
-            <h3 style="font-family:'Orbitron'; font-size:12px; color:var(--neon-blue);">BAJNOKSÁGOK</h3>
-            <button class="tool-btn" style="width: 100%; margin-bottom: 10px;" onclick="selectAllLeagues()" id="select-all-btn">MIND KIJELÖL</button>
-            <div id="league-list"></div>
-        </aside>
-
-        <main class="content-area">
-            <div id="date-strip" class="date-strip"></div>
-            <div id="match-container"></div>
-        </main>
-
-        <aside class="glass-panel standings-sidebar" id="sidebar-standings">
-            <button class="close-sidebar-btn" onclick="closeAllMobileMenus()">✖</button>
-            <h3 style="font-family:'Orbitron'; font-size:12px; color:var(--neon-green);">ÉLŐ TABELLA</h3>
-            <div id="standings-target">
-                <p style="text-align:center; opacity:0.3; margin-top:50px; font-family:'Orbitron'; font-size:10px;">VÁLASSZ EGY MECCSET</p>
-            </div>
-        </aside>
-    </div>
+    </aside>
+</div>
     <script>
     // --- GLOBÁLIS ÁLLAPOT ÉS MENTÉS KEZELÉSE ---
     let currentLang = 'HU';
@@ -441,14 +439,32 @@ function updateSelectAllButton() {
             if (text.includes("Relegation")) return "KIESŐ";
             return "ZÓNA";
         }
-        
-     async function showStandings(leagueId, teamId, code) {
-    // 1. Mobil oldalsáv megnyitása
+    // Mobil menü megnyitása
+function openMobileMenu(id) {
+    // Biztonsági mentés: minden mást csukjunk be előtte
+    closeAllMobileMenus();
+    const menu = document.getElementById(id);
+    if (menu) {
+        menu.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeAllMobileMenus() {
+    // Mindkét oldalsávot alaphelyzetbe rakjuk
+    document.getElementById('sidebar-leagues').classList.remove('open');
+    document.getElementById('sidebar-standings').classList.remove('open');
+    document.body.style.overflow = 'auto';
+}
+
+// A Tabella betöltésekor automatikus nyitás mobilon
+async function showStandings(leagueId, teamId, code) {
+    // MOBIL NÉZET: Itt az ID-nek 'sidebar-standings'-nek kell lennie!
     if (window.innerWidth <= 1100) {
-        const sidebar = document.getElementById("section-standings");
+        const sidebar = document.getElementById("sidebar-standings"); // JAVÍTVA
         if (sidebar) {
             sidebar.classList.add('open');
-            document.body.style.overflow = 'hidden'; // Háttér görgetés tiltása
+            document.body.style.overflow = 'hidden'; 
         }
     }
 
@@ -557,6 +573,7 @@ function toggleM(id) {
 </html>
 </body>
 </html>
+
 
 
 
