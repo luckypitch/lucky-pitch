@@ -496,46 +496,39 @@ function updateSelectAllButton() {
             if (text.includes("Relegation")) return "KIESŐ";
             return "ZÓNA";
         }
-
-        function toggleM(id) {
-    const el = document.getElementById(id);
-    if (el) {
-        el.classList.toggle('open');
-        // Ha kinyitjuk, ne lehessen alatta görgetni a főoldalt
-        if (el.classList.contains('open')) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'auto';
-        }
-    }
-}
         
-        async function showStandings(leagueId, teamId, code) {
-    // 1. Megnyitjuk a panelt mobilon
+     async function showStandings(leagueId, teamId, code) {
+    // 1. Mobil oldalsáv megnyitása
     if (window.innerWidth <= 1100) {
-        toggleM('section-standings');
+        const sidebar = document.getElementById("section-standings");
+        if (sidebar) {
+            sidebar.classList.add('open');
+            document.body.style.overflow = 'hidden'; // Háttér görgetés tiltása
+        }
     }
 
     const target = document.getElementById("standings-target");
-    // Töltés jelzése a megfelelő színnel
     target.innerHTML = `<p style="text-align:center; padding:50px; font-family:'Orbitron'; font-size:10px; color:var(--neon-blue);">LOADING...</p>`;
     
-    // Biztosítjuk a bezáró gomb meglétét mobilon
-    const closeBtn = `<button class="close-sidebar" onclick="toggleM('section-standings')">✖ BEZÁRÁS</button>`;
+    // Bezáró gomb mobilon (stílusos X)
+    const closeBtn = window.innerWidth <= 1100 ? 
+        `<button onclick="toggleM('section-standings')" style="width:100%; padding:12px; background:rgba(255,62,62,0.1); border:1px solid rgba(255,62,62,0.3); color:#ff3e3e; font-family:'Orbitron'; font-size:10px; border-radius:10px; margin-bottom:15px; cursor:pointer;">✖ BEZÁRÁS</button>` : '';
 
     try {
         const res = await fetch(`/api/standings/${code || leagueId}`);
         const data = await res.json();
         const tableData = data.standings.find(s => s.type === 'TOTAL').table;
+        const total = tableData.length; // Ez kell a kieső helyek számításához!
 
         let html = closeBtn + `<table class="standings-table">
             <thead>
-                <tr><th>#</th><th style="text-align:left">TEAM</th><th>P</th></tr>
+                <tr><th>#</th><th style="text-align:left">${currentLang === 'HU' ? 'CSAPAT' : 'TEAM'}</th><th>P</th></tr>
             </thead>
             <tbody>`;
-                tableData.forEach(r => {
-                    let status = r.description || "";
-                    let pos = r.position;
+
+        tableData.forEach(r => {
+            let status = r.description || "";
+            let pos = r.position;
 
                    if (!status || status === "") {
                         if (['PL', 'PD', 'SA'].includes(code)) {
@@ -577,27 +570,42 @@ function updateSelectAllButton() {
                             else if (pos >= total - 2) status = "Relegation";
                         }
                     }
+const color = getStatusColor(status);
+            const isTarget = r.team.id == teamId;
+            const boxBg = color !== 'transparent' ? color : 'rgba(255,255,255,0.05)';
+            const boxText = color !== 'transparent' ? '#000' : 'var(--neon-blue)';
 
-                    const color = getStatusColor(status);
-                    const isTarget = r.team.id == teamId;
-                    const boxBg = color !== 'transparent' ? color : 'rgba(255,255,255,0.05)';
-                    const boxText = color !== 'transparent' ? '#000' : 'var(--neon-blue)';
+            html += `
+                <tr class="${isTarget ? 'highlight' : ''}">
+                    <td class="pos-col" style="border-left: 3px solid ${color}; padding-left: 10px;">
+                        ${status ? `<span class="zone-tag" style="color:${color}; font-size:7px; display:block; font-family:'Orbitron';">${translateStatus(status)}</span>` : ''}
+                        <div class="pos-num-box" style="background:${boxBg}; color:${boxText}; width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:5px; font-weight:900; font-size:11px;">
+                            ${pos}
+                        </div>
+                    </td>
+                    <td style="text-align:left; font-weight:800; font-size:13px;">
+                        <img src="${r.team.crest}" width="24" style="vertical-align:middle; margin-right:10px;">
+                        ${r.team.shortName || r.team.name}
+                    </td>
+                    <td style="font-weight:bold; color:var(--neon-green); font-family:'Orbitron'; font-size:14px;">${r.points}</td>
+                </tr>`;
+        });
 
-                    html += `<tr class="${isTarget ? 'highlight' : ''}">
-                        <td class="pos-col" style="border-left-color: ${color}">
-                            ${status ? `<span class="zone-tag" style="color:${color}">${translateStatus(status)}</span>` : ''}
-                            <div class="pos-num-box" style="background:${boxBg}; color:${boxText};">${pos}</div>
-                        </td>
-                        <td style="text-align:left; font-weight:800;">
-                            <img src="${r.team.crest}" width="24" style="vertical-align:middle; margin-right:10px;">
-                            ${r.team.shortName || r.team.name}
-                        </td>
-                        <td style="font-weight:bold; color:var(--neon-green); font-family:'Orbitron'; font-size:14px;">${r.points}</td>
-                    </tr>`;
-                });
-                target.innerHTML = html + "</tbody></table>";
-            } catch (e) { target.innerHTML = "Error loading standings."; }
-        }
+        target.innerHTML = html + "</tbody></table><div style='height:50px;'></div>"; // Kis extra hely az alján
+    } catch (e) { 
+        console.error(e);
+        target.innerHTML = closeBtn + "<p style='text-align:center; padding:20px;'>Hiba a betöltéskor.</p>"; 
+    }
+}
+
+// Biztonsági toggle funkció a bezáráshoz
+function toggleM(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.remove('open');
+        document.body.style.overflow = 'auto';
+    }
+}
         init();
     </script>
 </body>
