@@ -137,8 +137,13 @@
 <body>
 
     <div id="goal-banner">
-    <div id="goal-team-name" style="font-size: 0.8rem; opacity: 0.9; margin-bottom: 2px;"></div>
-    <div id="goal-text">GOOOAAAL!!!</div>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+        <img id="goal-logo" src="" alt="" style="width: 40px; height: 40px; object-fit: contain; display: none;">
+        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+            <div id="goal-team-name" style="font-size: 0.9rem; font-weight: 700; color: #000; font-family: 'Orbitron';"></div>
+            <div id="goal-text" style="font-size: 1.2rem; font-weight: 900; color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">GOOOAAAL!!!</div>
+        </div>
+    </div>
 </div>
     <audio id="goal-sound" preload="auto">
     <source src="https://actions.google.com/sounds/v1/sports/football_crowd_goal.ogg" type="audio/ogg">
@@ -292,40 +297,48 @@
             return "ZÓNA";
         }
 
+        let originalTitle = document.title; // Elmentjük az eredeti címet (pl. LuckyPitch)
+let titleInterval = null;
 
-       function triggerGoalEffect(matchId, teamName) {
-    const banner = document.getElementById('goal-banner');
-    const teamDisplay = document.getElementById('goal-team-name');
-    const goalText = document.getElementById('goal-text');
-    const matchCard = document.getElementById(`match-${matchId}`);
-    const sound = document.getElementById('goal-sound');
-
-    if (flashingMatches.has(matchId)) return;
-
-    // Adatok beírása a bannerbe
-    if (teamDisplay) teamDisplay.innerText = teamName.toUpperCase();
-    if (goalText) goalText.innerText = "GOOOAAAL!!!";
-
-    // Megjelenítés
-    if (banner) banner.classList.add('show');
+function animateTitle(scrollingText) {
+    // Ha már fut egy animáció, állítsuk le
+    if (titleInterval) clearInterval(titleInterval);
     
-    if (sound) {
-        sound.currentTime = 0;
-        sound.play().catch(() => {});
-    }
+    let fullText = scrollingText + "  *** ";
+    titleInterval = setInterval(() => {
+        // Levágjuk az első karaktert és a végére rakjuk (elcsúsztatás)
+        fullText = fullText.substring(1) + fullText.substring(0, 1);
+        document.title = fullText;
+    }, 200); // 200ms-onként ugrik egy karaktert
 
-    if (matchCard) {
-        matchCard.classList.add('goal-highlight');
-        flashingMatches.add(matchId);
-    }
-
+    // 6 másodperc után állítsuk le és állítsuk vissza az eredeti címet
     setTimeout(() => {
-        if (banner) banner.classList.remove('show');
-        if (matchCard) {
-            matchCard.classList.remove('goal-highlight');
-            flashingMatches.delete(matchId);
-        }
-    }, 5000);
+        clearInterval(titleInterval);
+        document.title = originalTitle;
+        titleInterval = null;
+    }, 6000);
+}
+
+      let originalTitle = document.title; // Elmentjük az eredeti címet (pl. LuckyPitch)
+let titleInterval = null;
+
+function animateTitle(scrollingText) {
+    // Ha már fut egy animáció, állítsuk le
+    if (titleInterval) clearInterval(titleInterval);
+    
+    let fullText = scrollingText + "  *** ";
+    titleInterval = setInterval(() => {
+        // Levágjuk az első karaktert és a végére rakjuk (elcsúsztatás)
+        fullText = fullText.substring(1) + fullText.substring(0, 1);
+        document.title = fullText;
+    }, 200); // 200ms-onként ugrik egy karaktert
+
+    // 6 másodperc után állítsuk le és állítsuk vissza az eredeti címet
+    setTimeout(() => {
+        clearInterval(titleInterval);
+        document.title = originalTitle;
+        titleInterval = null;
+    }, 6000);
 }
        async function showStandings(leagueId, teamId, code) {
             if(window.innerWidth <= 1100) toggleM('sidebar-standings');
@@ -466,6 +479,7 @@
     </script>
 </body>
 </html>
+
 
 
 
