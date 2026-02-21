@@ -3,268 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuckyPitch | Smart Betting</title>
+    <title>LuckyPitch | Smart Betting Experience</title>
 
-    <script
-      async
-      crossorigin="anonymous"
-      data-clerk-publishable-key="pk_test_YWxsb3dlZC1pbnNlY3QtOTguY2xlcmsuYWNjb3VudHMuZGV2JA"
-      src="https://allowed-insect-98.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
-      type="text/javascript"
-    ></script>
-
+    <script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_YWxsb3dlZC1pbnNlY3QtOTguY2xlcmsuYWNjb3VudHMuZGV2JA" src="https://allowed-insect-98.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
     <script src="https://js.stripe.com/v3/"></script>
 
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
+
     <style>
-        :root{
-            --text: white;
-            --box-bg: rgba(0,0,0,0.7);
-            --btn-bg: #cde1e3;
-            --btn-text: black;
-            --primary: #00ff88;
-            --stripe: #635bff;
+        :root {
+            --bg: #020617;
+            --glass: rgba(15, 23, 42, 0.7);
+            --neon-blue: #0ea5e9;
+            --neon-green: #00ff88;
+            --neon-purple: #8b5cf6;
+            --text: #f1f5f9;
+            --border: rgba(255, 255, 255, 0.1);
         }
 
-        body.light{
-            --text: #111;
-            --box-bg: rgba(255,255,255,0.85);
-            --btn-bg: #111;
-            --btn-text: white;
+        body.light {
+            --bg: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.8);
+            --text: #0f172a;
+            --border: rgba(0, 0, 0, 0.1);
+            --neon-blue: #0284c7;
         }
 
-        *{ margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-
-        body{
-            min-height:100vh;
-            background: url("Foci.jpg") center/cover no-repeat fixed;
-            color:var(--text);
-            transition: 0.3s ease;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        body {
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
             overflow-x: hidden;
+            transition: 0.3s;
         }
 
-        body.light { background: url("Focivil.jpeg") center/cover no-repeat fixed; }
-
-        nav{
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:20px 60px;
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+        /* --- ANIMÁLT HÁTTÉR --- */
+        .bg-animation {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; overflow: hidden; filter: blur(100px); opacity: 0.5;
+        }
+        .blob {
+            position: absolute; width: 600px; height: 600px; border-radius: 50%;
+            animation: move 25s infinite alternate;
+        }
+        .blob-1 { background: #0044ff; top: -10%; left: -10%; }
+        .blob-2 { background: var(--neon-green); bottom: -10%; right: -10%; animation-duration: 30s; }
+        
+        @keyframes move {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(300px, 200px) scale(1.3); }
         }
 
-        .logo{ font-size:26px; font-weight:900; color: var(--primary); }
+        /* --- NAVIGÁCIÓ --- */
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px; background: var(--glass);
+            backdrop-filter: blur(20px); border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.5rem; color: var(--neon-blue); letter-spacing: 2px; }
 
-        .nav-buttons{ display:flex; gap:12px; align-items: center; }
+        .nav-buttons { display: flex; gap: 10px; align-items: center; }
 
         button, .btn-link {
-            border:none; padding:10px 18px; border-radius:8px;
-            cursor:pointer; font-weight:bold; background:var(--btn-bg);
-            color:var(--btn-text); text-decoration: none; transition: 0.3s;
+            border: none; padding: 10px 20px; border-radius: 12px;
+            cursor: pointer; font-weight: bold; font-family: 'Orbitron'; font-size: 11px;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border);
+            text-decoration: none;
+        }
+        button:hover { transform: translateY(-3px); border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(14, 165, 233, 0.3); }
+
+        .btn-auth { background: var(--neon-blue); color: white; }
+        .btn-support { background: #635bff; color: white; }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            padding: 100px 20px 60px;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
         }
 
-        .btn-auth { background: var(--primary); color: #000; }
-        .btn-support { background: var(--stripe); color: white; }
-        .btn-support:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        .hero{
-            min-height:90vh; display:flex; justify-content:center;
-            align-items:center; padding:20px;
+        .hero-box {
+            background: var(--glass); padding: 60px; border-radius: 40px;
+            border: 1px solid var(--border); backdrop-filter: blur(30px);
+            max-width: 900px; box-shadow: 0 40px 100px rgba(0,0,0,0.4);
+            margin-bottom: 50px;
         }
 
-        .box{
-            border: 1px solid rgba(255,255,255,0.1); padding:50px;
-            max-width:800px; text-align:center; background:var(--box-bg);
-            backdrop-filter: blur(15px); border-radius:30px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+        h1 { font-family: 'Orbitron'; font-size: clamp(32px, 5vw, 64px); font-weight: 900; margin-bottom: 20px; line-height: 1.1; }
+        .highlight-text { color: var(--neon-green); font-size: 1.2rem; font-weight: bold; margin-bottom: 30px; display: block; }
+
+        .btn-cta {
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            color: white; padding: 20px 60px; font-size: 1.2rem; border-radius: 50px;
+            display: inline-block; margin-top: 20px; border: none;
         }
 
-        h1{ font-size:52px; margin-bottom:15px; text-transform: uppercase; font-weight: 800; }
-        .kiemelt{ font-weight:bold; font-size: 1.3rem; color: var(--primary); margin-bottom: 25px; }
-        p{ line-height:1.8; margin-bottom:20px; font-size: 1.1rem; }
-        .divider{ border-top:1px solid rgba(255,255,255,0.2); margin:30px 0; }
-        
-        .btn-main { 
-            margin-top:20px; padding:18px 50px; font-size:20px; 
-            border-radius: 50px; display: inline-block;
+        /* --- FEATURES GRID --- */
+        .features-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px; width: 100%; max-width: 1100px; margin-top: 40px;
         }
+        .f-card {
+            background: var(--glass); padding: 35px; border-radius: 25px;
+            border: 1px solid var(--border); transition: 0.4s;
+        }
+        .f-card:hover { transform: translateY(-10px); border-color: var(--neon-green); background: rgba(0, 255, 136, 0.05); }
+        .f-card h3 { font-family: 'Orbitron'; margin-bottom: 15px; color: var(--neon-blue); }
 
-        #status-msg { color: var(--primary); margin-top: 15px; font-weight: bold; }
+        /* --- STATS BAR --- */
+        .stats-bar {
+            display: flex; gap: 50px; margin-top: 50px; padding: 20px 40px;
+            background: rgba(0,0,0,0.2); border-radius: 100px; border: 1px solid var(--border);
+        }
+        .stat-item b { display: block; font-size: 1.5rem; color: var(--neon-green); }
+        .stat-item span { font-size: 0.8rem; opacity: 0.7; text-transform: uppercase; }
 
-        @media (max-width:768px){
-            nav{ padding:15px 20px; }
-            h1{ font-size:32px; }
-            .box{ padding:40px 15px; }
+        @media (max-width: 768px) {
+            .hero-box { padding: 40px 20px; }
+            .stats-bar { flex-direction: column; gap: 20px; border-radius: 20px; }
         }
     </style>
 </head>
 <body>
 
+<div class="bg-animation">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+</div>
+
 <nav>
     <div class="logo">LuckyPitch</div>
-
     <div class="nav-buttons">
-        <button id="mod-btn" onclick="toggleTheme()">☀️</button>
-        <button id="lang-toggle-btn" onclick="toggleLang()">HU 🇭🇺</button>
-        
-        <button id="support-btn" class="btn-support" onclick="handleSupport()">Donate</button>
-        
+        <button onclick="toggleTheme()" id="mod-btn">☀️</button>
+        <button onclick="toggleLang()" id="lang-btn">HU 🇭🇺</button>
+        <button class="btn-support" onclick="handleSupport()" id="support-btn">Donate</button>
         <div id="user-button"></div>
         <div id="auth-links" style="display: none;">
             <button onclick="Clerk.openSignIn()" class="btn-auth" id="login-text">LOGIN</button>
         </div>
-
-        <a href="https://www.facebook.com/profile.php?id=61588443053104" target="_blank">
-            <img id="fb-logo" src="facebook-1.png" style="width:30px; vertical-align: middle; margin-left: 5px;">
-        </a>
     </div>
 </nav>
 
 <section class="hero">
-    <div class="box">
-        <h1 id="title">Let the wins Begin</h1>
-        <p id="kiemelt" class="kiemelt">Where passion meets precision — and every decision counts.</p>
+    <div class="hero-box">
+        <h1 id="title">Let the Wins Begin</h1>
+        <span class="highlight-text" id="kiemelt">Where passion meets precision — every decision counts.</span>
         
-        <p id="text1">At LuckyPitch, we believe winning isn’t just about luck — it’s about smart thinking, sharp strategy, and the courage to trust your instincts.</p>
+        <p id="text1" style="margin-bottom: 30px; opacity: 0.9;">At LuckyPitch, we believe winning isn’t just about luck — it’s about smart thinking, sharp strategy, and the courage to trust your instincts.</p>
 
-        <div id="status-msg"></div>
-        <div class="divider"></div>
+        <a href="/meccsek" class="btn-cta btn-link" id="cta-link">Matches</a>
+        
+        <div id="status-msg" style="margin-top:20px; color:var(--neon-green); font-weight:bold;"></div>
+    </div>
 
-        <p id="text2">This is where insight meets opportunity. This is where the game changes. Play smarter. Think sharper. Win bigger.</p>
+    <div class="stats-bar">
+        <div class="stat-item"><b id="stat-matches">2,400+</b><span id="stat-text-1">Live Matches</span></div>
+        <div class="stat-item"><b id="stat-users">98%</b><span id="stat-text-2">Accuracy</span></div>
+        <div class="stat-item"><b id="stat-wins">15k</b><span id="stat-text-3">Winning Tips</span></div>
+    </div>
 
-        <a href="/meccsek" id="cta-link" class="btn-link btn-main">Matches</a>
+    <div class="features-grid">
+        <div class="f-card">
+            <h3 id="f1-t">Real-Time Data</h3>
+            <p id="f1-p">Get instant goal alerts and live table updates faster than anyone else.</p>
+        </div>
+        <div class="f-card">
+            <h3 id="f2-t">Smart Analytics</h3>
+            <p id="f2-p">Deep insights into team forms and historical data for better decisions.</p>
+        </div>
+        <div class="f-card">
+            <h3 id="f3-t">Neon Interface</h3>
+            <p id="f3-p">Dark mode optimized high-performance UI designed for bettors.</p>
+        </div>
     </div>
 </section>
 
 <script>
-// --- KONFIGURÁCIÓ ---
 const stripe = Stripe('pk_test_51T2qaQQkKVs47hkTqXwOVadi0o1GiBortnh6rNLqLxHMS7E6CKCQwp4lcwtnk7jIojzDjERp8wuMHNgx5FKqHEUo00uXcI3IS5');
 
 const translations = {
     hu: {
         title: "Kezdődjenek a Győzelmek",
         kiemelt: "Ahol a szenvedély találkozik a precizitással.",
-        text1: "A LuckyPitchnél hisszük, hogy a győzelem nem csupán szerencse kérdése.",
-        text2: "Játssz okosabban. Gondolkodj élesebben. Nyerj nagyobbat.",
+        text1: "A LuckyPitchnél hisszük, hogy a győzelem nem csak szerencse kérdése.",
         cta: "Meccsek megtekintése",
         langBtn: "EN 🇬🇧",
         login: "BELÉPÉS",
         support: "Támogatás",
-        loading: "Betöltés...",
-        alert: "Kérlek, jelentkezz be a támogatáshoz!"
+        f1t: "Élő Adatok", f1p: "Azonnali gólértesítések és élő tabella frissítések.",
+        f2t: "Okos Analitika", f2p: "Mélyreható statisztikák és formaelemzés a jobb döntésekért.",
+        f3t: "Neon Felület", f3p: "Sötét módra optimalizált, nagy teljesítményű kezelőfelület.",
+        s1: "Élő Meccs", s2: "Pontosság", s3: "Nyerő Tipp"
     },
     en: {
         title: "Let the Wins Begin",
         kiemelt: "Where passion meets precision.",
         text1: "At LuckyPitch, we believe winning isn't just about luck.",
-        text2: "Play smarter. Think sharper. Win bigger.",
         cta: "Explore Matches",
         langBtn: "HU 🇭🇺",
         login: "LOGIN",
         support: "Donate",
-        loading: "Loading...",
-        alert: "Please log in to donate!"
+        f1t: "Real-Time Data", f1p: "Get instant goal alerts and live table updates.",
+        f2t: "Smart Analytics", f2p: "Deep insights into team forms and historical data.",
+        f3t: "Neon Interface", f3p: "High-performance UI designed for pro bettors.",
+        s1: "Live Matches", s2: "Accuracy", s3: "Winning Tips"
     }
 };
 
-// --- TÁMOGATÁS KEZELÉSE ---
 async function handleSupport() {
     if (!window.Clerk || !Clerk.user) {
-        const lang = localStorage.getItem("lang") || "en";
-        alert(translations[lang].alert);
+        alert("Please log in to donate!");
         Clerk.openSignIn();
         return;
     }
-
     const btn = document.getElementById('support-btn');
-    const lang = localStorage.getItem("lang") || "en";
-    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "Loading...";
 
     try {
-        btn.innerText = translations[lang].loading;
-        btn.disabled = true;
-
-        const response = await fetch('/create-checkout-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (!response.ok) throw new Error("Szerver hiba");
-
+        const response = await fetch('/create-checkout-session', { method: 'POST' });
         const session = await response.json();
-        if (session.id) {
-            await stripe.redirectToCheckout({ sessionId: session.id });
-        }
+        if (session.id) await stripe.redirectToCheckout({ sessionId: session.id });
     } catch (err) {
-        console.error(err);
-        alert("Hiba történt. Próbáld újra később.");
-        btn.innerText = originalText;
+        alert("Error connecting to Stripe.");
         btn.disabled = false;
     }
 }
 
-// --- APP INICIALIZÁLÁS ---
 async function startApp() {
-    try {
-        await Clerk.load();
-        
-        const userBtnDiv = document.getElementById('user-button');
-        const authLinks = document.getElementById('auth-links');
+    await Clerk.load();
+    const userBtnDiv = document.getElementById('user-button');
+    const authLinks = document.getElementById('auth-links');
 
-        if (Clerk.user) {
-            Clerk.mountUserButton(userBtnDiv);
-            authLinks.style.display = 'none';
-        } else {
-            authLinks.style.display = 'block';
-        }
-    } catch (err) {
-        console.error("Clerk error:", err);
-        document.getElementById('auth-links').style.display = 'block';
+    if (Clerk.user) {
+        Clerk.mountUserButton(userBtnDiv);
+        authLinks.style.display = 'none';
+    } else {
+        authLinks.style.display = 'block';
     }
 
-    // URL visszajelzés (sikeres fizetés után)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success')) {
         document.getElementById('status-msg').innerText = "❤️ Thank you for your support!";
         window.history.replaceState({}, document.title, "/");
     }
-
     updateUI();
 }
 
 function updateUI() {
     const lang = localStorage.getItem("lang") || "en";
     const theme = localStorage.getItem("theme") || "dark";
-    const data = translations[lang];
+    const d = translations[lang];
 
-    document.getElementById("title").innerText = data.title;
-    document.getElementById("kiemelt").innerText = data.kiemelt;
-    document.getElementById("text1").innerText = data.text1;
-    document.getElementById("text2").innerText = data.text2;
-    document.getElementById("cta-link").innerText = data.cta;
-    document.getElementById("lang-toggle-btn").innerText = data.langBtn;
-    document.getElementById("login-text").innerText = data.login;
-    document.getElementById("support-btn").innerText = data.support;
+    document.getElementById("title").innerText = d.title;
+    document.getElementById("kiemelt").innerText = d.kiemelt;
+    document.getElementById("text1").innerText = d.text1;
+    document.getElementById("cta-link").innerText = d.cta;
+    document.getElementById("lang-btn").innerText = d.langBtn;
+    document.getElementById("login-text").innerText = d.login;
+    document.getElementById("support-btn").innerText = d.support;
+    
+    // Features & Stats
+    document.getElementById("f1-t").innerText = d.f1t; document.getElementById("f1-p").innerText = d.f1p;
+    document.getElementById("f2-t").innerText = d.f2t; document.getElementById("f2-p").innerText = d.f2p;
+    document.getElementById("f3-t").innerText = d.f3t; document.getElementById("f3-p").innerText = d.f3p;
+    document.getElementById("stat-text-1").innerText = d.s1;
+    document.getElementById("stat-text-2").innerText = d.s2;
+    document.getElementById("stat-text-3").innerText = d.s3;
 
     document.body.classList.toggle("light", theme === "light");
     document.getElementById("mod-btn").innerText = theme === "light" ? "🌙" : "☀️";
-    // FACEBOOK LOGO VÁLTÁS
-    const fbLogo = document.getElementById("fb-logo");
-    fbLogo.src = theme === "light" ? "facebook-2.png" : "facebook-1.png";
 }
 
 function toggleLang() {
-    const cur = localStorage.getItem("lang") || "en";
-    localStorage.setItem("lang", cur === "en" ? "hu" : "en");
+    localStorage.setItem("lang", (localStorage.getItem("lang") || "en") === "en" ? "hu" : "en");
     updateUI();
 }
 
 function toggleTheme() {
-    const cur = localStorage.getItem("theme") || "dark";
-    localStorage.setItem("theme", cur === "dark" ? "light" : "dark");
+    localStorage.setItem("theme", (localStorage.getItem("theme") || "dark") === "dark" ? "light" : "dark");
     updateUI();
 }
 
@@ -273,4 +293,3 @@ window.addEventListener('load', startApp);
 
 </body>
 </html>
-
