@@ -176,12 +176,42 @@
         /* --- MOBILE --- */
         .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: none; justify-content: space-around; align-items: center; z-index: 1100; }
 
-        @media (max-width: 1100px) {
-            .sidebar, .standings-sidebar { position: fixed; top: 75px; bottom: 70px; width: 85%; z-index: 1050; transform: translateX(-105%); background: var(--bg); }
-            .standings-sidebar { right: 0; transform: translateX(105%); }
-            .sidebar.open, .standings-sidebar.open { transform: translateX(0); }
-            .mobile-nav { display: flex; }
-        }
+      /* --- MOBIL SIDEBAR STÍLUS --- */
+@media (max-width: 1100px) {
+    .glass-panel#section-standings {
+        position: fixed;
+        top: 0;
+        right: -100%; /* Alapból rejtve jobbra */
+        width: 85%;
+        height: 100%;
+        z-index: 2000;
+        transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+        box-shadow: -10px 0 30px rgba(0,0,0,0.8);
+        border-radius: 20px 0 0 20px;
+    }
+
+    .glass-panel#section-standings.open {
+        right: 0; /* Beúszik */
+    }
+
+    /* Bezáró gomb a tabella tetejére (csak mobilon) */
+    .close-sidebar {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: var(--neon-red);
+        font-family: 'Orbitron';
+        margin-bottom: 15px;
+        border-radius: 10px;
+    }
+}
+
+@media (min-width: 1101px) {
+    .close-sidebar { display: none; }
+}
     </style>
 </head>
 <body class="dark">
@@ -467,19 +497,42 @@ function updateSelectAllButton() {
             return "ZÓNA";
         }
 
+        function toggleM(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.toggle('open');
+        // Ha kinyitjuk, ne lehessen alatta görgetni a főoldalt
+        if (el.classList.contains('open')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+    }
+}
+        
         async function showStandings(leagueId, teamId, code) {
-            if(window.innerWidth <= 1100) toggleM('sidebar-standings');
-            const target = document.getElementById("standings-target");
-            target.innerHTML = `<p style="text-align:center; padding:50px; font-family:'Orbitron'; font-size:10px;">LOADING...</p>`;
-            
-            try {
-                const res = await fetch(`/api/standings/${code || leagueId}`);
-                const data = await res.json();
-                const tableData = data.standings.find(s => s.type === 'TOTAL').table;
-                const total = tableData.length;
+    // 1. Megnyitjuk a panelt mobilon
+    if (window.innerWidth <= 1100) {
+        toggleM('section-standings');
+    }
 
-                let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">${currentLang==='HU'?'CSAPAT':'TEAM'}</th><th>P</th></tr></thead><tbody>`;
-                
+    const target = document.getElementById("standings-target");
+    // Töltés jelzése a megfelelő színnel
+    target.innerHTML = `<p style="text-align:center; padding:50px; font-family:'Orbitron'; font-size:10px; color:var(--neon-blue);">LOADING...</p>`;
+    
+    // Biztosítjuk a bezáró gomb meglétét mobilon
+    const closeBtn = `<button class="close-sidebar" onclick="toggleM('section-standings')">✖ BEZÁRÁS</button>`;
+
+    try {
+        const res = await fetch(`/api/standings/${code || leagueId}`);
+        const data = await res.json();
+        const tableData = data.standings.find(s => s.type === 'TOTAL').table;
+
+        let html = closeBtn + `<table class="standings-table">
+            <thead>
+                <tr><th>#</th><th style="text-align:left">TEAM</th><th>P</th></tr>
+            </thead>
+            <tbody>`;
                 tableData.forEach(r => {
                     let status = r.description || "";
                     let pos = r.position;
@@ -551,6 +604,7 @@ function updateSelectAllButton() {
 </html>
 </body>
 </html>
+
 
 
 
