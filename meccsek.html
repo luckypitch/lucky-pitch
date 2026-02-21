@@ -200,6 +200,9 @@
         </main>
         <aside class="standings-sidebar" id="sidebar-standings">
             <div class="sidebar-header" id="h-table">📊 Élő Tabella</div>
+            <button id="mobile-test-btn" onclick="runMobileTest()" style="position:fixed; top:85px; right:10px; z-index:9999; padding:10px; background:var(--neon-red); color:white; border:none; border-radius:8px; font-family:'Orbitron'; font-size:10px;">
+    🔥 GÓL TESZT
+</button>
             <div id="standings-target">
                 <p id="standings-placeholder" style="text-align:center; opacity:0.3; margin-top:100px; font-family:'Orbitron'; font-size:10px;">VÁLASSZ EGY CSAPATOT</p>
             </div>
@@ -328,6 +331,24 @@ function animateTitle(scrollingText) {
             return "transparent";
         }
 
+function runMobileTest() {
+    // Megkeressük az első kártyát, amit a telefon kijelzőjén látsz
+    const firstMatch = document.querySelector('.match-card');
+    
+    if (firstMatch) {
+        const teamName = firstMatch.querySelector('.team-link span')?.innerText || "TESZT CSAPAT";
+        const logoUrl = firstMatch.querySelector('.team-link img')?.src || "";
+        const matchId = firstMatch.id ? firstMatch.id.replace('match-', '') : 'test';
+
+        // Meghívjuk a már megírt függvényedet
+        if (typeof triggerGoalEffect === 'function') {
+            triggerGoalEffect(matchId, teamName, logoUrl);
+        }
+    } else {
+        alert("Nincsenek betöltve meccsek! Válassz egy ligát előbb.");
+    }
+}
+        
         function translateStatus(text) {
             if (!text) return "";
             if (text.includes("Champions League")) return "BL";
@@ -517,6 +538,7 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
     </script>
 </body>
 </html>
+
 
 
 
