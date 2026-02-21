@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuckyPitch | Quantum AI Betting</title>
+    <title>LuckyPitch | Ultimate Betting Engine</title>
 
     <script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_YWxsb3dlZC1pbnNlY3QtOTguY2xlcmsuYWNjb3VudHMuZGV2JA" src="https://allowed-insect-98.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
     <script src="https://js.stripe.com/v3/"></script>
@@ -13,214 +13,154 @@
         :root {
             --bg: #020617; --glass: rgba(15, 23, 42, 0.7); --neon-blue: #0ea5e9;
             --neon-green: #00ff88; --neon-purple: #8b5cf6; --text: #f1f5f9;
-            --border: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.1); --card-bg: rgba(15, 23, 42, 0.8);
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        body.light {
+            --bg: #f8fafc; --glass: rgba(255, 255, 255, 0.8); --text: #0f172a;
+            --border: rgba(0, 0, 0, 0.1); --neon-blue: #0284c7; --card-bg: rgba(255, 255, 255, 0.9);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; transition: 0.3s; }
 
-        /* NEURAL NETWORK CANVAS */
-        #neuralCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.35; pointer-events: none; }
-        .cursor-glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, transparent 70%); border-radius: 50%; pointer-events: none; z-index: -1; transform: translate(-50%, -50%); }
+        /* NEURAL NETWORK */
+        #neuralCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.3; pointer-events: none; }
+        .cursor-glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(14, 165, 233, 0.1) 0%, transparent 70%); border-radius: 50%; pointer-events: none; z-index: -1; transform: translate(-50%, -50%); }
 
-        /* NAVIGATION */
+        /* NAV */
         nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: var(--glass); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; }
         .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.5rem; color: var(--neon-blue); letter-spacing: 2px; }
-        .nav-buttons { display: flex; gap: 12px; align-items: center; }
+
+        /* BUTTONS */
         button, .btn-link { border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; font-family: 'Orbitron'; font-size: 11px; transition: 0.3s; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); text-decoration: none; }
         button:hover { transform: translateY(-2px); border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(14, 165, 233, 0.3); }
 
-        /* TICKER - DINAMIKUS MECCS LISTA */
-        .ticker-wrap { width: 100%; overflow: hidden; background: rgba(14, 165, 233, 0.05); border-bottom: 1px solid var(--border); padding: 10px 0; }
+        /* TICKER */
+        .ticker-wrap { width: 100%; overflow: hidden; background: rgba(14, 165, 233, 0.05); border-bottom: 1px solid var(--border); padding: 12px 0; }
         .ticker { display: inline-block; white-space: nowrap; animation: ticker 60s linear infinite; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); }
-        .ticker span { margin-right: 60px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; }
-        .ticker .live-dot { width: 6px; height: 6px; background: var(--neon-green); border-radius: 50%; display: inline-block; }
+        .ticker span { margin-right: 50px; font-weight: bold; }
         @keyframes ticker { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
 
-        /* HERO - SPLIT VIEW */
-        .hero { display: flex; align-items: center; justify-content: space-between; padding: 60px 10%; min-height: 85vh; gap: 50px; }
-        .hero-text { flex: 1.2; }
-        .hero-visual { flex: 0.8; display: flex; flex-direction: column; align-items: center; }
+        /* SIGNALS */
+        #signal-feed { position: fixed; bottom: 20px; left: 20px; z-index: 2000; pointer-events: none; }
+        .signal { background: var(--glass); border-left: 4px solid var(--neon-green); padding: 12px 20px; border-radius: 10px; margin-top: 10px; font-size: 10px; font-family: 'Orbitron'; backdrop-filter: blur(10px); animation: slideIn 0.5s ease-out; }
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
+        /* HERO */
+        .hero { display: flex; align-items: center; justify-content: space-between; padding: 60px 10%; min-height: 85vh; gap: 50px; }
         h1 { font-family: 'Orbitron'; font-size: clamp(32px, 5vw, 60px); line-height: 1.1; margin-bottom: 25px; font-weight: 900; }
-        
+
         /* PREDICTION CARD */
         .prediction-card {
-            background: var(--glass); border: 1px solid var(--neon-blue); border-radius: 35px; padding: 35px;
+            background: var(--card-bg); border: 1px solid var(--neon-blue); border-radius: 35px; padding: 35px;
             width: 100%; max-width: 420px; backdrop-filter: blur(30px); position: relative;
-            animation: float 6s ease-in-out infinite; box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+            animation: float 6s ease-in-out infinite; box-shadow: 0 25px 60px rgba(0,0,0,0.4);
         }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
 
-        .card-badge { font-family: 'Orbitron'; font-size: 9px; color: var(--neon-green); margin-bottom: 15px; letter-spacing: 2.5px; font-weight: 800; border: 1px solid var(--neon-green); padding: 5px 12px; border-radius: 20px; display: inline-block; }
-        #daily-match { font-family: 'Orbitron'; font-size: 1.6rem; margin-bottom: 10px; font-weight: 900; color: #fff; line-height: 1.2; text-transform: uppercase; }
-        .match-meta { font-size: 11px; opacity: 0.7; margin-bottom: 25px; font-family: 'Orbitron'; color: var(--neon-blue); text-transform: uppercase; }
-
-        .locked-zone { position: relative; background: rgba(0,0,0,0.5); border-radius: 25px; padding: 25px; border: 1px solid rgba(255,255,255,0.05); }
-        .blur-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 25px;
-            backdrop-filter: blur(15px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;
+        .card-badge { font-family: 'Orbitron'; font-size: 9px; color: var(--neon-green); border: 1px solid var(--neon-green); padding: 5px 12px; border-radius: 20px; display: inline-block; margin-bottom: 15px; }
+        .locked-zone { position: relative; background: rgba(0,0,0,0.3); border-radius: 25px; padding: 25px; overflow: hidden; }
+        .blur-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; backdrop-filter: blur(15px); display: flex; align-items: center; justify-content: center; z-index: 10; }
+        
+        /* FACEBOOK HOVER GLOW */
+        .fb-link { 
+            display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; 
+            font-family: 'Orbitron'; font-size: 12px; transition: 0.4s; padding: 12px 30px; 
+            border-radius: 50px; border: 1px solid var(--border);
         }
-        .btn-unlock { background: var(--neon-green); color: #000; border: none; padding: 14px 32px; border-radius: 50px; font-family: 'Orbitron'; font-weight: 900; font-size: 12px; cursor: pointer; transition: 0.3s; }
-        .btn-unlock:hover { box-shadow: 0 0 30px var(--neon-green); transform: scale(1.05); }
+        .fb-link:hover { 
+            color: #1877F2; border-color: #1877F2; 
+            box-shadow: 0 0 25px rgba(24, 119, 242, 0.6); 
+            transform: translateY(-3px); 
+        }
 
-        /* STATS */
         .stats-bar { display: flex; gap: 40px; margin-top: 50px; }
-        .stat-item b { display: block; font-size: 2.4rem; color: var(--neon-green); font-family: 'Orbitron'; line-height: 1; margin-bottom: 5px; }
-        .stat-item span { font-size: 10px; opacity: 0.5; font-family: 'Orbitron'; letter-spacing: 1px; }
+        .stat-item b { display: block; font-size: 2.2rem; color: var(--neon-green); font-family: 'Orbitron'; }
 
-        .trust-indicator { margin-top: 25px; display: flex; align-items: center; gap: 10px; font-size: 10px; font-family: 'Orbitron'; color: var(--neon-green); opacity: 0.8; }
-        .pulse-dot { width: 8px; height: 8px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 12px var(--neon-green); animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.2; transform: scale(0.8); } }
+        .dot { width: 8px; height: 8px; background: var(--neon-green); border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 10px var(--neon-green); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
-        footer { padding: 50px; background: var(--glass); border-top: 1px solid var(--border); text-align: center; margin-top: 50px; }
-        .fb-link { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-family: 'Orbitron'; font-size: 12px; transition: 0.3s; padding: 12px 30px; border-radius: 50px; border: 1px solid var(--border); }
-
-        @media (max-width: 1100px) {
-            .hero { flex-direction: column; text-align: center; padding: 40px 5%; }
-            .stats-bar { gap: 25px; justify-content: center; }
-        }
+        @media (max-width: 1000px) { .hero { flex-direction: column; text-align: center; } .stats-bar { justify-content: center; } }
     </style>
 </head>
 <body>
 
 <canvas id="neuralCanvas"></canvas>
 <div class="cursor-glow" id="cursor"></div>
+<div id="signal-feed"></div>
 
 <nav>
     <div class="logo">LuckyPitch</div>
     <div class="nav-buttons">
+        <button onclick="toggleTheme()" id="theme-icon">🌙</button>
         <button onclick="toggleLang()" id="lang-btn">HU 🇭🇺</button>
         <button onclick="handleSupport()" id="support-btn" style="background:#635bff; color:white;">Donate</button>
         <div id="user-button"></div>
-        <div id="auth-links">
-            <button onclick="Clerk.openSignIn()" style="background:var(--neon-blue); color:white;" id="login-text">LOGIN</button>
-        </div>
+        <div id="auth-links"><button onclick="Clerk.openSignIn()" style="background:var(--neon-blue); color:white;" id="login-text">LOGIN</button></div>
     </div>
 </nav>
 
 <div class="ticker-wrap">
-    <div class="ticker" id="ticker-content">
-        <span><i class="live-dot"></i> INITIALIZING NEURAL DATA NODES...</span>
-        <span><i class="live-dot"></i> STANDBY FOR TODAY'S FIXTURES...</span>
-    </div>
+    <div class="ticker" id="ticker-content"><span>CONNECTING TO NEURAL NODES... ANALYZING GLOBAL MARKETS...</span></div>
 </div>
 
 <section class="hero">
     <div class="hero-text">
         <h1 id="title">Let the Wins Begin</h1>
-        <p id="text1" style="opacity: 0.8; margin-bottom: 40px; max-width: 600px; line-height: 1.8; font-size: 1.1rem;">
-            Elite strategy meets real-time football data. Experience the next generation of sports analytics.
-        </p>
+        <p id="text1" style="opacity: 0.8; margin-bottom: 40px; max-width: 600px; line-height: 1.8;">Elite strategy meets real-time football data. Experience the next generation of sports analytics.</p>
+        <a href="/meccsek" class="btn-link" id="cta-link" style="background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); color: white; padding: 18px 50px; border-radius: 50px; font-size: 1.1rem;">EXPLORE MATCHES</a>
         
-        <a href="/meccsek" class="btn-link" id="cta-link" style="background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); color: white; padding: 20px 60px; font-size: 1.2rem; border-radius: 60px; border: none; font-family: 'Orbitron'; letter-spacing: 2px; box-shadow: 0 10px 30px rgba(14, 165, 233, 0.3);">MATCHES</a>
-
         <div class="stats-bar">
             <div class="stat-item"><b class="counter" data-target="2400">0</b><span id="stat-text-1">Live Matches</span></div>
             <div class="stat-item"><b class="counter" data-target="98">0</b><span id="stat-text-2">Accuracy %</span></div>
-            <div class="stat-item"><b class="counter" data-target="15000">0</b><span id="stat-text-3">Winning Tips</span></div>
         </div>
     </div>
 
     <div class="hero-visual">
         <div class="prediction-card">
             <div class="card-badge" id="badge-text">🔥 TOP PREDICTION TODAY</div>
-            <h3 id="daily-match">SYNCING...</h3>
-            <p class="match-meta" id="match-meta">NEURAL CORE CALCULATING ODDS</p>
-            
+            <h3 id="daily-match" style="font-family:'Orbitron'; margin-bottom:10px;">MATCH SYNCING...</h3>
+            <p id="match-meta" style="font-size:11px; color:var(--neon-blue); margin-bottom:20px; font-family:'Orbitron';">NEURAL CORE CALCULATING...</p>
             <div class="locked-zone">
-                <div class="blur-overlay">
-                    <span style="font-size: 28px; margin-bottom: 15px;">🔒</span>
-                    <button onclick="handleSupport()" class="btn-unlock" id="unlock-btn">Unlock Prediction</button>
-                </div>
-                <div style="opacity: 0.1; font-family: 'Orbitron'; font-size: 12px; line-height: 2;">
+                <div class="blur-overlay"><button onclick="handleSupport()" class="btn-unlock" id="unlock-btn" style="background:var(--neon-green); color:#000; padding:12px 30px; border-radius:50px;">Unlock Tip</button></div>
+                <div style="opacity:0.1; line-height:2;">
                     <p>PICK: HOME WIN (1.95)</p>
                     <p>PROBABILITY: 94.2%</p>
-                    <p>QUANTUM CONFIDENCE: MAX</p>
                 </div>
             </div>
         </div>
-        <div class="trust-indicator">
-            <div class="pulse-dot"></div>
-            <span id="trust-text">SYSTEM STATUS: OPTIMAL</span>
+        <div style="margin-top:20px; font-size:10px; font-family:'Orbitron'; opacity:0.7;">
+            <span class="dot"></span> <span id="trust-text">AI CORE: ACTIVE & VERIFIED</span>
         </div>
     </div>
 </section>
 
-<footer>
-    <a href="https://www.facebook.com/profile.php?id=61588443053104" target="_blank" class="fb-link">Facebook</a>
-    <p style="font-size: 10px; margin-top: 35px; opacity: 0.3; font-family: 'Orbitron'; letter-spacing: 2px;">© 2026 LUCKYPITCH | NEURAL ENGINE v4.2.0</p>
+<footer style="padding: 60px; text-align: center; border-top: 1px solid var(--border);">
+    <a href="https://www.facebook.com/profile.php?id=61588443053104" target="_blank" class="fb-link">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        <span>FOLLOW US ON FACEBOOK</span>
+    </a>
 </footer>
 
 <script>
 const stripe = Stripe('pk_test_51T2qaQQkKVs47hkTqXwOVadi0o1GiBortnh6rNLqLxHMS7E6CKCQwp4lcwtnk7jIojzDjERp8wuMHNgx5FKqHEUo00uXcI3IS5');
 
+// 1. SÖTÉT MÓD
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    document.getElementById('theme-icon').innerText = isLight ? '☀️' : '🌙';
+}
+
+// 2. FORDÍTÁS
 const translations = {
-    hu: {
-        title: "Kezdődjenek a Győzelmek", text1: "Profi stratégia találkozik az élő adatokkal. Tapasztald meg a sportelemzés új generációját.",
-        s1: "Élő Meccs", s2: "Pontosság %", s3: "Nyerő Tipp", login: "BELÉPÉS", donate: "Támogatás", 
-        lang: "EN 🇬🇧", badge: "🔥 MAI KIEMELT TIPP", unlock: "Tipp Feloldása", meta: "NEURÁLIS MAG ODDS-OT SZÁMOL", cta: "MECCSEK", trust: "RENDSZER ÁLLAPOT: OPTIMÁLIS"
-    },
-    en: {
-        title: "Let the Wins Begin", text1: "Elite strategy meets real-time football data. Experience the next generation of sports analytics.",
-        s1: "Live Matches", s2: "Accuracy %", s3: "Winning Tips", login: "LOGIN", donate: "Donate", 
-        lang: "HU 🇭🇺", badge: "🔥 TOP PREDICTION TODAY", unlock: "Unlock Prediction", meta: "NEURAL CORE CALCULATING ODDS", cta: "MATCHES", trust: "SYSTEM STATUS: OPTIMAL"
-    }
+    hu: { title: "Kezdődjenek a Győzelmek", text1: "Profi stratégia találkozik az élő adatokkal. Tapasztald meg a sportelemzés új generációját.", s1: "Élő Meccs", s2: "Pontosság %", login: "BELÉPÉS", donate: "Támogatás", lang: "EN 🇬🇧", badge: "🔥 MAI KIEMELT TIPP", unlock: "Tipp Feloldása", cta: "MECCSEK", trust: "AI MAG: AKTÍV ÉS IGAZOLT" },
+    en: { title: "Let the Wins Begin", text1: "Elite strategy meets real-time football data. Experience the next generation of sports analytics.", s1: "Live Matches", s2: "Accuracy %", login: "LOGIN", donate: "Donate", lang: "HU 🇭🇺", badge: "🔥 TOP PREDICTION TODAY", unlock: "Unlock Prediction", cta: "MATCHES", trust: "AI CORE: ACTIVE & VERIFIED" }
 };
 
-// --- DYNAMIC TICKER & CARD SYNC ---
-async function fetchTodayMatches() {
-    const today = new Date().toISOString().split('T')[0];
-    try {
-        const res = await fetch(`/api/live-ticker?date=${today}`);
-        const matches = await res.json();
-        const ticker = document.getElementById('ticker-content');
-        const cardMatch = document.getElementById('daily-match');
-        
-        if(matches && matches.length > 0) {
-            // Megtöltjük a tickert az összes meccsel
-            ticker.innerHTML = matches.map(m => `<span><i class="live-dot"></i> ⚽ ${m.toUpperCase()}</span>`).join("");
-            
-            // A kártyára kiválasztjuk az első (legfontosabb) meccset
-            // Kitisztítjuk a neveket (pl. Real Madrid vs Barcelona)
-            let matchName = matches[0].replace(/[0-9]/g, '').replace(/:/g, '').split('-').join(' VS ');
-            cardMatch.innerText = matchName;
-        } else {
-            cardMatch.innerText = "Searching for signals...";
-        }
-    } catch(e) { console.log("Data sync in progress..."); }
-}
-
-// --- NEURAL CANVAS ---
-const canvas = document.getElementById('neuralCanvas');
-const ctx = canvas.getContext('2d');
-let points = [];
-function initNeural() {
-    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    points = Array(70).fill().map(() => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5 }));
-}
-function drawNeural() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = "#0ea5e9"; ctx.strokeStyle = "rgba(14, 165, 233, 0.1)";
-    points.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy;
-        if(p.x<0 || p.x>canvas.width) p.vx *= -1; if(p.y<0 || p.y>canvas.height) p.vy *= -1;
-        ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, Math.PI*2); ctx.fill();
-        points.slice(i+1).forEach(p2 => {
-            let d = Math.hypot(p.x-p2.x, p.y-p2.y);
-            if(d < 180) { ctx.lineWidth = 1 - d/180; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p2.x,p2.y); ctx.stroke(); }
-        });
-    });
-    requestAnimationFrame(drawNeural);
-}
-
-// --- APP CORE ---
-async function handleSupport() {
-    if (!window.Clerk || !Clerk.user) { Clerk.openSignIn(); return; }
-    try {
-        const res = await fetch('/create-checkout-session', { method: 'POST' });
-        const session = await res.json();
-        if (session.id) await stripe.redirectToCheckout({ sessionId: session.id });
-    } catch (e) {}
+function toggleLang() {
+    localStorage.setItem("lang", (localStorage.getItem("lang") || "en") === "en" ? "hu" : "en");
+    updateUI();
 }
 
 function updateUI() {
@@ -230,34 +170,61 @@ function updateUI() {
     document.getElementById("text1").innerText = t.text1;
     document.getElementById("stat-text-1").innerText = t.s1;
     document.getElementById("stat-text-2").innerText = t.s2;
-    document.getElementById("stat-text-3").innerText = t.s3;
     document.getElementById("login-text").innerText = t.login;
     document.getElementById("support-btn").innerText = t.donate;
     document.getElementById("lang-btn").innerText = t.lang;
     document.getElementById("badge-text").innerText = t.badge;
     document.getElementById("unlock-btn").innerText = t.unlock;
-    document.getElementById("match-meta").innerText = t.meta;
     document.getElementById("cta-link").innerText = t.cta;
     document.getElementById("trust-text").innerText = t.trust;
 }
 
-function toggleLang() {
-    localStorage.setItem("lang", (localStorage.getItem("lang") || "en") === "en" ? "hu" : "en");
-    updateUI();
+// 3. ADATOK
+async function fetchMatches() {
+    try {
+        const res = await fetch('/api/live-ticker');
+        const matches = await res.json();
+        const ticker = document.getElementById('ticker-content');
+        const cardMatch = document.getElementById('daily-match');
+        if(matches.length > 0) {
+            ticker.innerHTML = matches.map(m => `<span>⚽ ${m.toUpperCase()}</span>`).join("");
+            cardMatch.innerText = matches[0].split('vs')[0].split('•')[0].trim();
+        }
+    } catch(e) {}
 }
 
-function startCounters() {
-    document.querySelectorAll('.counter').forEach(c => {
-        const target = +c.getAttribute('data-target');
-        const update = () => {
-            const cur = +c.innerText.replace(/\D/g,'');
-            if (cur < target) {
-                c.innerText = Math.ceil(cur + target/50);
-                setTimeout(update, 30);
-            } else { c.innerText = target.toLocaleString() + (target > 100 ? "+" : "%"); }
-        };
-        update();
-    });
+// 4. SIGNALS
+const sigs = ["✅ AI Hit: Man City Win", "🔥 New High Value Signal", "✅ 92% Win: Arsenal", "⚡ Algorithm Updated", "💰 User Won 500k HUF"];
+function showSignal() {
+    const feed = document.getElementById('signal-feed');
+    const div = document.createElement('div');
+    div.className = 'signal';
+    div.innerText = sigs[Math.floor(Math.random()*sigs.length)];
+    feed.appendChild(div);
+    setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 500); }, 4000);
+}
+
+// 5. NEURAL
+function initNeural() {
+    const canvas = document.getElementById('neuralCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    let pts = Array(70).fill().map(() => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5 }));
+    function draw() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = "#0ea5e9"; ctx.strokeStyle = "rgba(14, 165, 233, 0.1)";
+        pts.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy;
+            if(p.x<0 || p.x>canvas.width) p.vx*=-1; if(p.y<0 || p.y>canvas.height) p.vy*=-1;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, Math.PI*2); ctx.fill();
+            pts.slice(i+1).forEach(p2 => {
+                let d = Math.hypot(p.x-p2.x, p.y-p2.y);
+                if(d < 150) { ctx.lineWidth = 1 - d/150; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p2.x,p2.y); ctx.stroke(); }
+            });
+        });
+        requestAnimationFrame(draw);
+    }
+    draw();
 }
 
 window.addEventListener('mousemove', (e) => {
@@ -266,17 +233,20 @@ window.addEventListener('mousemove', (e) => {
 });
 
 async function startApp() {
+    if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
     await Clerk.load();
     if (Clerk.user) {
         Clerk.mountUserButton(document.getElementById('user-button'));
         document.getElementById('auth-links').style.display = 'none';
     }
-    updateUI(); initNeural(); drawNeural(); fetchTodayMatches(); startCounters();
-    setInterval(fetchTodayMatches, 60000); // Percenként frissít
+    updateUI(); initNeural(); fetchMatches();
+    setInterval(showSignal, 7000);
+    document.querySelectorAll('.counter').forEach(c => {
+        const target = +c.getAttribute('data-target');
+        c.innerText = target + (target > 100 ? "+" : "%");
+    });
 }
-
-window.addEventListener('load', startApp);
-window.addEventListener('resize', initNeural);
+window.onload = startApp;
 </script>
 </body>
 </html>
