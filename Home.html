@@ -69,134 +69,89 @@
         button, .btn-link {
             border: none; padding: 10px 20px; border-radius: 12px;
             cursor: pointer; font-weight: bold; font-family: 'Orbitron'; font-size: 11px;
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border);
+            transition: 0.3s; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border);
             text-decoration: none;
         }
         button:hover { transform: translateY(-3px); border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(14, 165, 233, 0.3); }
 
-        .btn-auth { background: var(--neon-blue); color: white; }
-        .btn-support { background: #635bff; color: white; }
-
-        /* --- TICKER SÁV --- */
+        /* --- TICKER --- */
         .ticker-wrap {
             width: 100%; overflow: hidden; background: rgba(14, 165, 233, 0.1);
-            border-bottom: 1px solid var(--border); padding: 8px 0;
-            backdrop-filter: blur(5px);
+            border-bottom: 1px solid var(--border); padding: 8px 0; backdrop-filter: blur(5px);
         }
         .ticker {
-            display: inline-block; white-space: nowrap;
-            animation: ticker 30s linear infinite; font-family: 'Orbitron';
-            font-size: 12px; color: var(--neon-blue);
+            display: inline-block; white-space: nowrap; animation: ticker 40s linear infinite;
+            font-family: 'Orbitron'; font-size: 12px; color: var(--neon-blue);
         }
-        .ticker span { margin-right: 50px; }
-        @keyframes ticker {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-        }
+        .ticker span { margin-right: 50px; font-weight: bold; }
+        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* --- HERO SECTION --- */
-        .hero {
-            padding: 60px 20px;
-            display: flex; flex-direction: column; align-items: center; text-align: center;
-        }
-
+        /* --- HERO --- */
+        .hero { padding: 60px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; }
         .hero-box {
-            background: var(--glass); padding: 60px; border-radius: 40px;
-            border: 1px solid var(--border); backdrop-filter: blur(30px);
-            max-width: 900px; box-shadow: 0 40px 100px rgba(0,0,0,0.4);
-            margin-bottom: 50px;
+            background: var(--glass); padding: 50px; border-radius: 40px; border: 1px solid var(--border);
+            backdrop-filter: blur(30px); max-width: 850px; position: relative;
             animation: float 6s ease-in-out infinite;
         }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
 
-        h1 { font-family: 'Orbitron'; font-size: clamp(32px, 5vw, 64px); font-weight: 900; margin-bottom: 20px; line-height: 1.1; }
-        .highlight-text { color: var(--neon-green); font-size: 1.2rem; font-weight: bold; margin-bottom: 30px; display: block; }
+        .algo-viz { display: flex; align-items: flex-end; gap: 3px; height: 30px; justify-content: center; margin-bottom: 20px; }
+        .bar { width: 3px; background: var(--neon-blue); animation: grow 1s infinite alternate; }
 
+        h1 { font-family: 'Orbitron'; font-size: clamp(32px, 5vw, 60px); margin-bottom: 20px; }
         .btn-cta {
             background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
-            color: white; padding: 20px 60px; font-size: 1.2rem; border-radius: 50px;
-            display: inline-block; margin-top: 20px; border: none; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+            color: white; padding: 18px 50px; font-size: 1.2rem; border-radius: 50px;
+            display: inline-block; margin-top: 20px; border: none; font-family: 'Orbitron';
         }
 
-        /* --- STATS BAR --- */
         .stats-bar {
-            display: flex; gap: 50px; margin-top: 20px; padding: 20px 40px;
+            display: flex; gap: 40px; margin-top: 40px; padding: 20px 40px;
             background: rgba(0,0,0,0.2); border-radius: 100px; border: 1px solid var(--border);
         }
-        .stat-item b {
-            display: block; font-size: 2.2rem;
-            background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .stat-item span { font-size: 0.8rem; opacity: 0.7; text-transform: uppercase; font-family: 'Orbitron'; }
+        .stat-item b { display: block; font-size: 2rem; color: var(--neon-green); }
 
-        /* --- LIVE INDICATOR --- */
-        .live-indicator {
-            display: flex; align-items: center; gap: 8px; margin-top: 20px;
-            background: rgba(255,0,0,0.1); padding: 5px 15px; border-radius: 20px;
-            border: 1px solid rgba(255,0,0,0.2);
-        }
-        .dot { width: 8px; height: 8px; background: #ff4444; border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-
-        /* --- CURSOR GLOW --- */
         .cursor-glow {
-            position: fixed; width: 400px; height: 400px;
-            background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
-            border-radius: 50%; pointer-events: none; z-index: -1;
-            transform: translate(-50%, -50%); transition: 0.1s;
+            position: fixed; width: 400px; height: 400px; background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
+            border-radius: 50%; pointer-events: none; z-index: -1; transform: translate(-50%, -50%);
         }
 
-        footer { padding: 40px; text-align: center; background: var(--glass); margin-top: 50px; border-top: 1px solid var(--border); }
-
-        @media (max-width: 768px) {
-            .stats-bar { flex-direction: column; gap: 20px; border-radius: 20px; }
-            .cursor-glow { display: none; }
-        }
+        @media (max-width: 768px) { .stats-bar { flex-direction: column; border-radius: 20px; } }
     </style>
 </head>
 <body>
 
 <div class="cursor-glow" id="cursor"></div>
-
-<div class="bg-animation">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-</div>
+<div class="bg-animation"><div class="blob blob-1"></div><div class="blob blob-2"></div></div>
 
 <nav>
     <div class="logo">LuckyPitch</div>
     <div class="nav-buttons">
         <button onclick="toggleTheme()" id="mod-btn">☀️</button>
         <button onclick="toggleLang()" id="lang-btn">HU 🇭🇺</button>
-        <button class="btn-support" onclick="handleSupport()" id="support-btn">Donate</button>
+        <button class="btn-support" onclick="handleSupport()" id="support-btn" style="background:#635bff; color:white;">Donate</button>
         <div id="user-button"></div>
         <div id="auth-links" style="display: none;">
-            <button onclick="Clerk.openSignIn()" class="btn-auth" id="login-text">LOGIN</button>
+            <button onclick="Clerk.openSignIn()" style="background:var(--neon-blue); color:white;" id="login-text">LOGIN</button>
         </div>
     </div>
 </nav>
 
 <div class="ticker-wrap">
     <div class="ticker" id="ticker-content">
-        </div>
+        <span id="ticker-status">Loading live data...</span>
+    </div>
 </div>
 
 <section class="hero">
     <div class="hero-box">
-        <h1 id="title">Let the Wins Begin</h1>
-        <span class="highlight-text" id="kiemelt">Where passion meets precision.</span>
-        <p id="text1" style="margin-bottom: 30px; opacity: 0.9;">Win bigger with smart strategy and real-time insights.</p>
-        <a href="/meccsek" class="btn-cta btn-link" id="cta-link">Matches</a>
-        
-        <div class="live-indicator">
-            <div class="dot"></div>
-            <span id="live-users" style="font-size: 12px; font-weight: bold; font-family: 'Orbitron';">142 USERS ONLINE</span>
+        <div class="algo-viz">
+            <div class="bar" style="height:40%"></div><div class="bar" style="height:80%"></div><div class="bar" style="height:60%"></div>
+            <div class="bar" style="height:100%"></div><div class="bar" style="height:50%"></div>
         </div>
+        <h1 id="title">Let the Wins Begin</h1>
+        <p id="text1" style="opacity: 0.8; margin-bottom: 25px;">Elite strategy meets real-time football data.</p>
+        <a href="/meccsek" class="btn-cta btn-link" id="cta-link">Matches</a>
     </div>
 
     <div class="stats-bar">
@@ -206,109 +161,47 @@
     </div>
 </section>
 
-<footer>
-    <a href="https://www.facebook.com/profile.php?id=61588443053104" target="_blank">
-        <img src="facebook-1.png" width="30" style="margin-bottom: 10px;">
-    </a>
-    <p style="font-size: 10px; opacity: 0.5; font-family: 'Orbitron';">© 2026 LUCKYPITCH | SMART BETTING SYSTEM</p>
-</footer>
-
 <script>
+// --- STRIPE INITIALIZATION ---
 const stripe = Stripe('pk_test_51T2qaQQkKVs47hkTqXwOVadi0o1GiBortnh6rNLqLxHMS7E6CKCQwp4lcwtnk7jIojzDjERp8wuMHNgx5FKqHEUo00uXcI3IS5');
 
-// --- TRANSLATIONS ---
-const translations = {
-    hu: {
-        title: "Kezdődjenek a Győzelmek",
-        kiemelt: "Ahol a szenvedély találkozik a precizitással.",
-        text1: "Nyerj nagyobbat okos stratégiával és valós idejű adatokkal.",
-        cta: "Meccsek megtekintése",
-        langBtn: "EN 🇬🇧", login: "BELÉPÉS", support: "Támogatás",
-        s1: "Élő Meccs", s2: "Pontosság %", s3: "Nyerő Tipp",
-        live: "FELHASZNÁLÓ ONLINE",
-        ticker: ["⚽ LIVERPOOL vs REAL MADRID - ÉLŐ", "🔥 98%-OS SIKERRÁTA MA", "🏆 BL HÍREK", "⚡ ALGORITMUS: AKTÍV"]
-    },
-    en: {
-        title: "Let the Wins Begin",
-        kiemelt: "Where passion meets precision.",
-        text1: "Win bigger with smart strategy and real-time insights.",
-        cta: "Explore Matches",
-        langBtn: "HU 🇭🇺", login: "LOGIN", support: "Donate",
-        s1: "Live Matches", s2: "Accuracy %", s3: "Winning Tips",
-        live: "USERS ONLINE",
-        ticker: ["⚽ LIVERPOOL vs REAL MADRID - LIVE", "🔥 98% SUCCESS RATE", "🏆 CL UPDATES", "⚡ SMART ALGO: ACTIVE"]
+// --- APP LOGIC ---
+async function fetchLiveTicker() {
+    const ticker = document.getElementById('ticker-content');
+    try {
+        // A te szerveredet hívjuk meg, nem közvetlenül az API-t a kulcs védelme miatt!
+        const response = await fetch('/api/live-ticker'); 
+        const matches = await response.json();
+        
+        if (matches && matches.length > 0) {
+            ticker.innerHTML = matches.map(m => `<span>⚽ ${m}</span>`).join("");
+        } else {
+            ticker.innerHTML = "<span>🔥 NO LIVE MATCHES RIGHT NOW - CHECK BACK LATER</span><span>⚡ SMART ALGO ACTIVE</span>";
+        }
+    } catch (e) {
+        ticker.innerHTML = "<span>🔥 98% SUCCESS RATE TODAY</span><span>🏆 NEW TIPS AVAILABLE</span>";
     }
-};
-
-// --- CORE FUNCTIONS ---
-function toggleTheme() {
-    const theme = (localStorage.getItem("theme") || "dark") === "dark" ? "light" : "dark";
-    localStorage.setItem("theme", theme);
-    updateUI();
 }
 
-function toggleLang() {
-    const lang = (localStorage.getItem("lang") || "en") === "en" ? "hu" : "en";
-    localStorage.setItem("lang", lang);
-    updateUI();
-}
-
-function updateUI() {
-    const lang = localStorage.getItem("lang") || "en";
-    const theme = localStorage.getItem("theme") || "dark";
-    const d = translations[lang];
-
-    document.getElementById("title").innerText = d.title;
-    document.getElementById("kiemelt").innerText = d.kiemelt;
-    document.getElementById("text1").innerText = d.text1;
-    document.getElementById("cta-link").innerText = d.cta;
-    document.getElementById("lang-btn").innerText = d.langBtn;
-    document.getElementById("login-text").innerText = d.login;
-    document.getElementById("support-btn").innerText = d.support;
-    document.getElementById("stat-text-1").innerText = d.s1;
-    document.getElementById("stat-text-2").innerText = d.s2;
-    document.getElementById("stat-text-3").innerText = d.s3;
-    
-    // Ticker Update
-    document.getElementById("ticker-content").innerHTML = d.ticker.map(t => `<span>${t}</span>`).join("");
-    
-    document.body.classList.toggle("light", theme === "light");
-    document.getElementById("mod-btn").innerText = theme === "light" ? "🌙" : "☀️";
-}
-
-// --- INTERACTIVE FEATURES ---
 function startCounters() {
-    document.querySelectorAll('.counter').forEach(counter => {
-        const target = +counter.getAttribute('data-target');
+    document.querySelectorAll('.counter').forEach(c => {
+        const target = +c.getAttribute('data-target');
         const update = () => {
-            const c = +counter.innerText;
-            const inc = target / 40;
-            if (c < target) {
-                counter.innerText = Math.ceil(c + inc);
-                setTimeout(update, 40);
-            } else {
-                counter.innerText = target.toLocaleString() + (target < 100 ? "" : "+");
-            }
+            const cur = +c.innerText;
+            if (cur < target) {
+                c.innerText = Math.ceil(cur + target/50);
+                setTimeout(update, 30);
+            } else { c.innerText = target + (target > 100 ? "+" : "%"); }
         };
         update();
     });
 }
 
-// Egér követése
 document.addEventListener('mousemove', (e) => {
     const cursor = document.getElementById('cursor');
-    if(window.innerWidth > 768) {
-        cursor.style.left = e.clientX + 'px';
-        cursor.style.top = e.clientY + 'px';
-    }
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
 });
-
-// Véletlenszerű online felhasználók
-setInterval(() => {
-    const lang = localStorage.getItem("lang") || "en";
-    const base = 140 + Math.floor(Math.random() * 25);
-    document.getElementById("live-users").innerText = `${base} ${translations[lang].live}`;
-}, 3000);
 
 async function startApp() {
     await Clerk.load();
@@ -318,12 +211,11 @@ async function startApp() {
     } else {
         document.getElementById('auth-links').style.display = 'block';
     }
-    updateUI();
+    fetchLiveTicker();
     startCounters();
 }
 
 window.addEventListener('load', startApp);
 </script>
-
 </body>
 </html>
