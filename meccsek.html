@@ -136,7 +136,10 @@
 </head>
 <body>
 
-    <div id="goal-banner">GOOOAAAL!!! ⚽ <span id="goal-team"></span></div>
+    <div id="goal-banner">
+    <div id="goal-team-name" style="font-size: 0.8rem; opacity: 0.9; margin-bottom: 2px;"></div>
+    <div id="goal-text">GOOOAAAL!!!</div>
+</div>
     <audio id="goal-sound" preload="auto">
     <source src="https://actions.google.com/sounds/v1/sports/football_crowd_goal.ogg" type="audio/ogg">
     <source src="https://www.soundjay.com/buttons/sounds/button-37a.mp3" type="audio/mpeg">
@@ -290,32 +293,32 @@
         }
 
 
-       function triggerGoalEffect(matchId) {
-    // 1. Megkeressük a meccskártyát a DOM-ban
-    // Feltételezve, hogy a kártyáidnak van id="match-123" attribútuma
-    const matchCard = document.getElementById(`match-${matchId}`);
+       function triggerGoalEffect(matchId, teamName) {
     const banner = document.getElementById('goal-banner');
+    const teamDisplay = document.getElementById('goal-team-name');
+    const goalText = document.getElementById('goal-text');
+    const matchCard = document.getElementById(`match-${matchId}`);
     const sound = document.getElementById('goal-sound');
 
-    // Ha már villog, nem indítjuk újra
     if (flashingMatches.has(matchId)) return;
 
-    // Banner megjelenítése
+    // Adatok beírása a bannerbe
+    if (teamDisplay) teamDisplay.innerText = teamName.toUpperCase();
+    if (goalText) goalText.innerText = "GOOOAAAL!!!";
+
+    // Megjelenítés
     if (banner) banner.classList.add('show');
     
-    // Hang lejátszása (ha a böngésző engedi)
     if (sound) {
         sound.currentTime = 0;
-        sound.play().catch(e => console.log("Audio play blocked"));
+        sound.play().catch(() => {});
     }
 
-    // Villogás hozzáadása
     if (matchCard) {
         matchCard.classList.add('goal-highlight');
         flashingMatches.add(matchId);
     }
 
-    // 5 másodperc után minden visszaáll
     setTimeout(() => {
         if (banner) banner.classList.remove('show');
         if (matchCard) {
@@ -463,5 +466,6 @@
     </script>
 </body>
 </html>
+
 
 
