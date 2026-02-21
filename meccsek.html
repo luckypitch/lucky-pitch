@@ -200,6 +200,22 @@
         let flashingMatches = new Set(); // Itt tároljuk a villogó meccsek ID-it
         let originalTitle = document.title;
         let titleInterval = null;
+
+function animateTitle(scrollingText) {
+    if (titleInterval) clearInterval(titleInterval);
+    
+    let fullText = scrollingText + "  *** ";
+    titleInterval = setInterval(() => {
+        fullText = fullText.substring(1) + fullText.substring(0, 1);
+        document.title = fullText;
+    }, 200);
+
+    setTimeout(() => {
+        clearInterval(titleInterval);
+        document.title = originalTitle;
+        titleInterval = null;
+    }, 6000);
+}
         
         function saveState() {
             localStorage.setItem('lp_selectedDate', selectedDate);
@@ -300,36 +316,34 @@
         }
 
 function triggerGoalEffect(matchId, teamName, logoUrl) {
+    // Itt hívjuk meg az animateTitle-t, ami most már létezik
+    animateTitle(`⚽ GÓÓÓL! - ${teamName.toUpperCase()} betalált!`);
+
     const banner = document.getElementById('goal-banner');
     const teamDisplay = document.getElementById('goal-team-name');
     const logoImg = document.getElementById('goal-logo');
     const matchCard = document.getElementById(`match-${matchId}`);
     const sound = document.getElementById('goal-sound');
 
-    // Címsáv animáció
-    animateTitle(`⚽ GÓÓÓL! - ${teamName.toUpperCase()} betalált!`);
+    if (flashingMatches.has(matchId)) return;
 
-    // Banner adatok
     if (teamDisplay) teamDisplay.innerText = teamName.toUpperCase();
     if (logoImg && logoUrl) {
         logoImg.src = logoUrl;
         logoImg.style.display = 'block';
     }
 
-    // Megjelenítés
     if (banner) banner.classList.add('show');
     if (sound) {
         sound.currentTime = 0;
         sound.play().catch(() => {});
     }
 
-    // Villogás (ha van kártya)
     if (matchCard) {
         matchCard.classList.add('goal-highlight');
         flashingMatches.add(matchId);
     }
 
-    // Visszaállítás
     setTimeout(() => {
         if (banner) banner.classList.remove('show');
         if (matchCard) {
@@ -479,6 +493,7 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
     </script>
 </body>
 </html>
+
 
 
 
