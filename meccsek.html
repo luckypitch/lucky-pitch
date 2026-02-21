@@ -111,12 +111,37 @@
             .sidebar.open, .standings-sidebar.open { transform: translateX(0); }
             .mobile-nav { display: flex; }
         }
+@keyframes goal-flash {
+    0% { background-color: rgba(255, 62, 62, 0.95); transform: scale(1.02); }
+    50% { background-color: rgba(255, 62, 62, 0.3); transform: scale(1); }
+    100% { background-color: rgba(255, 62, 62, 0.95); transform: scale(1.02); }
+}
+
+/* Az egész kártya ÉS a benne lévő összes div villogjon */
+.match-card.goal-highlight, 
+.match-card.goal-highlight div, 
+.match-card.goal-highlight span {
+    animation: goal-flash 0.5s ease-in-out infinite !important;
+    color: white !important; /* Gól alatt legyen fehér a szöveg a jobb olvashatóságért */
+    border-color: #ffffff !important;
+}
+
+.match-card.goal-highlight {
+    z-index: 1000;
+    position: relative;
+    box-shadow: 0 0 50px rgba(255, 62, 62, 0.8);
+}
+        
     </style>
 </head>
 <body>
 
     <div id="goal-banner">GOOOAAAL!!! ⚽ <span id="goal-team"></span></div>
-
+    <audio id="goal-sound" preload="auto">
+    <source src="https://actions.google.com/sounds/v1/sports/football_crowd_goal.ogg" type="audio/ogg">
+    <source src="https://www.soundjay.com/buttons/sounds/button-37a.mp3" type="audio/mpeg">
+</audio>
+    
     <div class="bg-animation">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
@@ -263,6 +288,33 @@
             return "ZÓNA";
         }
 
+
+        function triggerGoalEffect(match, h, a) {
+    const mId = String(match.id);
+    flashingMatches.add(mId);
+    
+    // HANG JAVÍTÁS
+    const goalSound = document.getElementById('goal-sound');
+    goalSound.pause(); 
+    goalSound.currentTime = 0;
+    goalSound.volume = 1.0; // Max hangerő
+    
+    // A lejátszás csak akkor fog menni, ha már kattintottál valahová az oldalon!
+    goalSound.play().catch(e => console.log("Hang blokkolva, várj egy kattintásra:", e));
+    
+    // Banner és villogás indítása...
+    const banner = document.getElementById('goal-banner');
+    banner.innerText = `GOAL! ${match.homeTeam.name} ${h}:${a} ${match.awayTeam.name}`;
+    banner.classList.add('show');
+    renderMatches();
+    
+    setTimeout(() => {
+        banner.classList.remove('show');
+        flashingMatches.delete(mId);
+        renderMatches();
+    }, 10000);
+}
+        
        async function showStandings(leagueId, teamId, code) {
             if(window.innerWidth <= 1100) toggleM('sidebar-standings');
             const target = document.getElementById("standings-target");
@@ -402,3 +454,4 @@
     </script>
 </body>
 </html>
+
