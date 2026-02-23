@@ -259,6 +259,7 @@ app.post('/create-checkout-session', async (req, res) => {
 // --- AUTOMATIKUS ELLENŐRZŐ FUNKCIÓ ---
 const autoCheckResults = async () => {
     console.log(`[${new Date().toLocaleTimeString()}] --- AUTO CHECK START ---`);
+    console.log("DEBUG: API Key létezik?", !!process.env.FOOTBALL_API_KEY);
     try {
         const { data: pendingBets, error } = await supabase
             .from('bets')
@@ -335,6 +336,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
