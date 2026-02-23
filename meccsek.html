@@ -1019,26 +1019,25 @@ async function loadUserBetsFromServer() {
     try {
         const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}`);
         
-        // --- HIBAKERESÉS KEZDETE ---
-        const text = await res.text(); // Előbb szövegként olvassuk be
+        // Itt volt a hiba: 'res' helyett 'response' kell mindenhol!
+        const text = await response.text(); 
         console.log("Szerver válasza:", text); 
 
-        if (!res.ok) {
-            console.error(`Szerver hiba: ${res.status}`);
+        if (!response.ok) {
+            console.error(`Szerver hiba: ${response.status}`);
             return;
         }
 
-        // Megpróbáljuk parsolni, ha nem üres a válasz
         try {
             const bets = JSON.parse(text);
             if (Array.isArray(bets)) {
                 localStorage.setItem('lp_activeBets', JSON.stringify(bets));
+                // Csak akkor renderelünk, ha tényleg változott valami
                 if (typeof renderMatches === 'function') renderMatches();
             }
         } catch (parseErr) {
             console.error("A szerver válasza nem érvényes JSON! Valószínűleg HTML hibaoldalt kaptál.");
         }
-        // --- HIBAKERESÉS VÉGE ---
 
     } catch (e) {
         console.warn("Hálózati hiba:", e);
@@ -1152,6 +1151,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
