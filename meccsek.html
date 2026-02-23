@@ -260,9 +260,9 @@
 // --- 1. GLOBÁLIS ÁLLAPOT ---
 let currentLang = localStorage.getItem('lp_lang') || 'HU';
 const todayStr = new Date().toLocaleDateString('sv');
-let selectedDate = localStorage.getItem('lp_selectedDate') || todayStr;
+let selectedDate = new Date().toLocaleDateString('sv');
 let savedLeagues = localStorage.getItem('lp_selectedLeagues');
-let selectedLeagues = savedLeagues ? new Set(JSON.parse(savedLeagues)) : new Set();
+let selectedLeagues = new Set();
 let allMatches = [];
 let prevScores = new Map();
 let flashingMatches = new Set();
@@ -680,6 +680,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
