@@ -136,18 +136,53 @@
         .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0,255,136,0.05); }
         .date-pill.is-today { border-color: var(--neon-blue); color: var(--neon-blue); border-width: 2px; }
 
-        .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
-        @media (max-width: 1100px) {
-            .main-content, #matches-list, .content {
-        padding-bottom: 100px !important; /* A 70px magas menü + 30px biztonsági sáv */
-    }
-            .sidebar, .standings-sidebar { position: fixed; top: 75px; bottom: 75px; width: 85%; z-index: 1050; transform: translateX(-105%); background: var(--bg); }
-            .standings-sidebar { right: 0; transform: translateX(105%); }
-            .sidebar.open, .standings-sidebar.open { transform: translateX(0); }
-            .mobile-nav { display: flex; }
-    .sidebar, .standings-sidebar { bottom: 70px; }
+       .mobile-nav { 
+    position: fixed; 
+    bottom: 0; 
+    left: 0; 
+    right: 0; 
+    height: 70px; 
+    background: var(--glass); 
+    display: none; 
+    justify-content: space-around; 
+    align-items: center; 
+    z-index: 1100; 
+    border-top: 1px solid var(--border); 
+    backdrop-filter: blur(20px); 
 }
-        }
+
+@media (max-width: 1100px) {
+    /* 1. Kiszabadítjuk az utolsó meccset a menü alól */
+    .main-content, #matches-list, .content {
+        padding-bottom: 100px !important; 
+    }
+
+    /* 2. Beállítjuk az oldalsávokat (Sidebar) */
+    .sidebar, .standings-sidebar { 
+        position: fixed; 
+        top: 75px; 
+        bottom: 70px; /* Pontosan a mobil menü tetejéig érjen */
+        width: 85%; 
+        z-index: 1050; 
+        transform: translateX(-105%); 
+        background: var(--bg); 
+        transition: transform 0.3s ease; /* Hogy szépen csússzon be */
+    }
+
+    .standings-sidebar { 
+        right: 0; 
+        transform: translateX(105%); 
+    }
+
+    .sidebar.open, .standings-sidebar.open { 
+        transform: translateX(0); 
+    }
+
+    /* 3. Megjelenítjük a mobil menüt */
+    .mobile-nav { 
+        display: flex; 
+    }
+} 
 @keyframes goal-flash {
     0% { background-color: rgba(255, 62, 62, 0.95); transform: scale(1.02); }
     50% { background-color: rgba(255, 62, 62, 0.3); transform: scale(1); }
@@ -1154,6 +1189,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
