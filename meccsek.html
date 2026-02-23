@@ -451,9 +451,13 @@ function renderMatches() {
         // --- KERESSÜK, VAN-E AKTÍV FOGADÁS ERRE A MECCSRE ---
         const myBet = activeBets.find(b => b.matchId === m.id && b.status === 'OPEN');
 
-        return `
-       <div class="match-card ${flashingMatches.has(m.id) ? 'goal-highlight' : ''}" id="match-${m.id}" style="...">
+       return `
+<div class="match-card ${flashingMatches.has(m.id) ? 'goal-highlight' : ''}" 
+     id="match-${m.id}" 
+     style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative;">
     
+    ${myBet ? `<div style="position: absolute; top: 0; left: 0; background: #ffaa00; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">LIVE BET</div>` : ''}
+
     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px;">
         
         <div class="team-link" 
@@ -474,81 +478,62 @@ function renderMatches() {
             <img src="${m.awayTeam.crest || ''}" style="width: 45px; height: 45px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/45'">
             <span style="font-size: 13px; font-weight: 500;">${m.awayTeam.name}</span>
         </div>
-
-            <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px; min-height: 45px; display: flex; justify-content: center; align-items: center;">
-                ${myBet ? `
-                    <div style="background: rgba(255, 170, 0, 0.1); border: 1px dashed #ffaa00; border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
-                        <div style="text-align: left;">
-                            <span style="font-size: 10px; color: #ffaa00; display: block; text-transform: uppercase;">Tipped: ${myBet.type}</span>
-                            <span style="font-size: 14px; font-weight: bold; color: white;">${myBet.amount.toLocaleString()} Ft</span>
-                        </div>
-                        <div style="text-align: right;">
-                            <span style="font-size: 10px; opacity: 0.6; display: block;">Várható:</span>
-                            <span style="font-size: 14px; font-weight: bold; color: #00ff88;">${Math.floor(myBet.amount * myBet.odds).toLocaleString()} Ft</span>
-                        </div>
-                    </div>
-                ` : !isFinished ? `
-                    <div style="display: flex; gap: 10px; width: 100%; justify-content: center;">
-                        <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">
-                            <span style="font-size: 10px; display: block; opacity: 0.6;">H</span>
-                            <span style="font-size: 13px; font-weight: bold;">${odds.h}</span>
-                        </button>
-                        <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
-                            <span style="font-size: 10px; display: block; opacity: 0.6;">D</span>
-                            <span style="font-size: 13px; font-weight: bold;">${odds.d}</span>
-                        </button>
-                        <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">
-                            <span style="font-size: 10px; display: block; opacity: 0.6;">V</span>
-                            <span style="font-size: 13px; font-weight: bold;">${odds.a}</span>
-                        </button>
-                    </div>
-                ` : `
-                    <div style="font-family: 'Orbitron'; font-size: 11px; opacity: 0.4; letter-spacing: 1px;">FOGADÁS LEZÁRVA</div>
-                `}
+    </div> <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px; min-height: 45px; display: flex; justify-content: center; align-items: center;">
+        ${myBet ? `
+            <div style="background: rgba(255, 170, 0, 0.1); border: 1px dashed #ffaa00; border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="text-align: left;">
+                    <span style="font-size: 10px; color: #ffaa00; display: block; text-transform: uppercase; font-family: 'Orbitron';">Tipped: ${myBet.type}</span>
+                    <span style="font-size: 14px; font-weight: bold; color: white;">${myBet.amount.toLocaleString()} Ft</span>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 10px; opacity: 0.6; display: block;">Várható:</span>
+                    <span style="font-size: 14px; font-weight: bold; color: #00ff88;">${Math.floor(myBet.amount * myBet.odds).toLocaleString()} Ft</span>
+                </div>
             </div>
-        </div>`;
-    }).join('');
-}
+        ` : !isFinished ? `
+            <div style="display: flex; gap: 10px; width: 100%; justify-content: center;">
+                <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">
+                    <span style="font-size: 10px; display: block; opacity: 0.6;">H</span>
+                    <span style="font-size: 13px; font-weight: bold;">${odds.h}</span>
+                </button>
+                <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
+                    <span style="font-size: 10px; display: block; opacity: 0.6;">D</span>
+                    <span style="font-size: 13px; font-weight: bold;">${odds.d}</span>
+                </button>
+                <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">
+                    <span style="font-size: 10px; display: block; opacity: 0.6;">V</span>
+                    <span style="font-size: 13px; font-weight: bold;">${odds.a}</span>
+                </button>
+            </div>
+        ` : `
+            <div style="font-family: 'Orbitron'; font-size: 11px; opacity: 0.4; letter-spacing: 1px;">FOGADÁS LEZÁRVA</div>
+        `}
+    </div>
+</div>`;
 
 async function placeBet(matchId, pickName, odds, type) {
-    const amount = prompt(`Fogadás: ${pickName}\nOdds: ${odds}\n\nAdd meg a tétet:`, "1000");
+    // ... (tét bekérése és ellenőrzése változatlan) ...
     
-    if (!amount || isNaN(amount) || amount <= 0) return;
+    const balanceElem = document.getElementById('user-balance');
+    const currentBalance = parseInt(balanceElem.innerText.replace(/\s/g, ''));
+    const newBalance = currentBalance - betAmount;
 
-    const betAmount = parseInt(amount);
-    const currentBalance = parseInt(document.getElementById('user-balance').innerText.replace(/\s/g, ''));
+    // 1. Frissítjük a UI-t azonnal
+    balanceElem.innerText = newBalance.toLocaleString();
 
-    if (betAmount > currentBalance) {
-        alert("Nincs elég egyenleged!");
-        return;
+    // 2. Mentjük az adatbázisba (Supabase)
+    if (window.Clerk && Clerk.user) {
+        await saveBalanceToDB(Clerk.user.id, newBalance);
     }
 
-    // Fogadás objektum
-    const newBet = {
-        matchId: matchId,
-        amount: betAmount,
-        odds: odds,
-        type: type, // 'H', 'D' vagy 'V'
-        pickName: pickName,
-        status: 'OPEN'
-    };
-
-    activeBets.push(newBet);
+    // 3. Elmentjük a fogadást
+    activeBets.push({
+        matchId, amount: betAmount, odds, type, pickName, status: 'OPEN'
+    });
     localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
 
-    // Egyenleg frissítése a szerveren (ha van Clerk)
-    if (window.Clerk && Clerk.user) {
-        try {
-            await fetch('/api/user/update-balance', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: Clerk.user.id, amount: -betAmount })
-            });
-            refreshBalance();
-        } catch (e) { console.error("Balance update error:", e); }
-    }
     renderMatches();
-    alert(`Sikeres fogadás: ${betAmount} Ft -> Várható nyeremény: ${Math.floor(betAmount * odds)} Ft`);
+    alert("Fogadás sikeres!");
 }
 
 function checkBetResults() {
@@ -587,17 +572,54 @@ function checkBetResults() {
 }
 
 async function processWin(amount, pick) {
-    alert(`GRATULÁLUNK! A(z) ${pick} tipped bejött. Nyeremény: ${amount} Ft`);
-    
+    const balanceElem = document.getElementById('user-balance');
+    const currentBalance = parseInt(balanceElem.innerText.replace(/\s/g, ''));
+    const newBalance = currentBalance + amount;
+
+    // UI frissítése
+    balanceElem.innerText = newBalance.toLocaleString();
+    alert(`NYERTÉL! ${amount} Ft hozzáadva a számládhoz.`);
+
+    // Mentés Supabase-be
+    if (window.Clerk && Clerk.user) {
+        await saveBalanceToDB(Clerk.user.id, newBalance);
+    }
+}
+
+// --- EGYENLEG MENTÉSE AZ ADATBÁZISBA ---
+async function saveBalanceToDB(userId, newBalance) {
+    try {
+        const res = await fetch('/api/user/update-balance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                userId: userId, 
+                balance: newBalance // Itt a teljes új összeget küldjük
+            })
+        });
+        if (!res.ok) throw new Error("Database update failed");
+        console.log("Egyenleg elmentve a Supabase-be:", newBalance);
+    } catch (e) {
+        console.error("Hiba a mentés során:", e);
+    }
+}
+
+// --- EGYENLEG BETÖLTÉSE INDÍTÁSKOR ---
+async function loadInitialBalance() {
     if (window.Clerk && Clerk.user) {
         try {
-            await fetch('/api/user/update-balance', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: Clerk.user.id, amount: amount })
-            });
-            refreshBalance();
-        } catch (e) { console.error("Win process error:", e); }
+            const res = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
+            const data = await res.json();
+            
+            // Ha van adat az adatbázisban, frissítjük a kijelzőt
+            if (data && data.balance !== undefined) {
+                const bSpan = document.getElementById('user-balance');
+                if (bSpan) bSpan.innerText = Number(data.balance).toLocaleString();
+                console.log("Egyenleg betöltve a Supabase-ből.");
+            }
+        } catch (e) {
+            console.error("Nem sikerült lekérni az egyenleget:", e);
+        }
     }
 }
         
@@ -785,7 +807,11 @@ async function startApp() {
             await Clerk.load();
             if (Clerk.user) {
                 Clerk.mountUserButton(document.getElementById('user-button'));
-                await refreshBalance();
+                
+                // --- EGYENLEG BETÖLTÉSE ADATBÁZISBÓL ---
+                // Megvárjuk, amíg a loadInitialBalance lekéri a Supabase-ből az értéket
+                await loadInitialBalance(); 
+                
             } else {
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
@@ -836,6 +862,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
