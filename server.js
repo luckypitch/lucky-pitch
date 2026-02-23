@@ -185,22 +185,6 @@ app.post('/create-checkout-session', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/user/get-bets', async (req, res) => {
-    const { userId } = req.query;
-    
-    try {
-        // Itt kellene lekérdezni az adatbázisodból (pl. MongoDB, SQL vagy Supabase)
-        // a user_id-hoz tartozó fogadásokat.
-        
-        // HA MÉG NINCS ADATBÁZISOD, küldj egy üres listát, hogy ne legyen hiba:
-        res.json([]); 
-        
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Szerver hiba történt" });
-    }
-});
-
 // --- OLDALAK KISZOLGÁLÁSA ---
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
@@ -219,6 +203,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
