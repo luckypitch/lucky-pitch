@@ -540,28 +540,64 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
             }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
         }
 
-        async function refreshBalance() {
+        // 1. Egyenleg lekérése a szervertől és megjelenítés
+async function refreshBalance() {
     if (Clerk.user) {
         try {
             const res = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
             const data = await res.json();
-            document.getElementById('user-balance').innerText = data.balance.toLocaleString();
-            document.getElementById('balance-wrap').style.display = 'flex';
+            
+            // Megkeressük a már létező elemeidet
+            const balanceSpan = document.getElementById('user-balance');
+            const balanceWrap = document.getElementById('balance-wrap');
+            
+            if (balanceSpan) balanceSpan.innerText = data.balance.toLocaleString();
+            if (balanceWrap) balanceWrap.style.display = 'flex'; // Megmutatjuk, ha be van lépve
         } catch (e) {
-            console.error("Balance sync error");
+            console.error("Hiba az egyenleg frissítésekor");
         }
     }
 }
-        async function startApp() {
-    if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
-    await Clerk.load();
-    if (Clerk.user) {
-        Clerk.mountUserButton(document.getElementById('user-button'));
-        document.getElementById('auth-links').style.display = 'none';
-        // Ezt add hozzá:
-        refreshBalance();
+
+// 2. Fogadás leadása gombnyomásra
+async function placeBet(matchName) {
+    if (!Clerk.user) {
+        Clerk.openSignIn();
+        return;
     }
-    updateUI(); initNeural(); fetchMatches(); startCounters();
+
+    const amount = prompt(`Mennyit teszel meg a(z) ${matchName} meccsre?`, "100");
+    
+    // Alapvető ellenőrzések
+    if (amount === null) return; // Mégse gomb
+    const betAmount = parseInt(amount);
+    
+    if (isNaN(betAmount) || betAmount <= 0) {
+        alert("Kérlek érvényes összeget adj meg!");
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/user/update-balance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                userId: Clerk.user.id, 
+                amount: -betAmount // Negatív, mert levonjuk
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert(`Sikeres fogadás! ${betAmount} LP levonva.`);
+            refreshBalance(); // Azonnal frissítjük a kijelzőt a nav-ban
+        } else {
+            alert(data.error || "Hiba történt a fogadás során.");
+        }
+    } catch (err) {
+        alert("Hálózati hiba történt.");
+    }
 }
         
         updateStaticTexts();
@@ -570,6 +606,7 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
     </script>
 </body>
 </html>
+
 
 
 
