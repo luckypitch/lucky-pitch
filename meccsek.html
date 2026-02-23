@@ -335,19 +335,24 @@ function showGoal(teamName) {
 
 async function updateData() {
     try {
+        console.log("Adatok lekérése...");
         const res = await fetch("/live-matches");
+        if (!res.ok) throw new Error("Hálózati hiba");
+        
         const data = await res.json();
         const newMatches = data.matches || [];
 
+        // Gólfigyelő logika javítva
         newMatches.forEach(match => {
+            if (!match.id || !match.score || !match.score.fullTime) return;
+
             const matchId = match.id;
             const newScore = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
+            
             if (prevScores.has(matchId) && prevScores.get(matchId) !== newScore) {
                 const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
                 const [newH, newA] = newScore.split('-').map(Number);
                 
-                // Megkeressük a logót a hatáshoz
-                const logo = match.homeTeam.crest || match.awayTeam.crest;
                 if (newH > oldH) triggerGoalEffect(matchId, match.homeTeam.name, match.homeTeam.crest);
                 if (newA > oldA) triggerGoalEffect(matchId, match.awayTeam.name, match.awayTeam.crest);
             }
@@ -355,10 +360,63 @@ async function updateData() {
         });
 
         allMatches = newMatches;
+        
+        // UI frissítése sorrendben
         renderDateStrip();
         renderLeagues();
         renderMatches();
-    } catch (e) { console.error("Update error", e); }
+        console.log("Meccsek frissítve:", allMatches.length);
+    } catch (e) { 
+        console.error("Update hiba:", e);
+        const cont = document.getElementById("match-container");
+        if (cont) cont.innerHTML = `<p style="text-align:center; color:red;">Hiba az adatok betöltésekor.</p>`;
+    }
+}
+
+function renderMatches() {
+    const cont = document.getElementById("match-container");
+    if (!cont) return;
+
+    // Szűrés a dátumra és a választott ligákra
+    const filteredMatches = allMatches.filter(m => {
+        const matchDate = m.utcDate.split('T')[0];
+        const dateMatch = matchDate === selectedDate;
+        const leagueMatch = selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString());
+        return dateMatch && leagueMatch;
+    });
+
+    if (filteredMatches.length === 0) {
+        cont.innerHTML = `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang === 'HU' ? 'NINCS MECCS EZEN A NAPON' : 'NO MATCHES FOR THIS DATE'}</p>`;
+        return;
+    }
+
+    cont.innerHTML = filteredMatches.map(m => {
+        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+        const homeScore = m.score.fullTime.home ?? 0;
+        const awayScore = m.score.fullTime.away ?? 0;
+        
+        let displayScore = isLive || m.status === 'FINISHED' 
+            ? `${homeScore}:${awayScore}` 
+            : new Date(m.utcDate).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+
+        return `
+        <div class="match-card" id="match-${m.id}">
+            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
+                <img src="${m.homeTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/50'">
+                <span>${m.homeTeam.name}</span>
+            </div>
+            <div style="text-align:center; width:140px;">
+                <div class="score-display ${isLive ? 'score-live' : ''}">${displayScore}</div>
+                <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size:9px; margin-top:10px; display:inline-block; text-decoration:none;">
+                    ${currentLang === 'HU' ? 'ELEMZÉS' : 'ANALYSIS'}
+                </a>
+            </div>
+            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
+                <img src="${m.awayTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/50'">
+                <span>${m.awayTeam.name}</span>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 function triggerGoalEffect(matchId, teamName, logoUrl) {
@@ -577,6 +635,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
