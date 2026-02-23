@@ -302,7 +302,49 @@ async function refreshBalance() {
         } catch (e) { console.error("Balance fetch error:", e); }
     }
 }
-// --- 4. ADATKEZELÉS ---        
+
+function checkGoals() {
+    if (!allMatches || !Array.isArray(allMatches)) return;
+
+    allMatches.forEach(match => {
+        const matchId = match.id;
+        // Pontszám formázása (pl. "2-1")
+        const currentScore = (match.score && match.score.fullTime) ? 
+            `${match.score.fullTime.home}-${match.score.fullTime.away}` : "0-0";
+
+        // Ha már ismertük a meccset, és változott az eredmény
+        if (prevScores.has(matchId) && prevScores.get(matchId) !== currentScore) {
+            const oldScore = prevScores.get(matchId);
+            const [oldH, oldA] = oldScore.split('-').map(Number);
+            const [newH, newA] = currentScore.split('-').map(Number);
+
+            // Megnézzük, ki lőtte a gólt, és aktiváljuk a vizuális effektet
+            if (newH > oldH && typeof triggerGoalEffect === 'function') {
+                triggerGoalEffect(matchId, match.homeTeam.name, match.homeTeam.crest);
+            }
+            if (newA > oldA && typeof triggerGoalEffect === 'function') {
+                triggerGoalEffect(matchId, match.awayTeam.name, match.awayTeam.crest);
+            }
+        }
+        // Frissítjük a tárolt eredményt
+        prevScores.set(matchId, currentScore);
+    });
+}
+// --- DINAMIKUS EFFEKT (Ha ez is hiányozna) ---
+
+function triggerGoalEffect(mId, tName, logo) {
+    const b = document.getElementById('goal-banner');
+    const sound = document.getElementById('goal-sound');
+    if (b) {
+        document.getElementById('goal-team-name').innerText = tName;
+        document.getElementById('goal-logo').src = logo;
+        document.getElementById('goal-logo').style.display = 'block';
+        b.classList.add('show');
+        if (sound) { sound.currentTime = 0; sound.play().catch(()=>{}); }
+        setTimeout(() => b.classList.remove('show'), 5000);
+    }
+}
+        
 // --- 4. ADATKEZELÉS ---        
 async function updateData() {
     try {
@@ -343,7 +385,7 @@ async function updateData() {
     } catch (e) {
         console.warn("Odds API hiba:", e);
     }
-} // <--- EZ A ZÁRÓJEL HIÁNYZOTT!
+}
 
 function getSmartOdds(match) {
     const seed = match.id || 0;
@@ -588,19 +630,6 @@ function renderLeagues() {
         </div>`).join('');
 }
 
-function triggerGoalEffect(mId, tName, logo) {
-    const b = document.getElementById('goal-banner');
-    const sound = document.getElementById('goal-sound');
-    if (b) {
-        document.getElementById('goal-team-name').innerText = tName;
-        document.getElementById('goal-logo').src = logo;
-        document.getElementById('goal-logo').style.display = 'block';
-        b.classList.add('show');
-        if (sound) { sound.currentTime = 0; sound.play().catch(()=>{}); }
-        setTimeout(() => b.classList.remove('show'), 5000);
-    }
-}
-
 // --- 7. INDÍTÁS ---
 async function startApp() {
     let t = 0;
@@ -662,6 +691,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
