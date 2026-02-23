@@ -344,98 +344,6 @@ async function updateData() {
     }
 }
 
-function renderMatches() {
-    const cont = document.getElementById("match-container");
-    if (!cont) return;
-
-    let filtered = allMatches.filter(m => {
-        const mDate = m.utcDate ? m.utcDate.split('T')[0] : "";
-        return mDate === selectedDate && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString()));
-    });
-
-    filtered.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
-
-    if (filtered.length === 0) {
-        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3; font-family:'Orbitron';">NINCS MECCS</p>`;
-        return;
-    }
-
-    cont.innerHTML = filtered.map(m => {
-        // --- DINAMIKUS AI ODDS GENERÁLÁS HELYBEN ---
-        let odds = { h: "2.10", d: "3.20", a: "2.80" }; // Alapértelmezett értékek
-        
-        try {
-            // Megpróbáljuk a rendes függvényt
-            odds = getSmartOdds(m);
-        } catch (e) {
-            // HA HIBA VAN (pl. nincs definiálva a függvény), GENERÁLUNK EGYET HELYBEN
-            const s = m.id || Math.random();
-            const rng = (offset) => Math.abs(Math.sin(s + offset));
-            
-            odds = {
-                h: (1.5 + rng(1) * 2.5).toFixed(2),
-                d: (3.0 + rng(2) * 1.2).toFixed(2),
-                a: (1.8 + rng(3) * 3.5).toFixed(2)
-            };
-        }
-        // --- GENERÁLÁS VÉGE ---
-
-        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-        const score = isLive || m.status === 'FINISHED' 
-            ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
-            : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
-
-        return `
-        <div class="match-card ${flashingMatches.has(m.id) ? 'goal-highlight' : ''}" id="match-${m.id}">
-            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
-                <img src="${m.homeTeam.crest || ''}" width="30">
-                <span>${m.homeTeam.name}</span>
-            </div>
-            
-            <div style="text-align:center; width:120px;">
-                <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
-                <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size:9px; margin-top:5px; display:inline-block; text-decoration:none;">ELEMZÉS</a>
-            </div>
-
-            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                <img src="${m.awayTeam.crest || ''}" width="30">
-                <span>${m.awayTeam.name}</span>
-            </div>
-
-            <div class="bet-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; width: 100%; grid-column: 1 / span 3;">
-                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">
-                    <span class="odds-label">H</span> <span class="odds-val">${odds.h}</span>
-                </button>
-                <button class="odds-btn" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
-                    <span class="odds-label">D</span> <span class="odds-val">${odds.d}</span>
-                </button>
-                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">
-                    <span class="odds-label">V</span> <span class="odds-val">${odds.a}</span>
-                </button>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-// --- 2. A HIÁNYZÓ GÓLFIGYELŐ ---
-function checkGoals() {
-    if (!allMatches || !Array.isArray(allMatches)) return;
-
-    allMatches.forEach(match => {
-        const matchId = match.id;
-        const currentScore = (match.score && match.score.fullTime) ? 
-            `${match.score.fullTime.home}-${match.score.fullTime.away}` : "0-0";
-
-        if (prevScores.has(matchId) && prevScores.get(matchId) !== currentScore) {
-            const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
-            const [newH, newA] = currentScore.split('-').map(Number);
-
-            if (newH > oldH) triggerGoalEffect(matchId, match.homeTeam.name, match.homeTeam.crest);
-            if (newA > oldA) triggerGoalEffect(matchId, match.awayTeam.name, match.awayTeam.crest);
-        }
-        prevScores.set(matchId, currentScore);
-    });
-}
 
 function getSmartOdds(match) {
     // Alapértelmezett AI oddsok (ha nincs API adat)
@@ -466,6 +374,96 @@ function getSmartOdds(match) {
         }
     }
     return result;
+}
+        
+function renderMatches() {
+    const cont = document.getElementById("match-container");
+    if (!cont) return;
+
+    let filtered = allMatches.filter(m => {
+        const mDate = m.utcDate ? m.utcDate.split('T')[0] : "";
+        return mDate === selectedDate && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString()));
+    });
+
+    filtered.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+
+    if (filtered.length === 0) {
+        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3; font-family:'Orbitron';">NINCS MECCS</p>`;
+        return;
+    }
+
+    cont.innerHTML = filtered.map(m => {
+        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+        const score = isLive || m.status === 'FINISHED' 
+            ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
+            : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+
+        // HELYI GENERÁTOR: Ha a getSmartOdds nem létezik, azonnal gyártunk egyet
+        const getOdds = (match) => {
+            try { return getSmartOdds(match); } 
+            catch(e) { 
+                const s = match.id || 0;
+                const r = (o) => Math.abs(Math.sin(s + o));
+                return {
+                    h: (1.5 + r(1)*2).toFixed(2),
+                    d: (3.1 + r(2)).toFixed(2),
+                    a: (1.8 + r(3)*3).toFixed(2)
+                };
+            }
+        };
+
+        const o = getOdds(m); // Rövid név 'o', hogy ne keveredjen össze semmivel
+
+        return `
+        <div class="match-card ${flashingMatches.has(m.id) ? 'goal-highlight' : ''}" id="match-${m.id}">
+            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
+                <img src="${m.homeTeam.crest || ''}" width="30">
+                <span>${m.homeTeam.name}</span>
+            </div>
+            
+            <div style="text-align:center; width:120px;">
+                <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
+                <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size:9px; margin-top:5px; display:inline-block; text-decoration:none;">ELEMZÉS</a>
+            </div>
+
+            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
+                <img src="${m.awayTeam.crest || ''}" width="30">
+                <span>${m.awayTeam.name}</span>
+            </div>
+
+            <div class="bet-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; width: 100%; grid-column: 1 / span 3;">
+                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${o.h}, 'H')">
+                    <span class="odds-label">H</span> <span class="odds-val">${o.h}</span>
+                </button>
+                <button class="odds-btn" onclick="placeBet(${m.id}, 'Döntetlen', ${o.d}, 'D')">
+                    <span class="odds-label">D</span> <span class="odds-val">${o.d}</span>
+                </button>
+                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${o.a}, 'V')">
+                    <span class="odds-label">V</span> <span class="odds-val">${o.a}</span>
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+}
+        
+// --- 2. A HIÁNYZÓ GÓLFIGYELŐ ---
+function checkGoals() {
+    if (!allMatches || !Array.isArray(allMatches)) return;
+
+    allMatches.forEach(match => {
+        const matchId = match.id;
+        const currentScore = (match.score && match.score.fullTime) ? 
+            `${match.score.fullTime.home}-${match.score.fullTime.away}` : "0-0";
+
+        if (prevScores.has(matchId) && prevScores.get(matchId) !== currentScore) {
+            const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
+            const [newH, newA] = currentScore.split('-').map(Number);
+
+            if (newH > oldH) triggerGoalEffect(matchId, match.homeTeam.name, match.homeTeam.crest);
+            if (newA > oldA) triggerGoalEffect(matchId, match.awayTeam.name, match.awayTeam.crest);
+        }
+        prevScores.set(matchId, currentScore);
+    });
 }
         
 // --- 5. MEGJELENÍTÉS ---
@@ -730,12 +728,27 @@ function closeM() {
         s.classList.remove('open');
     });
 }
+function saveState() {
+    const state = {
+        selectedLeagues: Array.from(selectedLeagues),
+        selectedDate: selectedDate,
+        currentLang: typeof currentLang !== 'undefined' ? currentLang : 'hu'
+    };
+    
+    try {
+        localStorage.setItem('lucky_pitch_state', JSON.stringify(state));
+        console.log("Állapot elmentve.");
+    } catch (e) {
+        console.warn("Nem sikerült menteni a localStorage-ba:", e);
+    }
+}
         
 window.addEventListener('load', startApp);
 
     </script>
 </body>
 </html>
+
 
 
 
