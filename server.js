@@ -256,12 +256,17 @@ app.post('/create-checkout-session', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- AUTOMATIKUS ELLENŐRZŐ FUNKCIÓ ---
+// --- AUTO CHECK FUNKCIÓ JAVÍTVA ---
 const autoCheckResults = async () => {
+    // Ellenőrizzük, hogy a változó létezik-e, hogy ne omoljon össze a trim() miatt, ha undefined
+    const apiKey = process.env.FOOTBALL_API_KEY ? String(process.env.FOOTBALL_API_KEY).trim() : null;
+    
     console.log(`[${new Date().toLocaleTimeString()}] --- AUTO CHECK START ---`);
-    console.log("DEBUG: API Key létezik?", !!process.env.FOOTBALL_API_KEY);
-    console.log(`DEBUG: Kulcs hossza: ${process.env.FOOTBALL_API_KEY.length} karakter`);
-    console.log(`DEBUG: Kulcs kezdete: ${process.env.FOOTBALL_API_KEY.substring(0, 3)}...`);
+    if (!apiKey) {
+        console.error("HIBA: FOOTBALL_API_KEY nincs beállítva a Renderen!");
+        return;
+    }
+
     try {
         const { data: pendingBets, error } = await supabase
             .from('bets')
@@ -269,55 +274,43 @@ const autoCheckResults = async () => {
             .eq('status', 'OPEN');
 
         if (error) throw error;
-        if (!pendingBets || pendingBets.length === 0) {
-            console.log("Nincs nyitott fogadás.");
-            return;
-        }
+        if (!pendingBets || pendingBets.length === 0) return;
 
         for (let bet of pendingBets) {
-            console.log(`Ellenőrzés: Match ${bet.match_id}`);
-            const apiRes = await fetch(`https://api.football-data.org/v4/matches/${bet.match_id}`, {
-    headers: { 
-        'X-Auth-Token': String(process.env.FOOTBALL_API_KEY).trim() 
-    }
-});
-            
-            const match = await apiRes.json();
-            
-            // Ha az API hibát ad (pl. limit), azt látni fogod a logban
-            if (match.message) {
-                console.log("API Üzenet:", match.message);
-                continue;
-            }
+            try {
+                const apiRes = await fetch(`https://api.football-data.org/v4/matches/${bet.match_id}`, {
+                    headers: { 'X-Auth-Token': apiKey }
+                });
+                
+                const match = await apiRes.json();
+                
+                if (match.status === 'FINISHED') {
+                    const homeScore = match.score.fullTime.home;
+                    const awayScore = match.score.fullTime.away;
+                    let actualResult = (homeScore > awayScore) ? 'H' : (homeScore < awayScore ? 'V' : 'D');
 
-            console.log(`Match ${bet.match_id} státusza: ${match.status}`);
-
-            if (match.status === 'FINISHED') {
-                const homeScore = match.score.fullTime.home;
-                const awayScore = match.score.fullTime.away;
-                let actualResult = (homeScore > awayScore) ? 'H' : (homeScore < awayScore ? 'V' : 'D');
-
-                if (bet.type === actualResult) {
-                    const winAmount = Math.floor(bet.amount * bet.odds);
-                    await supabase.rpc('settle_winning_bet', { u_id: bet.user_id, win_amount: winAmount });
-                    await supabase.from('bets').update({ status: 'WON' }).eq('id', bet.id);
-                    console.log(`Siker: Bet ${bet.id} -> WON`);
-                } else {
-                    await supabase.from('bets').update({ status: 'LOST' }).eq('id', bet.id);
-                    console.log(`Siker: Bet ${bet.id} -> LOST`);
+                    if (bet.type === actualResult) {
+                        const winAmount = Math.floor(bet.amount * bet.odds);
+                        await supabase.rpc('settle_winning_bet', { u_id: bet.user_id, win_amount: winAmount });
+                        await supabase.from('bets').update({ status: 'WON' }).eq('id', bet.id);
+                    } else {
+                        await supabase.from('bets').update({ status: 'LOST' }).eq('id', bet.id);
+                    }
                 }
+                // API védelem: 1 mp szünet
+                await new Promise(r => setTimeout(r, 1000));
+            } catch (innerErr) {
+                console.error(`Hiba a ${bet.match_id} meccs ellenőrzésekor:`, innerErr.message);
             }
-            // 2 másodperc szünet meccsenként, hogy ne büntessen az API
-            await new Promise(r => setTimeout(r, 2000));
         }
     } catch (err) {
-        console.error("AUTO CHECK ERROR:", err.message);
+        console.error("AUTO CHECK GLOBAL ERROR:", err.message);
     }
 };
 
-// Indítás 5 percenként (300.000 ms)
+// 5 percenkénti indítás
 setInterval(autoCheckResults, 300000);
-// Első indítás azonnal
+// Első futtatás azonnal
 autoCheckResults();
 
 // server.js - Fogadások kiértékelése
@@ -340,6 +333,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
