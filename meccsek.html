@@ -404,6 +404,28 @@ function renderMatches() {
 }
 
 // --- 5. TABELLA ÉS ZÓNÁK ---
+function getStatusColor(status) {
+    if (!status) return 'transparent';
+    const s = status.toLowerCase();
+    if (s.includes('champions league')) return '#0044ff'; // BL - Kék
+    if (s.includes('europa league')) return '#cc7a00';   // EL - Narancs
+    if (s.includes('conference league')) return '#00cc6a'; // KL - Zöld
+    if (s.includes('relegation')) return '#ff3e3e';      // Kieső - Piros
+    if (s.includes('play-off') || s.includes('osztályozó')) return '#d35400'; 
+    return 'transparent';
+}
+
+function translateStatus(status) {
+    if (currentLang !== 'HU') return status;
+    const s = status.toLowerCase();
+    if (s.includes('champions league group')) return 'BL Csoportkör';
+    if (s.includes('champions league qual')) return 'BL Selejtező';
+    if (s.includes('europa league group')) return 'EL Csoportkör';
+    if (s.includes('conference league')) return 'KL Selejtező';
+    if (s.includes('relegation')) return 'Kieső zóna';
+    return status;
+}
+        
 async function showStandings(leagueId, teamId, code) {
             if(window.innerWidth <= 1100) toggleM('sidebar-standings');
             const target = document.getElementById("standings-target");
@@ -482,27 +504,6 @@ async function showStandings(leagueId, teamId, code) {
                 target.innerHTML = html + "</tbody></table>";
             } catch (e) { target.innerHTML = "Error loading standings."; }
         }
-function getStatusColor(status) {
-    if (!status) return 'transparent';
-    const s = status.toLowerCase();
-    if (s.includes('champions league')) return '#0044ff'; // BL - Kék
-    if (s.includes('europa league')) return '#cc7a00';   // EL - Narancs
-    if (s.includes('conference league')) return '#00cc6a'; // KL - Zöld
-    if (s.includes('relegation')) return '#ff3e3e';      // Kieső - Piros
-    if (s.includes('play-off') || s.includes('osztályozó')) return '#d35400'; 
-    return 'transparent';
-}
-
-function translateStatus(status) {
-    if (currentLang !== 'HU') return status;
-    const s = status.toLowerCase();
-    if (s.includes('champions league group')) return 'BL Csoportkör';
-    if (s.includes('champions league qual')) return 'BL Selejtező';
-    if (s.includes('europa league group')) return 'EL Csoportkör';
-    if (s.includes('conference league')) return 'KL Selejtező';
-    if (s.includes('relegation')) return 'Kieső zóna';
-    return status;
-}
         
 // --- 6. UI KIEGÉSZÍTŐK ---
 function saveState() {
