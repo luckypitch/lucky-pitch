@@ -716,11 +716,6 @@ async function loadInitialBalance() {
         console.error("Hiba az egyenleg megjelenítésekor:", err);
     }
 }
-        
-Majdnem tökéletes, de van benne egy apró „csapda”: a target változót a függvényen belül is definiálnod kell, mielőtt elkezded használni (pl. a target.innerHTML sornál), különben a JavaScript nem fogja tudni, hova kell rajzolnia a tabellát.
-
-Így néz ki a javított, teljesen stabil verzió:
-JavaScript
 
 async function showStandings(leagueId, teamId, code, isAutoCall = false) {
     // 1. Sidebar kezelése mobilon
@@ -981,6 +976,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
