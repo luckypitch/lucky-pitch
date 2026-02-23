@@ -475,7 +475,6 @@ function renderMatches() {
     const cont = document.getElementById("match-container");
     if (!cont) return;
 
-    // 1. Biztonsági ellenőrzés: Ha még nem jöttek meg az adatok
     if (!allMatches || allMatches.length === 0) {
         cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3;">${currentLang==='HU'?'ADATOK BETÖLTÉSE...':'LOADING MATCHES...'}</p>`;
         return;
@@ -495,17 +494,21 @@ function renderMatches() {
 
     cont.innerHTML = filtered.map(m => {
         try {
+            // --- ITT DEFINIÁLJUK A VÁLTOZÓKAT A RETURN ELŐTT ---
             const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
             const isFinished = ["FINISHED", "AWARDED", "POSTPONED", "CANCELLED"].includes(m.status);
+            
             const score = (isLive || isFinished) && m.score && m.score.fullTime
                 ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
                 : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
 
-            const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.5, d:3.0, a:2.5};
+            // Odds lekérése (ellenőrizzük, létezik-e a függvény)
+            const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
 
-            // --- JAVÍTOTT KERESÉS: String-re kényszerítjük az ID-kat az összehasonlításhoz ---
+            // Fogadás megkeresése (String-re kényszerítve az ID-kat)
             const myBet = activeBets.find(b => String(b.matchId) === String(m.id));
 
+            // Csak most jöhet a return!
             return `
             <div class="match-card ${typeof flashingMatches !== 'undefined' && flashingMatches.has(m.id) ? 'goal-highlight' : ''}" 
                  id="match-${m.id}" 
@@ -556,8 +559,8 @@ function renderMatches() {
                 </div>
             </div>`;
         } catch (err) {
-            console.error("Hiba egy meccskártya renderelésekor:", err, m);
-            return ''; // Ha egy meccs hibás, a többit még rendereljük
+            console.error("Hiba a kártya renderelésekor:", err);
+            return '';
         }
     }).join('');
 }
@@ -955,6 +958,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
