@@ -50,7 +50,7 @@ app.get('/api/user/balance', async (req, res) => {
                 .insert({ user_id: userId, balance: 1000 })
                 .select()
                 .single();
-            
+
             if (insertError) throw insertError;
             return res.json({ balance: 1000 });
         }
@@ -89,7 +89,7 @@ app.post('/api/user/update-balance', async (req, res) => {
                     type: bet.type,
                     status: 'OPEN'
                 }]);
-            
+
             if (betError) console.error("Supabase mentési hiba (bets):", betError);
         }
 
@@ -100,33 +100,22 @@ app.post('/api/user/update-balance', async (req, res) => {
     }
 });
 
-app.get('/api/user/balance', async (req, res) => {
+app.get('/api/user/bets', async (req, res) => {
     try {
         const userId = req.query.userId;
         if (!userId) return res.status(400).json({ error: "No UserID" });
 
-        // 1. Megnézzük, van-e lezáratlan fogadása (OPEN)
-        const { data: openBets } = await supabase
+        const { data, error } = await supabase
             .from('bets')
             .select('*')
             .eq('user_id', userId)
-            .eq('status', 'OPEN');
+            .order('created_at', { ascending: false });
 
-        // 2. Ha van, lefuttatjuk rájuk az ellenőrzést (Opcionális: itt meghívhatod az autoCheck-et)
-        // De a leggyorsabb, ha egyszerűen lekérjük az egyenleget:
-        let { data, error } = await supabase
-            .from('user_balances')
-            .select('balance')
-            .eq('user_id', userId)
-            .single();
-
-        if (error && error.code === 'PGRST116') {
-            // ... (új user létrehozása, ha nem létezik)
-        }
-
+        if (error) throw error;
         res.json(data);
     } catch (err) {
-        res.status(500).json({ error: "Hiba" });
+        console.error("Hiba a fogadások lekérésekor:", err);
+        res.status(500).json({ error: "Szerver hiba" });
     }
 });
 
@@ -159,7 +148,7 @@ app.post('/api/admin/check-results', async (req, res) => {
 
                 if (bet.type === actualResult) {
                     const winAmount = Math.floor(bet.amount * bet.odds);
-                    
+
                     // SQL RPC hívás a pénz jóváírásához
                     await supabase.rpc('settle_winning_bet', { 
                         u_id: bet.user_id, 
@@ -201,7 +190,7 @@ app.get("/live-matches", async (req, res) => {
 
         if (!response.ok) throw new Error(`API hiba: ${response.status}`);
         const data = await response.json();
-        
+
         matchCache.data = data;
         matchCache.lastFetch = now;
         res.json(data);
@@ -218,7 +207,7 @@ app.get('/api/live-ticker', async (req, res) => {
         });
         const data = await response.json();
         if (!data.matches) return res.json(["LuckyPitch Engine Online"]);
-        
+
         const ticker = data.matches.slice(0, 10).map(m => `${m.homeTeam.name} vs ${m.awayTeam.name}`);
         res.json(ticker);
     } catch (err) { res.status(500).json(["Neural Link Stable..."]); }
@@ -304,7 +293,7 @@ const autoCheckResults = async () => {
 
                     if (currentWallet) {
                         const newTotal = currentWallet.balance + winAmount;
-                        
+
                         // 2. Frissítjük a user_balances-t
                         await supabase
                             .from('user_balances')
@@ -352,22 +341,3 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
