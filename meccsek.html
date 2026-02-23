@@ -261,11 +261,12 @@ async function refreshBalance() {
 }
 
 // --- 3. FŐ INDÍTÓ FÜGGVÉNY ---
+// --- 3. FŐ INDÍTÓ FÜGGVÉNY ---
 async function startApp() {
     console.log("LuckyPitch indítása...");
     
     try {
-        // Várunk, amíg a Clerk betöltődik a head-ből
+        // Várunk, amíg a Clerk betöltődik
         if (typeof Clerk === 'undefined') {
             console.log("Várakozás a Clerk-re...");
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -276,19 +277,18 @@ async function startApp() {
 
         if (Clerk.user) {
             console.log("Bejelentkezett felhasználó:", Clerk.user.id);
-            // Profil gomb kirakása
             const userBtnDiv = document.getElementById('user-button');
             if (userBtnDiv) Clerk.mountUserButton(userBtnDiv);
             
             // Egyenleg lekérése
-            refreshBalance();
+            await refreshBalance();
         } else {
             console.log("Nincs bejelentkezett felhasználó.");
         }
 
         // Meccsek és felület betöltése
-        updateData();
-        updateStaticTexts();        
+        updateStaticTexts(); 
+        await updateData();
         
 function animateTitle(scrollingText) {
     if (titleInterval) clearInterval(titleInterval);
@@ -594,10 +594,10 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
             }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
         }
        
-        // Automatikus frissítés 30 másodpercenként
+        // Automatikus frissítés indítása
         setInterval(() => {
+            console.log("Automatikus frissítés...");
             updateData();
-            updateStaticTexts();
             refreshBalance();
         }, 30000);
 
@@ -612,6 +612,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
