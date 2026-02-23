@@ -187,6 +187,10 @@
     <nav>
         <div class="logo">LUCKYPITCH</div>
         <div class="nav-tools">
+            <div class="nav-buttons">
+    <div id="balance-wrap" style="display:none; font-family:'Orbitron'; color:var(--neon-green); font-size:12px; border-right: 1px solid var(--border); padding-right: 15px;">
+        <span id="user-balance">0</span> LP
+    </div>
             <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
             <a href="/home" class="tool-btn" id="back-link" style="text-decoration:none;">VISSZA</a>
@@ -536,12 +540,37 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
             }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
         }
 
+        async function refreshBalance() {
+    if (Clerk.user) {
+        try {
+            const res = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
+            const data = await res.json();
+            document.getElementById('user-balance').innerText = data.balance.toLocaleString();
+            document.getElementById('balance-wrap').style.display = 'flex';
+        } catch (e) {
+            console.error("Balance sync error");
+        }
+    }
+}
+        async function startApp() {
+    if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
+    await Clerk.load();
+    if (Clerk.user) {
+        Clerk.mountUserButton(document.getElementById('user-button'));
+        document.getElementById('auth-links').style.display = 'none';
+        // Ezt add hozzá:
+        refreshBalance();
+    }
+    updateUI(); initNeural(); fetchMatches(); startCounters();
+}
+        
         updateStaticTexts();
         updateData();
         setInterval(updateData, 30000);
     </script>
 </body>
 </html>
+
 
 
 
