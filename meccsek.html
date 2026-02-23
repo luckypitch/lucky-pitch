@@ -30,7 +30,7 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
+
         body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; position: relative; transition: background 0.5s; }
 
         .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; filter: blur(100px); opacity: 0.5; }
@@ -72,7 +72,7 @@
         .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
 
         .content-area { flex: 1; overflow-y: auto; padding: 25px; scrollbar-width: none; }
-        
+
         .match-card {
             background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 24px;
             padding: 20px; margin-bottom: 15px; display: flex; align-items: center; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -119,7 +119,7 @@
         .standings-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
         .standings-table td { padding: 14px 8px; background: rgba(255,255,255,0.03); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 12px; }
         .pos-col { border-left-width: 5px !important; border-left-style: solid !important; }
-        
+
         .pos-num-box { 
             width: 34px; height: 34px; line-height: 34px; margin: 0 auto; 
             border-radius: 8px; font-weight: 900; font-family: 'Orbitron'; font-size: 12px; 
@@ -136,16 +136,13 @@
         .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0,255,136,0.05); }
         .date-pill.is-today { border-color: var(--neon-blue); color: var(--neon-blue); border-width: 2px; }
 
-                  .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
-        @media (max-width: 1100px) { #matches-list, .matches-container { 
-        padding-bottom: 100px !important;}
-            .sidebar, .standings-sidebar { position: fixed; top: 75px; bottom: 70px; width: 85%; z-index: 1050; transform: translateX(-105%); background: var(--bg); }
-            .standings-sidebar { right: 0; transform: translateX(105%); }
-            .sidebar.open, .standings-sidebar.open { transform: translateX(0); }
-            .mobile-nav { display: flex; }
-        }
-        
-        
+        .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
+        @media (max-width: 1100px) {
+            .sidebar, .standings-sidebar { position: fixed; top: 75px; bottom: 70px; width: 85%; z-index: 1050; transform: translateX(-105%); background: var(--bg); }
+            .standings-sidebar { right: 0; transform: translateX(105%); }
+            .sidebar.open, .standings-sidebar.open { transform: translateX(0); }
+            .mobile-nav { display: flex; }
+        }
 @keyframes goal-flash {
     0% { background-color: rgba(255, 62, 62, 0.95); transform: scale(1.02); }
     50% { background-color: rgba(255, 62, 62, 0.3); transform: scale(1); }
@@ -183,7 +180,7 @@
 
 .odds-label { font-size: 9px; opacity: 0.6; margin-bottom: 2px; }
 .odds-val { font-family: 'Orbitron'; font-size: 11px; font-weight: bold; }
-        
+
     </style>
 </head>
 <body>
@@ -200,7 +197,7 @@
     <audio id="goal-sound" preload="auto">
     <source src="driken5482-applause-cheer-236786.mp3" type="audio/mpeg">
 </audio>
-    
+
     <div class="bg-animation">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
@@ -214,7 +211,7 @@
             <span id="user-balance">0</span>&nbsp;LP
         </div>
         <div id="user-button"></div>
-        
+
         <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
         <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
         <a href="/home" class="tool-btn" id="back-link" style="text-decoration:none;">VISSZA</a>
@@ -267,7 +264,7 @@ let prevScores = new Map();
 let flashingMatches = new Set();
 let globalOdds = []; // Itt tároljuk az API-ból jött oddsokat
 let activeBets = JSON.parse(localStorage.getItem('lp_activeBets')) || [];
-        
+
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
     if (!status) return 'transparent';
@@ -311,7 +308,7 @@ async function updateData() {
 
         renderLeagues();
         renderMatches();
-        
+
         if (allMatches.length > 0) {
             checkGoals();      // Gól-animációk
             checkBetResults(); // Fogadások kiértékelése
@@ -323,7 +320,7 @@ async function updateData() {
         console.error("Hiba az updateData futásakor:", e);
     }
 }
-        
+
 // --- 3. EGYENLEG ÉS AUTH ---
 async function refreshBalance() {
     if (window.Clerk && Clerk.user) {
@@ -370,12 +367,12 @@ function checkGoals() {
 function triggerGoalEffect(mId, tName, logo) {
     const b = document.getElementById('goal-banner');
     const sound = document.getElementById('goal-sound');
-    
+
     // --- ÚJ RÉSZ: Meccskártya villogtatás indítása ---
     if (typeof flashingMatches !== 'undefined') {
         const stringId = String(mId);
         flashingMatches.add(stringId);
-        
+
         // Újrarajzoljuk a meccseket, hogy megkapja a 'goal-highlight' osztályt
         if (typeof renderMatches === 'function') renderMatches();
 
@@ -389,7 +386,7 @@ function triggerGoalEffect(mId, tName, logo) {
 
     if (b) {
         document.getElementById('goal-team-name').innerText = tName;
-        
+
         const logoImg = document.getElementById('goal-logo');
         if (logoImg) {
             logoImg.src = logo || 'default-logo.png'; 
@@ -406,7 +403,7 @@ function triggerGoalEffect(mId, tName, logo) {
         setTimeout(() => b.classList.remove('show'), 5000);
     }
 }
-        
+
 // --- 4. ADATKEZELÉS ---        
 async function checkBetResults() {
     if (!activeBets || activeBets.length === 0) return;
@@ -415,7 +412,7 @@ async function checkBetResults() {
 
     for (let i = activeBets.length - 1; i >= 0; i--) {
         const bet = activeBets[i];
-        
+
         // Megkeressük a meccset az élő adatok között
         const match = allMatches.find(m => String(m.id) === String(bet.matchId));
 
@@ -432,9 +429,9 @@ async function checkBetResults() {
             if (won) {
                 const prize = Math.floor(bet.amount * bet.odds);
                 const newTotal = window.userBalance + prize;
-                
+
                 alert(`GRATULÁLUNK! 🎉\nA(z) ${match.homeTeam.name} meccsen nyertél ${prize} LP-t!`);
-                
+
                 // Frissítjük a Supabase-t
                 await updateSupabaseBalance(newTotal);
             } else {
@@ -465,7 +462,7 @@ async function updateSupabaseBalance(newAmount, betData = null) {
                 bet: betData // Itt küldjük el a fogadás részleteit is!
             })
         });
-        
+
         if (res.ok) {
             window.userBalance = newAmount;
             const balanceElem = document.getElementById('user-balance');
@@ -477,11 +474,11 @@ async function updateSupabaseBalance(newAmount, betData = null) {
         return false;
     }
 }
-        
+
 function getSmartOdds(match) {
     const seed = match.id || 0;
     const rng = (s) => Math.abs(Math.sin(seed + s));
-    
+
     let result = {
         h: (1.4 + rng(1) * 2).toFixed(2),
         d: (2.8 + rng(2) * 1.5).toFixed(2),
@@ -506,7 +503,7 @@ function getSmartOdds(match) {
     }
     return result;
 } 
-        
+
 // --- 5. MEGJELENÍTÉS ---
 async function renderMatches() {
     const cont = document.getElementById("match-container");
@@ -522,7 +519,7 @@ async function renderMatches() {
         try {
             // JAVÍTÁS: Hozzáadunk egy időbélyeget (?t=...), így a böngésző KÖTELES a szerverhez fordulni a cache helyett
             const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}&t=${Date.now()}`);
-            
+
             if (response.ok) {
                 currentUserBets = await response.json();
                 localStorage.setItem('lp_activeBets', JSON.stringify(currentUserBets));
@@ -551,13 +548,13 @@ async function renderMatches() {
     try {
         const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
         const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
-        
+
         const score = (isLive || isFinished) && m.score && m.score.fullTime
             ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
             : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
 
         const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
-        
+
         // 1. Megkeressük a fogadást
         const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
 
@@ -631,7 +628,7 @@ async function renderMatches() {
         }
     }).join('');
 }
-        
+
 async function placeBet(matchId, teamName, odds, type) {
     // 1. BELÉPÉS ELLENŐRZÉSE
     if (typeof Clerk === 'undefined' || !Clerk.user) {
@@ -683,7 +680,7 @@ async function placeBet(matchId, teamName, odds, type) {
             window.userBalance = newBalance;
             const balanceElem = document.getElementById('user-balance');
             if (balanceElem) balanceElem.innerText = newBalance.toLocaleString();
-            
+
             // LocalStorage-ba is elmentjük a "LIVE BET" jelvény miatt
             let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
             currentBets.push({
@@ -694,7 +691,7 @@ async function placeBet(matchId, teamName, odds, type) {
                 status: 'OPEN'
             });
             localStorage.setItem('lp_activeBets', JSON.stringify(currentBets));
-            
+
             alert(`Sikeres fogadás!`);
             if (typeof renderMatches === 'function') renderMatches();
         } else {
@@ -719,7 +716,7 @@ async function checkBetResults() {
 
         // Megkeressük a meccset az élő adatok között
         const match = allMatches.find(x => String(x.id) === String(bet.matchId));
-        
+
         // Ha a meccs véget ért (FINISHED)
         if (match && (match.status === 'FINISHED' || match.status === 'AWARDED')) {
             const homeScore = match.score.fullTime.home;
@@ -734,7 +731,7 @@ async function checkBetResults() {
                 // --- NYERT! ---
                 const prize = Math.floor(bet.amount * bet.odds);
                 console.log(`GRATULÁLOK! Nyertél ${prize} LP-t a ${bet.teamName} meccsen!`);
-                
+
                 // Jóváírjuk a szerveren és a kliensen is
                 await processWin(prize, bet.matchId);
                 bet.status = 'WON';
@@ -806,20 +803,20 @@ async function loadInitialBalance() {
     try {
         const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
         const data = await response.json();
-        
+
         if (data && data.balance !== undefined) {
             const balanceSpan = document.getElementById('user-balance');
             const balanceWrap = document.getElementById('balance-wrap'); // EZT ADTUK HOZZÁ
-            
+
             if (balanceSpan) {
                 balanceSpan.innerText = Number(data.balance).toLocaleString();
             }
-            
+
             // Itt tesszük láthatóvá a dobozt!
             if (balanceWrap) {
                 balanceWrap.style.display = 'flex'; 
             }
-            
+
             window.userBalance = data.balance; 
         }
     } catch (err) {
@@ -839,14 +836,14 @@ async function showStandings(leagueId, teamId, code, isAutoCall = false) {
 
     // Loading állapot kijelzése
     target.innerHTML = `<p style="text-align:center; padding:50px; font-size:10px; font-family:'Orbitron';">LOADING...</p>`;
-    
+
     try {
         const res = await fetch(`/api/standings/${code || leagueId}`);
         const data = await res.json();
-        
+
         // Ellenőrizzük, hogy van-e érvényes adat
         if (!data || !data.standings) throw new Error("Hibás adat");
-        
+
         const standings = data.standings.find(s => s.type === 'TOTAL');
         if (!standings) throw new Error("Nincs TOTAL táblázat");
 
@@ -854,7 +851,7 @@ async function showStandings(leagueId, teamId, code, isAutoCall = false) {
         const total = tableData.length;
 
         let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">${currentLang==='HU'?'CSAPAT':'TEAM'}</th><th>P</th></tr></thead><tbody>`;
-        
+
         tableData.forEach(r => {
             let status = r.description || "";
             const pos = r.position; // Definíció hozzáadva!
@@ -934,7 +931,7 @@ function updateStaticTexts() {
     if (hLeagues) hLeagues.innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
     if (hTable) hTable.innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
     if (backLink) backLink.innerText = isHU ? 'VISSZA' : 'BACK';
-    
+
     // Mobil gombok
     const mLeagues = document.getElementById('m-leagues');
     const mMatches = document.getElementById('m-matches');
@@ -954,7 +951,7 @@ function toggleLang() {
     renderMatches(); // Újrarajzoljuk a meccseket az új nyelven
     renderLeagues();
     renderDateStrip();
-    
+
     // Frissítjük a gomb feliratát is
     const langBtn = document.getElementById('lang-btn');
     if (langBtn) langBtn.innerText = currentLang;
@@ -978,7 +975,7 @@ if (localStorage.getItem('lp_theme') === 'light') {
         if (document.getElementById('theme-btn')) document.getElementById('theme-btn').innerText = '🌙';
     });
 }
-        
+
 // --- 6. UI LOGIKA ---
 function renderDateStrip() {
     const strip = document.getElementById("date-strip");
@@ -992,7 +989,7 @@ function renderDateStrip() {
 
     try {
         const dates = [...new Set(allMatches.map(m => m.utcDate ? m.utcDate.split('T')[0] : ""))].filter(d => d !== "").sort();
-        
+
         strip.innerHTML = dates.map(d => `
             <div class="date-pill ${d === selectedDate ? 'active' : ''}" 
                  onclick="selectedDate='${d}'; renderMatches(); renderDateStrip();">
@@ -1016,10 +1013,10 @@ function renderLeagues() {
 }
 async function loadUserBetsFromServer() {
     if (typeof Clerk === 'undefined' || !Clerk.user) return;
-    
+
     try {
         const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}`);
-        
+
         // Itt volt a hiba: 'res' helyett 'response' kell mindenhol!
         const text = await response.text(); 
         console.log("Szerver válasza:", text); 
@@ -1044,7 +1041,7 @@ async function loadUserBetsFromServer() {
         console.warn("Hálózati hiba:", e);
     }
 }
-        
+
 // --- 7. INDÍTÁS ---
 let isInitialized = false; // <--- Új változó a függvényen kívül vagy az elején
 
@@ -1054,7 +1051,7 @@ async function startApp() {
         await new Promise(r => setTimeout(r, 100)); 
         t++; 
     }
-    
+
     try {
         if (typeof Clerk !== 'undefined') {
             await Clerk.load();
@@ -1077,9 +1074,9 @@ async function startApp() {
                         afterSignOutUrl: window.location.origin + '/meccsek.html'
                     });
                 }
-                
+
                 await loadInitialBalance(); 
-                
+
                 // PRÓBÁLD MEG ÍGY: Ha a szerver hibát dob, ne álljon meg a script
                 try {
                     if (typeof loadUserBetsFromServer === 'function') {
@@ -1088,7 +1085,7 @@ async function startApp() {
                 } catch (betError) {
                     console.warn("Szerveroldali fogadások nem elérhetők, marad a helyi tároló.");
                 }
-                
+
                 isInitialized = true; // <--- Itt jelezzük, hogy a belépett user adatai betöltődtek
             } else {
                 const lb = document.getElementById('login-btn');
@@ -1138,7 +1135,7 @@ function saveState() {
         selectedDate: selectedDate,
         currentLang: typeof currentLang !== 'undefined' ? currentLang : 'hu'
     };
-    
+
     try {
         localStorage.setItem('lucky_pitch_state', JSON.stringify(state));
         console.log("Állapot elmentve.");
@@ -1146,124 +1143,12 @@ function saveState() {
         console.warn("Nem sikerült menteni a localStorage-ba:", e);
     }
 }
-        
+
 window.addEventListener('load', startApp);
 
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
