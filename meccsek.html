@@ -946,26 +946,19 @@ function renderLeagues() {
         </div>`).join('');
 }
 async function loadUserBetsFromServer() {
-    if (!Clerk.user) return;
+    if (typeof Clerk === 'undefined' || !Clerk.user) return;
     try {
-        // Kérjük le a szervertől a user korábbi fogadásait
+        // Itt kérjük le a szervertől a user fogadásait
         const res = await fetch(`/api/user/get-bets?userId=${Clerk.user.id}`);
         if (res.ok) {
             const bets = await res.json();
-            // Elmentjük a gépünkre, hogy a renderMatches tudja használni
+            // Elmentjük a gépünkre, hogy a renderMatches lássa
             localStorage.setItem('lp_activeBets', JSON.stringify(bets));
-            console.log("Fogadások szinkronizálva.");
+            console.log("Fogadások szinkronizálva a szerverrel.");
         }
     } catch (e) {
         console.error("Nem sikerült a fogadások betöltése:", e);
     }
-}
-
-// A startApp-on belül hívd meg:
-if (Clerk.user) {
-    await loadInitialBalance(); 
-    await loadUserBetsFromServer(); // <--- EZT SZÚRD BE IDE
-    renderMatches();
 }
         
 // --- 7. INDÍTÁS ---
@@ -1000,7 +993,8 @@ async function startApp() {
                         afterSignOutUrl: window.location.origin + '/meccsek.html'
                     });
                 }
-                await loadInitialBalance(); 
+                await loadInitialBalance();
+                await loadUserBetsFromServer();
             } else {
                 // Ha nincs user, alapból elrejtjük a belépés gombot, amíg az adatok be nem töltődnek
                 const lb = document.getElementById('login-btn');
@@ -1059,6 +1053,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
