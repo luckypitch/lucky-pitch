@@ -533,7 +533,6 @@ function renderMatches() {
 
     cont.innerHTML = filtered.map(m => {
         try {
-            // --- ITT DEFINIÁLJUK A VÁLTOZÓKAT A RETURN ELŐTT ---
             const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
             const isFinished = ["FINISHED", "AWARDED", "POSTPONED", "CANCELLED"].includes(m.status);
             
@@ -541,17 +540,20 @@ function renderMatches() {
                 ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
                 : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
 
-            // Odds lekérése (ellenőrizzük, létezik-e a függvény)
             const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
 
-            // Fogadás megkeresése (String-re kényszerítve az ID-kat)
-            const myBet = currentUserBets.find(b => String(b.matchId) === String(m.id));
+            // --- JAVÍTÁS: Kezeljük mindkét elnevezést (Supabase match_id vs Local matchId) ---
+            const myBet = currentUserBets.find(b => 
+                String(b.match_id || b.matchId) === String(m.id)
+            );
 
-            // Csak most jöhet a return!
+            // --- JAVÍTÁS: String típusú ellenőrzés a villogáshoz ---
+            const isFlashing = typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id)) ? 'goal-highlight' : '';
+
             return `
-            <div class="match-card ${typeof flashingMatches !== 'undefined' && flashingMatches.has(m.id) ? 'goal-highlight' : ''}" 
+            <div class="match-card ${isFlashing}" 
                  id="match-${m.id}" 
-                 style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                 style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; transition: all 0.3s ease;">
                 
                 ${myBet ? `<div style="position: absolute; top: 0; left: 0; background: #ffaa00; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">LIVE BET</div>` : ''}
 
@@ -991,24 +993,16 @@ async function loadUserBetsFromServer() {
     
     try {
         const res = await fetch(`/api/user/get-bets?userId=${Clerk.user.id}`);
-        
-        // CSAK AKKOR próbáljuk feldolgozni, ha a válasz sikeres (200 OK)
         if (res.ok) {
-            const contentType = res.headers.get("content-type");
-            if (contentType && contentType.includes("application/json")) {
-                const bets = await res.json();
-                if (Array.isArray(bets)) {
-                    localStorage.setItem('lp_activeBets', JSON.stringify(bets));
-                    console.log("Fogadások betöltve a szerverről.");
-                }
+            const bets = await res.json();
+            if (Array.isArray(bets)) {
+                localStorage.setItem('lp_activeBets', JSON.stringify(bets));
+                console.log("Fogadások szinkronizálva a szerverrel.");
+                if (typeof renderMatches === 'function') renderMatches();
             }
-        } else {
-            // Ha a szerver 404-et vagy mást ad, NEM töröljük a helyi adatokat!
-            console.warn("A szerveroldali mentés még nem elérhető, helyi adatok használata.");
         }
     } catch (e) {
-        // Ha hiba van (pl. nincs internet vagy rossz a JSON), megőrizzük a meglévőt
-        console.log("Helyi módban maradunk, refresh után is megmaradnak az adatok.");
+        console.warn("Helyi módban maradunk:", e);
     }
 }
         
@@ -1119,6 +1113,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
