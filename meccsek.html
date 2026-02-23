@@ -917,33 +917,38 @@ async function startApp() {
         if (typeof Clerk !== 'undefined') {
             await Clerk.load();
 
-            // --- KIJELENTKEZÉS FIGYELÉSE ÉS TISZTÍTÁS ---
+            // --- JAVÍTOTT KIJELENTKEZÉS FIGYELÉS ---
             Clerk.addListener(({ user }) => {
-                if (!user) {
-                    // Ha kijelentkezik a user:
-                    localStorage.removeItem('lp_activeBets'); // Töröljük a fogadásait a gépéről
-                    window.location.href = '/meccsek.html';   // Frissítjük az oldalt
+                // Csak akkor frissítünk, ha kijelentkezett ÉS még ott van a régi adat a storage-ban
+                // Ez megakadályozza a végtelen újratöltést!
+                if (!user && localStorage.getItem('lp_activeBets')) {
+                    console.log("Kijelentkezés észlelve, adatok törlése...");
+                    localStorage.removeItem('lp_activeBets');
+                    window.userBalance = 0;
+                    
+                    // Rövid szünet, hogy a Clerk befejezze a műveletet, majd frissítés
+                    setTimeout(() => {
+                        window.location.href = '/meccsek.html';
+                    }, 100);
                 }
             });
 
             if (Clerk.user) {
                 const userBtn = document.getElementById('user-button');
                 if(userBtn) {
-                    // Beállítjuk, hogy kijelentkezés után hova dobjon vissza
                     Clerk.mountUserButton(userBtn, {
                         afterSignOutUrl: window.location.origin + '/meccsek.html'
                     });
                 }
                 await loadInitialBalance(); 
             } else {
-                // Ha nincs belépve, biztosan ne legyenek ott a régi fogadások
-                localStorage.removeItem('lp_activeBets');
-                
+                // Ha nincs user, alapból elrejtjük a belépés gombot, amíg az adatok be nem töltődnek
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
                     lb.style.display = 'block'; 
                     lb.onclick = () => Clerk.openSignIn({ afterSignInUrl: window.location.href });
                 }
+                // Itt NE törölj localStorage-ot, azt elintézi az addListener okosabban!
             }
         }
 
@@ -994,6 +999,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
