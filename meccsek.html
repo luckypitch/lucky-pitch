@@ -263,7 +263,8 @@ let allMatches = [];
 let prevScores = new Map();
 let flashingMatches = new Set();
 let globalOdds = []; // Itt tároljuk az API-ból jött oddsokat
-
+let activeBets = JSON.parse(localStorage.getItem('lp_activeBets')) || [];
+        
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
     if (!status) return 'transparent';
@@ -359,9 +360,15 @@ async function updateData() {
 
         if (typeof renderDateStrip === 'function') renderDateStrip();
         if (typeof renderLeagues === 'function') renderLeagues();
+        
+        // 1. Megrajzoljuk a meccseket
         renderMatches();
         
+        // 2. Ellenőrizzük a gólokat (ez már benne volt)
         if (allMatches.length > 0) checkGoals();
+
+        // 3. IDE KERÜL AZ ÚJ SOR: Ellenőrizzük, véget ért-e fogadott meccs
+        if (allMatches.length > 0) checkBetResults();
 
     } catch (e) {
         console.error("Hiba az updateData futásakor:", e);
@@ -376,13 +383,16 @@ async function updateData() {
             if (globalOdds.length > 0) {
                 console.log("Odds adatok frissítve.");
                 renderMatches();
+                
+                // Ha az oddsok frissítése után is történik render, 
+                // itt is érdemes ránézni a fogadásokra
+                checkBetResults();
             }
         }
     } catch (e) {
         console.warn("Odds API hiba:", e);
     }
 }
-
 function getSmartOdds(match) {
     const seed = match.id || 0;
     const rng = (s) => Math.abs(Math.sin(seed + s));
@@ -427,7 +437,6 @@ function renderMatches() {
         return;
     }
 
-    // RENDEZÉS, HOGY NE UGRÁLJANAK A MECCSEK
     filtered.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
 
     cont.innerHTML = filtered.map(m => {
@@ -436,46 +445,139 @@ function renderMatches() {
             ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
             : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
 
-        // !!! EZ A SOR MENTI MEG A KÓDOT !!!
-        const odds = getSmartOdds(m); 
+        const odds = getSmartOdds(m);
 
         return `
-        <div class="match-card ${flashingMatches.has(m.id) ? 'goal-highlight' : ''}" id="match-${m.id}">
-            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
-                <img src="${m.homeTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/40'">
-                <span>${m.homeTeam.name}</span>
-            </div>
+        <div class="match-card ${flashingMatches.has(m.id) ? 'goal-highlight' : ''}" 
+             id="match-${m.id}" 
+             style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px;">
             
-            <div style="text-align:center; width:120px;">
-                <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
-                <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size:9px; margin-top:5px; display:inline-block; text-decoration:none;">ELEMZÉS</a>
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px;">
+                <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center;">
+                    <img src="${m.homeTeam.crest || ''}" style="width: 45px; height: 45px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/45'">
+                    <span style="font-size: 13px; font-weight: 500;">${m.homeTeam.name}</span>
+                </div>
+                
+                <div style="flex: 0 0 80px; text-align: center;">
+                    <div class="score-display ${isLive ? 'score-live' : ''}" style="font-size: 22px; font-weight: 800; letter-spacing: 2px;">${score}</div>
+                    <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size: 9px; margin-top: 8px; display: inline-block; padding: 2px 8px;">ELEMZÉS</a>
+                </div>
+
+                <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center;">
+                    <img src="${m.awayTeam.crest || ''}" style="width: 45px; height: 45px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/45'">
+                    <span style="font-size: 13px; font-weight: 500;">${m.awayTeam.name}</span>
+                </div>
             </div>
 
-            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                <img src="${m.awayTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/40'">
-                <span>${m.awayTeam.name}</span>
+            <div class="bet-row" style="display: flex; gap: 10px; width: 100%; justify-content: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
+                <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">
+                    <span style="font-size: 10px; display: block; opacity: 0.6;">H</span>
+                    <span style="font-size: 13px; font-weight: bold;">${odds.h}</span>
+                </button>
+                <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
+                    <span style="font-size: 10px; display: block; opacity: 0.6;">D</span>
+                    <span style="font-size: 13px; font-weight: bold;">${odds.d}</span>
+                </button>
+                <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">
+                    <span style="font-size: 10px; display: block; opacity: 0.6;">V</span>
+                    <span style="font-size: 13px; font-weight: bold;">${odds.a}</span>
+                </button>
             </div>
-
-            <div class="bet-row" style="display: flex; justify-content: center; gap: 8px; margin-top: 12px; width: 100%; grid-column: 1 / span 3;">
-    <button class="odds-btn" style="flex: 0 1 80px; padding: 4px 0; min-height: 32px;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">
-        <span class="odds-label" style="font-size: 10px; display: block; opacity: 0.7;">H</span>
-        <span class="odds-val" style="font-size: 12px; font-weight: bold;">${odds.h}</span>
-    </button>
-    
-    <button class="odds-btn" style="flex: 0 1 80px; padding: 4px 0; min-height: 32px;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
-        <span class="odds-label" style="font-size: 10px; display: block; opacity: 0.7;">D</span>
-        <span class="odds-val" style="font-size: 12px; font-weight: bold;">${odds.d}</span>
-    </button>
-    
-    <button class="odds-btn" style="flex: 0 1 80px; padding: 4px 0; min-height: 32px;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">
-        <span class="odds-label" style="font-size: 10px; display: block; opacity: 0.7;">V</span>
-        <span class="odds-val" style="font-size: 12px; font-weight: bold;">${odds.a}</span>
-    </button>
-</div>
         </div>`;
     }).join('');
 }
+
+async function placeBet(matchId, pickName, odds, type) {
+    const amount = prompt(`Fogadás: ${pickName}\nOdds: ${odds}\n\nAdd meg a tétet:`, "1000");
     
+    if (!amount || isNaN(amount) || amount <= 0) return;
+
+    const betAmount = parseInt(amount);
+    const currentBalance = parseInt(document.getElementById('user-balance').innerText.replace(/\s/g, ''));
+
+    if (betAmount > currentBalance) {
+        alert("Nincs elég egyenleged!");
+        return;
+    }
+
+    // Fogadás objektum
+    const newBet = {
+        matchId: matchId,
+        amount: betAmount,
+        odds: odds,
+        type: type, // 'H', 'D' vagy 'V'
+        pickName: pickName,
+        status: 'OPEN'
+    };
+
+    activeBets.push(newBet);
+    localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
+
+    // Egyenleg frissítése a szerveren (ha van Clerk)
+    if (window.Clerk && Clerk.user) {
+        try {
+            await fetch('/api/user/update-balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: Clerk.user.id, amount: -betAmount })
+            });
+            refreshBalance();
+        } catch (e) { console.error("Balance update error:", e); }
+    }
+
+    alert(`Sikeres fogadás: ${betAmount} Ft -> Várható nyeremény: ${Math.floor(betAmount * odds)} Ft`);
+}
+
+function checkBetResults() {
+    if (activeBets.length === 0) return;
+
+    activeBets.forEach((bet, index) => {
+        if (bet.status !== 'OPEN') return;
+
+        const match = allMatches.find(m => m.id === bet.matchId);
+        
+        if (match && match.status === 'FINISHED') {
+            const homeScore = match.score.fullTime.home;
+            const awayScore = match.score.fullTime.away;
+            let winner = '';
+
+            if (homeScore > awayScore) winner = 'H';
+            else if (homeScore < awayScore) winner = 'V';
+            else winner = 'D';
+
+            if (bet.type === winner) {
+                // NYERT!
+                const prize = Math.floor(bet.amount * bet.odds);
+                processWin(prize, bet.pickName);
+                bet.status = 'WON';
+            } else {
+                // VESZTETT
+                bet.status = 'LOST';
+                console.log(`Sajnos vesztettél: ${bet.pickName}`);
+            }
+        }
+    });
+
+    // Takarítás: csak azokat tartjuk meg, amik még futnak
+    activeBets = activeBets.filter(b => b.status === 'OPEN');
+    localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
+}
+
+async function processWin(amount, pick) {
+    alert(`GRATULÁLUNK! A(z) ${pick} tipped bejött. Nyeremény: ${amount} Ft`);
+    
+    if (window.Clerk && Clerk.user) {
+        try {
+            await fetch('/api/user/update-balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: Clerk.user.id, amount: amount })
+            });
+            refreshBalance();
+        } catch (e) { console.error("Win process error:", e); }
+    }
+}
+        
 async function showStandings(leagueId, teamId, code) {
     if(window.innerWidth <= 1100 && typeof toggleM === 'function') toggleM('sidebar-standings');
     const target = document.getElementById("standings-target");
@@ -711,6 +813,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
