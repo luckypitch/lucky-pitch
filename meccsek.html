@@ -244,31 +244,6 @@ let selectedLeagues = savedLeagues ? new Set(JSON.parse(savedLeagues)) : new Set
 let allMatches = [];
 let prevScores = new Map();
 let flashingMatches = new Set();
-
-function toggleTheme() { 
-    document.body.classList.toggle('light'); 
-    localStorage.setItem('lp_theme', document.body.classList.contains('light'));
-}
-
-function toggleLang() {
-    currentLang = currentLang === 'HU' ? 'EN' : 'HU';
-    updateStaticTexts();
-    renderMatches();
-    renderDateStrip();
-    renderLeagues();
-}
-
-function updateStaticTexts() {
-    const isHU = currentLang === 'HU';
-    const langBtn = document.getElementById('lang-btn');
-    const hLeagues = document.getElementById('h-leagues');
-    const hTable = document.getElementById('h-table');
-    const backLink = document.getElementById('back-link');
-
-    if (langBtn) langBtn.innerText = currentLang;
-    if (hLeagues) hLeagues.innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
-    if (hTable) hTable.innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
-    if (backLink) backLink.innerText = isHU ? 'VISSZA' : 'BACK';
         
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
@@ -523,6 +498,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
