@@ -247,110 +247,52 @@ let flashingMatches = new Set();
 let originalTitle = document.title;
 let titleInterval = null;
 
-function toggleM(id) { closeM(); document.getElementById(id).classList.add('open'); }
-function closeM() { document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => s.classList.remove('open')); }
+// Segédfüggvények a tabellához (Ezek hiányoztak!)
+function getStatusColor(status) {
+    if (!status) return 'transparent';
+    const s = status.toLowerCase();
+    if (s.includes('champions league')) return '#0044ff';
+    if (s.includes('europa league')) return '#cc7a00';
+    if (s.includes('conference league')) return '#00cc6a';
+    if (s.includes('relegation')) return '#ff3e3e';
+    if (s.includes('play-off') || s.includes('osztályozó')) return '#d35400';
+    return 'transparent';
+}
 
-        
+function translateStatus(status) {
+    if (currentLang !== 'HU') return status;
+    const s = status.toLowerCase();
+    if (s.includes('champions league group')) return 'BL Csoportkör';
+    if (s.includes('champions league qual')) return 'BL Selejtező';
+    if (s.includes('europa league group')) return 'EL Csoportkör';
+    if (s.includes('relegation')) return 'Kieső zóna';
+    return status;
+}
+
 // --- 2. EGYENLEG ÉS CLERK ---
 async function refreshBalance() {
     if (window.Clerk && Clerk.user) {
         try {
-            console.log("Egyenleg lekérése a felhasználónak:", Clerk.user.id);
             const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
-            
-            if (!response.ok) throw new Error("Szerver hiba az egyenlegnél");
-            
             const data = await response.json();
-            console.log("Kapott egyenleg adat:", data);
-
             const balanceSpan = document.getElementById('user-balance');
             const balanceWrap = document.getElementById('balance-wrap');
-
-            if (balanceSpan && balanceWrap) {
-                // Biztosítjuk, hogy szám legyen és szépen formázzuk
-                balanceSpan.innerText = Number(data.balance || 0).toLocaleString();
-                
-                // Kényszerítjük a megjelenítést
-                balanceWrap.style.setProperty('display', 'flex', 'important');
-                console.log("Egyenleg sikeresen kiírva a felületre.");
-            } else {
-                console.warn("Hiba: Nem találom a 'user-balance' vagy 'balance-wrap' ID-t a HTML-ben!");
-            }
-        } catch (error) {
-            console.error("Balance Fetch Error:", error);
-        }
-    } else {
-        console.log("Nincs bejelentkezett felhasználó, az egyenleg nem lekérhető.");
+            if (balanceSpan) balanceSpan.innerText = Number(data.balance || 0).toLocaleString();
+            if (balanceWrap) balanceWrap.style.setProperty('display', 'flex', 'important');
+        } catch (e) { console.error("Balance error", e); }
     }
 }
 
-// --- 3. ANIMÁCIÓK ÉS EFFEKTEK ---
-function animateTitle(scrollingText) {
-    if (titleInterval) clearInterval(titleInterval);
-    let fullText = scrollingText + "  *** ";
-    titleInterval = setInterval(() => {
-        fullText = fullText.substring(1) + fullText.substring(0, 1);
-        document.title = fullText;
-    }, 200);
-    setTimeout(() => {
-        clearInterval(titleInterval);
-        document.title = originalTitle;
-        titleInterval = null;
-    }, 6000);
-}
-
-function showGoal(teamName) {
-    const banner = document.getElementById('goal-banner');
-    const goalTeam = document.getElementById('goal-team');
-    if (goalTeam) goalTeam.innerText = teamName.toUpperCase();
-    if (banner) {
-        banner.classList.add('show');
-        setTimeout(() => banner.classList.remove('show'), 5000);
-    }
-}
-        
-function triggerGoalEffect(matchId, teamName, logoUrl) {
-    animateTitle(`⚽ GÓÓÓL! - ${teamName.toUpperCase()}!`);
-    const banner = document.getElementById('goal-banner');
-    const teamDisplay = document.getElementById('goal-team-name');
-    const logoImg = document.getElementById('goal-logo');
-    const matchCard = document.getElementById(`match-${matchId}`);
-    const sound = document.getElementById('goal-sound');
-
-    if (flashingMatches.has(matchId)) return;
-
-    if (teamDisplay) teamDisplay.innerText = teamName.toUpperCase();
-    if (logoImg && logoUrl) {
-        logoImg.src = logoUrl;
-        logoImg.style.display = 'block';
-    }
-
-    if (banner) banner.classList.add('show');
-    if (sound) { sound.currentTime = 0; sound.play().catch(() => {}); }
-
-    if (matchCard) {
-        matchCard.classList.add('goal-highlight');
-        flashingMatches.add(matchId);
-    }
-
-    setTimeout(() => {
-        if (banner) banner.classList.remove('show');
-        if (matchCard) {
-            matchCard.classList.remove('goal-highlight');
-            flashingMatches.delete(matchId);
-        }
-    }, 5000);
-}
-
-// --- 4. ADATOK ÉS MEGJELENÍTÉS ---
+// --- 3. ADATOK LEKÉRÉSE ÉS MEGJELENÍTÉSE ---
 async function updateData() {
     try {
         const res = await fetch("/live-matches");
+        if (!res.ok) throw new Error("Szerver hiba");
         const data = await res.json();
-        const newMatches = data.matches || [];
+        allMatches = data.matches || data || [];
 
         // Gólfigyelés
-        newMatches.forEach(match => {
+        allMatches.forEach(match => {
             const matchId = match.id;
             const newScore = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
             if (prevScores.has(matchId) && prevScores.get(matchId) !== newScore) {
@@ -362,20 +304,28 @@ async function updateData() {
             prevScores.set(matchId, newScore);
         });
 
-        allMatches = newMatches;
         renderDateStrip();
         renderLeagues();
         renderMatches();
-    } catch (e) { console.error("Update hiba:", e); }
+    } catch (e) {
+        console.error("Fetch hiba:", e);
+        document.getElementById("match-container").innerHTML = "<p style='text-align:center; padding:20px;'>Hiba az adatok betöltésekor...</p>";
+    }
 }
 
 function renderMatches() {
     const cont = document.getElementById("match-container");
     if (!cont) return;
+
     const filtered = allMatches.filter(m => {
         const matchDate = m.utcDate.split('T')[0];
         return matchDate === selectedDate && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString()));
     });
+
+    if (filtered.length === 0) {
+        cont.innerHTML = `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
+        return;
+    }
 
     cont.innerHTML = filtered.map(m => {
         const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
@@ -400,50 +350,29 @@ function renderMatches() {
                 <span>${m.awayTeam.name}</span>
             </div>
         </div>`;
-    }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px;">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
+    }).join('');
 }
 
-// --- 5. TABELLA ÉS ZÓNÁK ---
-function getStatusColor(status) {
-    if (!status) return 'transparent';
-    const s = status.toLowerCase();
-    if (s.includes('champions league')) return '#0044ff'; // BL - Kék
-    if (s.includes('europa league')) return '#cc7a00';   // EL - Narancs
-    if (s.includes('conference league')) return '#00cc6a'; // KL - Zöld
-    if (s.includes('relegation')) return '#ff3e3e';      // Kieső - Piros
-    if (s.includes('play-off') || s.includes('osztályozó')) return '#d35400'; 
-    return 'transparent';
-}
-
-function translateStatus(status) {
-    if (currentLang !== 'HU') return status;
-    const s = status.toLowerCase();
-    if (s.includes('champions league group')) return 'BL Csoportkör';
-    if (s.includes('champions league qual')) return 'BL Selejtező';
-    if (s.includes('europa league group')) return 'EL Csoportkör';
-    if (s.includes('conference league')) return 'KL Selejtező';
-    if (s.includes('relegation')) return 'Kieső zóna';
-    return status;
-}
-        
+// --- 4. TABELLA ---
 async function showStandings(leagueId, teamId, code) {
-            if(window.innerWidth <= 1100) toggleM('sidebar-standings');
-            const target = document.getElementById("standings-target");
-            target.innerHTML = `<p style="text-align:center; padding:50px; font-family:'Orbitron'; font-size:10px;">LOADING...</p>`;
-            
-            try {
-                const res = await fetch(`/api/standings/${code || leagueId}`);
-                const data = await res.json();
-                const tableData = data.standings.find(s => s.type === 'TOTAL').table;
-                const total = tableData.length;
+    if(window.innerWidth <= 1100 && typeof toggleM === 'function') toggleM('sidebar-standings');
+    const target = document.getElementById("standings-target");
+    if (!target) return;
+    target.innerHTML = `<p style="text-align:center; padding:50px; font-family:'Orbitron'; font-size:10px;">LOADING...</p>`;
+    
+    try {
+        const res = await fetch(`/api/standings/${code || leagueId}`);
+        const data = await res.json();
+        const tableData = data.standings.find(s => s.type === 'TOTAL').table;
+        const total = tableData.length;
 
-                let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">${currentLang==='HU'?'CSAPAT':'TEAM'}</th><th>P</th></tr></thead><tbody>`;
-                
-                tableData.forEach(r => {
-                    let status = r.description || "";
-                    let pos = r.position;
+        let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">${currentLang==='HU'?'CSAPAT':'TEAM'}</th><th>P</th></tr></thead><tbody>`;
+        
+        tableData.forEach(r => {
+            let status = r.description || "";
+            let pos = r.position;
 
-                   if (!status || status === "") {
+if (!status || status === "") {
                         if (['PL', 'PD', 'SA'].includes(code)) {
                             if (pos <= 4) status = "Champions League Group Stage";
                             else if (pos === 5) status = "Europa League Group Stage";
@@ -482,34 +411,54 @@ async function showStandings(leagueId, teamId, code) {
                             if (pos === 1) status = "Bajnok / Feljutó";
                             else if (pos >= total - 2) status = "Relegation";
                         }
-                    }
 
-                    const color = getStatusColor(status);
-                    const isTarget = r.team.id == teamId;
-                    const boxBg = color !== 'transparent' ? color : 'rgba(255,255,255,0.05)';
-                    const boxText = color !== 'transparent' ? '#000' : 'var(--neon-blue)';
+            
+            const color = getStatusColor(status);
+            const isTarget = r.team.id == teamId;
 
-                    html += `<tr class="${isTarget ? 'highlight' : ''}">
-                        <td class="pos-col" style="border-left-color: ${color}">
-                            ${status ? `<span class="zone-tag" style="color:${color}">${translateStatus(status)}</span>` : ''}
-                            <div class="pos-num-box" style="background:${boxBg}; color:${boxText};">${pos}</div>
-                        </td>
-                        <td style="text-align:left; font-weight:800;">
-                            <img src="${r.team.crest}" width="24" style="vertical-align:middle; margin-right:10px;">
-                            ${r.team.shortName || r.team.name}
-                        </td>
-                        <td style="font-weight:bold; color:var(--neon-green); font-family:'Orbitron'; font-size:14px;">${r.points}</td>
-                    </tr>`;
-                });
-                target.innerHTML = html + "</tbody></table>";
-            } catch (e) { target.innerHTML = "Error loading standings."; }
+            html += `<tr class="${isTarget ? 'highlight' : ''}">
+                <td class="pos-col" style="border-left: 4px solid ${color}">
+                    <div class="pos-num-box" style="background:${color!=='transparent'?color:'rgba(255,255,255,0.05)'}">${pos}</div>
+                </td>
+                <td style="text-align:left;">
+                    <img src="${r.team.crest}" width="20" style="margin-right:8px;"> ${r.team.shortName || r.team.name}
+                </td>
+                <td style="color:var(--neon-green); font-weight:bold;">${r.points}</td>
+            </tr>`;
+        });
+        target.innerHTML = html + "</tbody></table>";
+    } catch (e) { target.innerHTML = "Hiba a tabella betöltésekor."; }
+}
+
+// --- 5. UI ÉS INDÍTÁS ---
+function toggleM(id) { 
+    document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => s.classList.remove('open'));
+    if(id) document.getElementById(id).classList.add('open'); 
+}
+function closeM() { toggleM(null); }
+
+function triggerGoalEffect(matchId, teamName, logoUrl) {
+    const banner = document.getElementById('goal-banner');
+    const teamDisplay = document.getElementById('goal-team-name');
+    const logoImg = document.getElementById('goal-logo');
+    const matchCard = document.getElementById(`match-${matchId}`);
+    const sound = document.getElementById('goal-sound');
+
+    if (teamDisplay) teamDisplay.innerText = teamName.toUpperCase();
+    if (logoImg) { logoImg.src = logoUrl; logoImg.style.display = 'block'; }
+    if (banner) banner.classList.add('show');
+    if (sound) { sound.currentTime = 0; sound.play().catch(()=>{}); }
+    if (matchCard) {
+        matchCard.classList.add('goal-highlight');
+        flashingMatches.add(matchId);
+    }
+    setTimeout(() => {
+        if (banner) banner.classList.remove('show');
+        if (matchCard) {
+            matchCard.classList.remove('goal-highlight');
+            flashingMatches.delete(matchId);
         }
-        
-// --- 6. UI KIEGÉSZÍTŐK ---
-function saveState() {
-    localStorage.setItem('lp_selectedDate', selectedDate);
-    localStorage.setItem('lp_selectedLeagues', JSON.stringify([...selectedLeagues]));
-    localStorage.setItem('lp_lang', currentLang);
+    }, 5000);
 }
 
 function renderDateStrip() {
@@ -517,7 +466,7 @@ function renderDateStrip() {
     if (!strip) return;
     const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
     strip.innerHTML = dates.map(d => `
-        <div class="date-pill ${d === selectedDate ? 'active' : ''}" onclick="selectedDate='${d}';saveState();renderMatches();renderLeagues();renderDateStrip();">
+        <div class="date-pill ${d === selectedDate ? 'active' : ''}" onclick="selectedDate='${d}';saveState();updateData();">
             ${d === todayStr ? (currentLang==='HU'?'MA':'TODAY') : d.split('-')[1]+'.'+d.split('-')[2]}
         </div>`).join('');
 }
@@ -527,65 +476,51 @@ function renderLeagues() {
     if (!cont) return;
     const unique = new Map();
     allMatches.filter(m => m.utcDate.startsWith(selectedDate)).forEach(m => unique.set(m.competition.id, m.competition));
-    cont.innerHTML = "";
-    unique.forEach((l, id) => {
-        const div = document.createElement("div");
-        div.className = `league-item ${selectedLeagues.has(id.toString()) ? 'active' : ''}`;
-        div.onclick = () => {
-            selectedLeagues.has(id.toString()) ? selectedLeagues.delete(id.toString()) : selectedLeagues.add(id.toString());
-            saveState(); renderLeagues(); renderMatches();
-        };
-        div.innerHTML = `<img src="${l.emblem}" width="20"> <span>${l.name}</span>`;
-        cont.appendChild(div);
-    });
+    cont.innerHTML = [...unique.values()].map(l => `
+        <div class="league-item ${selectedLeagues.has(l.id.toString()) ? 'active' : ''}" 
+             onclick="selectedLeagues.has('${l.id}') ? selectedLeagues.delete('${l.id}') : selectedLeagues.add('${l.id}'); saveState(); renderMatches(); renderLeagues();">
+            <img src="${l.emblem}" width="20"> <span>${l.name}</span>
+        </div>`).join('');
+}
+
+function saveState() {
+    localStorage.setItem('lp_selectedDate', selectedDate);
+    localStorage.setItem('lp_selectedLeagues', JSON.stringify([...selectedLeagues]));
+    localStorage.setItem('lp_lang', currentLang);
 }
 
 function updateStaticTexts() {
     const isHU = currentLang === 'HU';
-    const langBtn = document.getElementById('lang-btn');
-    const hLeagues = document.getElementById('h-leagues');
-    const hTable = document.getElementById('h-table');
-    const backLink = document.getElementById('back-link');
-
-    if (langBtn) langBtn.innerText = currentLang;
-    if (hLeagues) hLeagues.innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
-    if (hTable) hTable.innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
-    if (backLink) backLink.innerText = isHU ? 'VISSZA' : 'BACK';
-    
-    // Mobil gombok
-    const mLeagues = document.getElementById('m-leagues');
-    const mMatches = document.getElementById('m-matches');
-    const mTable = document.getElementById('m-table');
-    if (mLeagues) mLeagues.innerText = isHU ? 'LIGÁK' : 'LEAGUES';
-    if (mMatches) mMatches.innerText = isHU ? 'MECCSEK' : 'MATCHES';
-    if (mTable) mTable.innerText = isHU ? 'TABELLA' : 'TABLE';
-
-    const placeholder = document.getElementById('standings-placeholder');
-    if (placeholder) placeholder.innerText = isHU ? 'VÁLASSZ EGY CSAPATOT' : 'CHOOSE A TEAM';
+    if(document.getElementById('lang-btn')) document.getElementById('lang-btn').innerText = currentLang;
+    if(document.getElementById('h-leagues')) document.getElementById('h-leagues').innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
+    if(document.getElementById('h-table')) document.getElementById('h-table').innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
 }
 
-// --- 7. START ---
 async function startApp() {
-    // ... (a várakozó rész ugyanaz marad) ...
-    
+    let tries = 0;
+    while (typeof Clerk === 'undefined' && tries < 20) {
+        await new Promise(r => setTimeout(r, 100));
+        tries++;
+    }
     try {
         await Clerk.load();
+        const loginBtn = document.getElementById('login-btn');
+        const userBtnDiv = document.getElementById('user-button');
 
         if (Clerk.user) {
-            // ... (bejelentkezett állapot kezelése) ...
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (userBtnDiv) Clerk.mountUserButton(userBtnDiv);
+            await refreshBalance();
         } else {
-            // Ha nincs belépve, a gombot úgy állítjuk be, hogy ide térjen vissza
-            const loginBtn = document.getElementById('login-btn');
             if (loginBtn) {
                 loginBtn.style.display = 'block';
-                loginBtn.onclick = () => Clerk.openSignIn({ 
-                    afterSignInUrl: window.location.href,
-                    afterSignUpUrl: window.location.href 
-                });
+                loginBtn.onclick = () => Clerk.openSignIn({ afterSignInUrl: window.location.href });
             }
         }
-        // ...
-    } catch (err) { console.error(err); }
+        updateStaticTexts();
+        await updateData();
+        setInterval(() => { updateData(); if(Clerk.user) refreshBalance(); }, 30000);
+    } catch (err) { console.error("StartApp error", err); }
 }
 
 window.addEventListener('load', startApp);
@@ -593,6 +528,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
