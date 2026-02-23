@@ -680,14 +680,6 @@ async function placeBet(matchId, teamName, odds, type) {
     }
 }
 
-Szuper, nézzük a checkBetResults függvényt! Mivel most LocalStorage-t használunk, a kihívás az, hogy a nyereményt nem elég csak a böngészőben hozzáadni az egyenleghez, hanem a szerverre is el kell küldeni, hogy megmaradjon.
-
-Itt a logikusan felépített checkBetResults és a hozzá tartozó processWin függvény:
-1. A fogadások ellenőrzése (checkBetResults)
-
-Ezt a függvényt érdemes az updateData végén vagy egy setInterval-ban hívni.
-JavaScript
-
 async function checkBetResults() {
     // 1. Beolvassuk a helyi fogadásokat
     let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
@@ -1115,6 +1107,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
