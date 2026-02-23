@@ -305,7 +305,8 @@ async function updateData() {
         // 3. Renderelés és logika futtatása
         if (typeof renderDateStrip === 'function') renderDateStrip();
         if (typeof renderLeagues === 'function') renderLeagues();
-        
+
+        renderLeagues();
         renderMatches();
         
         if (allMatches.length > 0) {
@@ -899,12 +900,9 @@ async function startApp() {
         if (typeof Clerk !== 'undefined') {
             await Clerk.load();
             if (Clerk.user) {
-                Clerk.mountUserButton(document.getElementById('user-button'));
-                
-                // --- EGYENLEG BETÖLTÉSE ADATBÁZISBÓL ---
-                // Megvárjuk, amíg a loadInitialBalance lekéri a Supabase-ből az értéket
+                const userBtn = document.getElementById('user-button');
+                if(userBtn) Clerk.mountUserButton(userBtn);
                 await loadInitialBalance(); 
-                
             } else {
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
@@ -913,7 +911,16 @@ async function startApp() {
                 }
             }
         }
+
+        // --- ADATOK LEKÉRÉSE ---
         await updateData();
+
+        // --- KÉNYSZERÍTETT RENDERELÉS ---
+        // Miután megjöttek a meccsek (allMatches), azonnal rajzoljuk ki a szűrőket is!
+        if (typeof renderDateStrip === 'function') renderDateStrip();
+        if (typeof renderLeagues === 'function') renderLeagues();
+        if (typeof renderMatches === 'function') renderMatches();
+
         setInterval(updateData, 30000);
     } catch (e) { console.error("StartApp error:", e); }
 }
@@ -955,6 +962,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
