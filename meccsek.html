@@ -547,7 +547,7 @@ async function placeBet(matchId, pickName, odds, type) {
             refreshBalance();
         } catch (e) { console.error("Balance update error:", e); }
     }
-
+    renderMatches();
     alert(`Sikeres fogadás: ${betAmount} Ft -> Várható nyeremény: ${Math.floor(betAmount * odds)} Ft`);
 }
 
@@ -836,6 +836,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
