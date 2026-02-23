@@ -237,19 +237,6 @@
         <main class="content-area">
             <div id="date-strip" class="date-strip"></div>
             <div id="match-container"></div>
-            <div class="bet-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 12px;">
-    <button class="odds-btn" onclick="placeBet(${m.id}, '${m.homeTeam.name}', ${odds.h}, 'H')">
-        <span class="odds-label">H</span>
-        <span class="odds-val">${odds.h}</span>
-    </button>
-    <button class="odds-btn" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
-        <span class="odds-label">D</span>
-        <span class="odds-val">${odds.d}</span>
-    </button>
-    <button class="odds-btn" onclick="placeBet(${m.id}, '${m.awayTeam.name}', ${odds.a}, 'V')">
-        <span class="odds-label">V</span>
-        <span class="odds-val">${odds.a}</span>
-    </button>
 </div>
         </main>
         <aside class="standings-sidebar" id="sidebar-standings">
@@ -439,13 +426,30 @@ function renderMatches() {
                 <img src="${m.homeTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/40'">
                 <span>${m.homeTeam.name}</span>
             </div>
+            
             <div style="text-align:center; width:120px;">
                 <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
                 <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size:9px; margin-top:5px; display:inline-block; text-decoration:none;">ELEMZÉS</a>
             </div>
+
             <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
                 <img src="${m.awayTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/40'">
                 <span>${m.awayTeam.name}</span>
+            </div>
+
+            <div class="bet-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 12px; width: 100%; grid-column: 1 / span 3;">
+                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">
+                    <span class="odds-label">H</span>
+                    <span class="odds-val">${odds.h}</span>
+                </button>
+                <button class="odds-btn" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
+                    <span class="odds-label">D</span>
+                    <span class="odds-val">${odds.d}</span>
+                </button>
+                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">
+                    <span class="odds-label">V</span>
+                    <span class="odds-val">${odds.a}</span>
+                </button>
             </div>
         </div>`;
     }).join('');
@@ -663,6 +667,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
