@@ -541,44 +541,49 @@ function updateStaticTexts() {
 
 // --- 7. START ---
 async function startApp() {
-    console.log("LuckyPitch indítása...");
+    console.log("Munkamenet ellenőrzése...");
     
-    // --- HIBA JAVÍTÁSA: Várakozás a Clerk objektumra ---
-    let retryCount = 0;
-    while (typeof Clerk === 'undefined' && retryCount < 10) {
-        console.log("Clerk még nem elérhető, várakozás... (" + retryCount + ")");
-        await new Promise(r => setTimeout(r, 500)); // Fél másodperc szünet
-        retryCount++;
+    // 1. Várakozás, amíg a Clerk betölt a memóriába
+    let tries = 0;
+    while (typeof Clerk === 'undefined' && tries < 20) {
+        await new Promise(r => setTimeout(r, 100));
+        tries++;
     }
 
     if (typeof Clerk === 'undefined') {
-        console.error("Hiba: A Clerk scriptet nem sikerült betölteni a head-ből!");
-        return; // Itt megállunk, hogy ne dobjon piros hibát
+        console.error("A Clerk script nem tudott betölteni.");
+        return;
     }
-    // --- Eddig tart a javítás ---
 
     try {
+        // 2. Inicializálás (Ez felismeri a Home.html sütijét!)
         await Clerk.load();
-        console.log("Clerk sikeresen inicializálva.");
 
-        const loginBtn = document.getElementById('login-btn');
         const balanceWrap = document.getElementById('balance-wrap');
         const userBtnDiv = document.getElementById('user-button');
+        const loginBtn = document.getElementById('login-btn');
 
         if (Clerk.user) {
-            if (loginBtn) loginBtn.style.display = 'none';
+            console.log("Üdv újra! Felhasználó azonosítva:", Clerk.user.id);
+            
+            // Profil gomb megjelenítése (ahogy a Home-on)
             if (userBtnDiv) Clerk.mountUserButton(userBtnDiv);
-            await refreshBalance();
+            
+            // Egyenleg lekérése és megjelenítése
+            await refreshBalance(); 
+            if (balanceWrap) balanceWrap.style.display = 'flex';
+            if (loginBtn) loginBtn.style.display = 'none';
         } else {
+            console.log("Nincs aktív munkamenet.");
             if (loginBtn) loginBtn.style.display = 'block';
-            if (balanceWrap) balanceWrap.style.display = 'none';
         }
 
+        // 3. Meccsadatok indítása
         updateStaticTexts();
         await updateData();
 
     } catch (err) {
-        console.error("Hiba az inicializálás alatt:", err);
+        console.error("Hiba az indítás során:", err);
     }
 }
 
@@ -587,6 +592,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
