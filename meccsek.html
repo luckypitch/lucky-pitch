@@ -187,10 +187,10 @@
     <nav>
         <div class="logo">LUCKYPITCH</div>
         <div class="nav-tools">
-            <div class="nav-buttons" style="display: flex; align-items: center; gap: 15px;">
-    <div id="balance-wrap" style="display: none; align-items: center; font-family: 'Orbitron'; color: #00ff88; font-size: 13px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px; font-weight: bold;">
-        <span id="user-balance" style="margin-right: 5px;">0</span> LP
-    </div>
+         <div class="nav-buttons">
+            <div id="balance-wrap" style="display:none; font-family:'Orbitron'; color:#00ff88; font-size:12px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px; align-items: center;">
+                <span id="user-balance">0</span> LP </div>
+        <div id="user-button"></div> </div>
             <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
             <a href="/home" class="tool-btn" id="back-link" style="text-decoration:none;">VISSZA</a>
@@ -224,6 +224,12 @@
     </div>
 
     <script>
+        async 
+  crossorigin="anonymous" 
+  data-clerk-publishable-key="pk_test_YWxsb3dlZC1pbnNlY3QtOTguY2xlcmsuYWNjb3VudHMuZGV2JA" 
+  src="https://allowed-insect-98.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" 
+  type="text/javascript">
+        
         // --- MEMÓRIA (STATE MANAGEMENT) ---
         let currentLang = localStorage.getItem('lp_lang') || 'HU';
         const todayStr = new Date().toLocaleDateString('sv');
@@ -540,8 +546,38 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
             }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
         }
 
+async function initMeccsekPage() {
+    await Clerk.load(); // Ez inicializálja a Clerket az oldalon
+
+    if (Clerk.user) {
+        // 1. Megjelenítjük a profil gombot
+        Clerk.mountUserButton(document.getElementById('user-button'));
+        
+        // 2. Lekérjük az egyenleget a szerverről
+        try {
+            const res = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
+            const data = await res.json();
+            
+            const balanceSpan = document.getElementById('user-balance');
+            const balanceWrap = document.getElementById('balance-wrap');
+            
+            if (balanceSpan && balanceWrap) {
+                balanceSpan.innerText = data.balance.toLocaleString();
+                balanceWrap.style.display = 'flex'; // Itt válik láthatóvá!
+            }
+        } catch (err) {
+            console.error("Egyenleg hiba:", err);
+        }
+    } else {
+        // Ha nincs belépve, visszadobhatjuk a főoldalra vagy mutathatunk egy LOGIN gombot
+        console.log("Nincs bejelentkezett felhasználó.");
+    }
+}
+
+window.addEventListener('load', initMeccsekPage);
+        
        async function refreshBalance() {
-    // Csak akkor fut le, ha van bejelentkezett felhasználó
+    // Ellenőrizzük, hogy a Clerk objektum és a bejelentkezett felhasználó létezik-e
     if (window.Clerk && Clerk.user) {
         try {
             const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
@@ -553,10 +589,8 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
             const balanceWrap = document.getElementById('balance-wrap');
 
             if (balanceSpan && balanceWrap) {
-                // Szám formázása (pl. 1,000)
                 balanceSpan.innerText = Number(data.balance).toLocaleString();
-                // Megjelenítés (fontos, hogy 'flex' legyen a szép igazításért)
-                balanceWrap.style.display = 'flex';
+                balanceWrap.style.display = 'flex'; // Itt kapcsoljuk be a láthatóságot
             }
         } catch (error) {
             console.error("Balance Error:", error);
@@ -564,17 +598,28 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
     }
 }
 
-// Clerk inicializálása utáni hívás
 async function startApp() {
-    await Clerk.load();
-    if (Clerk.user) {
-        Clerk.mountUserButton(document.getElementById('user-button'));
-        // Frissítjük az egyenleget belépés után
-        refreshBalance();
+    try {
+        await Clerk.load(); // Inicializálás
+        
+        if (Clerk.user) {
+            // Profil gomb megjelenítése
+            const userButtonDiv = document.getElementById('user-button');
+            if (userButtonDiv) Clerk.mountUserButton(userButtonDiv);
+            
+            // Egyenleg lekérése
+            await refreshBalance();
+        } else {
+            // Opcionális: Ha nincs belépve, elrejtheted az egyenleget vagy mutathatsz login gombot
+            console.log("Nincs bejelentkezett felhasználó.");
+        }
+    } catch (err) {
+        console.error("Clerk betöltési hiba:", err);
     }
 }
 
-window.onload = startApp;
+// Biztosítjuk, hogy az oldal betöltése után induljon el
+window.addEventListener('load', startApp);
         
         updateStaticTexts();
         updateData();
@@ -582,6 +627,7 @@ window.onload = startApp;
     </script>
 </body>
 </html>
+
 
 
 
