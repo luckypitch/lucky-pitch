@@ -422,6 +422,9 @@ function getSmartOdds(match) {
     return result;
 }
 
+// A renderMatches elején:
+const myBet = activeBets.find(b => String(b.matchId) === String(m.id) && b.status === 'OPEN');        
+        
 // --- 5. MEGJELENÍTÉS ---
 function renderMatches() {
     const cont = document.getElementById("match-container");
@@ -907,6 +910,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
