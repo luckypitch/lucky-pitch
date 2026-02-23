@@ -609,19 +609,22 @@ async function saveBalanceToDB(userId, newBalance) {
 
 // --- EGYENLEG BETÖLTÉSE INDÍTÁSKOR ---
 async function loadInitialBalance() {
-    if (window.Clerk && Clerk.user) {
+    if (typeof Clerk !== 'undefined' && Clerk.user) {
         try {
+            // A korábban beállított szerver oldali API-t hívjuk meg
             const res = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
             const data = await res.json();
             
-            // Ha van adat az adatbázisban, frissítjük a kijelzőt
             if (data && data.balance !== undefined) {
                 const bSpan = document.getElementById('user-balance');
-                if (bSpan) bSpan.innerText = Number(data.balance).toLocaleString();
-                console.log("Egyenleg betöltve a Supabase-ből.");
+                if (bSpan) {
+                    // Szépen formázott szám: 1 000
+                    bSpan.innerText = Number(data.balance).toLocaleString();
+                }
+                console.log("Egyenleg sikeresen betöltve a Supabase-ből.");
             }
         } catch (e) {
-            console.error("Nem sikerült lekérni az egyenleget:", e);
+            console.error("Hiba az egyenleg lekérésekor:", e);
         }
     }
 }
@@ -865,6 +868,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
