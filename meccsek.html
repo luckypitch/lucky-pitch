@@ -460,20 +460,22 @@ function renderMatches() {
                 <span>${m.awayTeam.name}</span>
             </div>
 
-            <div class="bet-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 12px; width: 100%; grid-column: 1 / span 3;">
-                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">
-                    <span class="odds-label">H</span>
-                    <span class="odds-val">${odds.h}</span>
-                </button>
-                <button class="odds-btn" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
-                    <span class="odds-label">D</span>
-                    <span class="odds-val">${odds.d}</span>
-                </button>
-                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">
-                    <span class="odds-label">V</span>
-                    <span class="odds-val">${odds.a}</span>
-                </button>
-            </div>
+            <div class="bet-row" style="display: flex; justify-content: center; gap: 8px; margin-top: 12px; width: 100%; grid-column: 1 / span 3;">
+    <button class="odds-btn" style="flex: 0 1 80px; padding: 4px 0; min-height: 32px;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">
+        <span class="odds-label" style="font-size: 10px; display: block; opacity: 0.7;">H</span>
+        <span class="odds-val" style="font-size: 12px; font-weight: bold;">${odds.h}</span>
+    </button>
+    
+    <button class="odds-btn" style="flex: 0 1 80px; padding: 4px 0; min-height: 32px;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
+        <span class="odds-label" style="font-size: 10px; display: block; opacity: 0.7;">D</span>
+        <span class="odds-val" style="font-size: 12px; font-weight: bold;">${odds.d}</span>
+    </button>
+    
+    <button class="odds-btn" style="flex: 0 1 80px; padding: 4px 0; min-height: 32px;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">
+        <span class="odds-label" style="font-size: 10px; display: block; opacity: 0.7;">V</span>
+        <span class="odds-val" style="font-size: 12px; font-weight: bold;">${odds.a}</span>
+    </button>
+</div>
         </div>`;
     }).join('');
 }
@@ -560,7 +562,29 @@ async function showStandings(leagueId, teamId, code) {
         target.innerHTML = "<p style='text-align:center; padding:20px;'>Error loading standings.</p>"; 
     }
 }
+function updateStaticTexts() {
+    const isHU = currentLang === 'HU';
+    const langBtn = document.getElementById('lang-btn');
+    const hLeagues = document.getElementById('h-leagues');
+    const hTable = document.getElementById('h-table');
+    const backLink = document.getElementById('back-link');
 
+    if (langBtn) langBtn.innerText = currentLang;
+    if (hLeagues) hLeagues.innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
+    if (hTable) hTable.innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
+    if (backLink) backLink.innerText = isHU ? 'VISSZA' : 'BACK';
+    
+    // Mobil gombok
+    const mLeagues = document.getElementById('m-leagues');
+    const mMatches = document.getElementById('m-matches');
+    const mTable = document.getElementById('m-table');
+    if (mLeagues) mLeagues.innerText = isHU ? 'LIGÁK' : 'LEAGUES';
+    if (mMatches) mMatches.innerText = isHU ? 'MECCSEK' : 'MATCHES';
+    if (mTable) mTable.innerText = isHU ? 'TABELLA' : 'TABLE';
+
+    const placeholder = document.getElementById('standings-placeholder');
+    if (placeholder) placeholder.innerText = isHU ? 'VÁLASSZ EGY CSAPATOT' : 'CHOOSE A TEAM';
+}
 // Nyelv váltása (HU <-> EN)
 function toggleLang() {
     currentLang = currentLang === 'HU' ? 'EN' : 'HU';
@@ -691,6 +715,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
