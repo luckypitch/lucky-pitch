@@ -559,8 +559,12 @@ async function renderMatches() {
             const isFlashing = typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id)) ? 'goal-highlight' : '';
 
             // Státusz egységesítése nagybetűre (WON, LOST, OPEN)
-            const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
+            const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
 
+            if (String(m.id) === '537065') {
+    console.log("Fiorentina bet adatok:", myBet);}
+            const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
+            
             return `
             <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; transition: all 0.3s ease;">
                 
@@ -1145,6 +1149,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
