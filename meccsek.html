@@ -415,6 +415,39 @@ async function showStandings(leagueId, teamId, code) {
     }
 }
 
+// Nyelv váltása (HU <-> EN)
+function toggleLang() {
+    currentLang = currentLang === 'HU' ? 'EN' : 'HU';
+    saveState(); // Elmentjük a választást
+    updateStaticTexts(); // Frissítjük a feliratokat (🏆 Bajnokságok, stb.)
+    renderMatches(); // Újrarajzoljuk a meccseket az új nyelven
+    renderLeagues();
+    renderDateStrip();
+    
+    // Frissítjük a gomb feliratát is
+    const langBtn = document.getElementById('lang-btn');
+    if (langBtn) langBtn.innerText = currentLang;
+}
+
+// Sötét/Világos mód váltása
+function toggleTheme() {
+    document.body.classList.toggle('light');
+    const themeBtn = document.getElementById('theme-btn');
+    if (themeBtn) {
+        themeBtn.innerText = document.body.classList.contains('light') ? '🌙' : '☀️';
+    }
+    // Elmentjük a választást a böngészőbe
+    localStorage.setItem('lp_theme', document.body.classList.contains('light') ? 'light' : 'dark');
+}
+
+// Oldal betöltésekor ellenőrizzük, volt-e mentett téma
+if (localStorage.getItem('lp_theme') === 'light') {
+    document.body.classList.add('light');
+    window.addEventListener('load', () => {
+        if (document.getElementById('theme-btn')) document.getElementById('theme-btn').innerText = '🌙';
+    });
+}
+        
 // --- 6. UI LOGIKA ---
 function renderDateStrip() {
     const s = document.getElementById("date-strip");
@@ -498,6 +531,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
