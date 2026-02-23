@@ -517,19 +517,13 @@ async function renderMatches() {
     let currentUserBets = [];
     if (typeof Clerk !== 'undefined' && Clerk.user) {
         try {
-            // JAVÍTÁS: Pontos útvonal használata (/api/user/bets)
-            const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}`);
+            // JAVÍTÁS: Hozzáadunk egy időbélyeget (?t=...), így a böngésző KÖTELES a szerverhez fordulni a cache helyett
+            const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}&t=${Date.now()}`);
             
             if (response.ok) {
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    currentUserBets = await response.json();
-                    localStorage.setItem('lp_activeBets', JSON.stringify(currentUserBets));
-                } else {
-                    throw new Error("A szerver nem JSON-t küldött, hanem valami mást (HTML?)");
-                }
+                currentUserBets = await response.json();
+                localStorage.setItem('lp_activeBets', JSON.stringify(currentUserBets));
             } else {
-                console.warn("A szerver hibaüzenetet küldött, a tárolt fogadásokat használom.");
                 currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
             }
         } catch (err) {
@@ -1151,6 +1145,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
