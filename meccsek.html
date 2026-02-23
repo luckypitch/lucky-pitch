@@ -584,11 +584,6 @@ function renderMatches() {
     }).join('');
 }
         
-Természetesen! Itt a teljes, végleges és letisztult placeBet függvény. Ebben benne van a belépés-ellenőrzés, a biztonságos egyenleg-kezelés és a fogadások elmentése a localStorage-ba, hogy azonnal megjelenjen a "LIVE BET" felirat.
-
-Mivel a Supabase-t még nem kötöttük be, ez a verzió a te szervereden lévő /api/user/update-balance végpontot hívja meg (amit korábban használtunk).
-JavaScript
-
 async function placeBet(matchId, teamName, odds, type) {
     // 1. BELÉPÉS ELLENŐRZÉSE
     if (typeof Clerk === 'undefined' || !Clerk.user) {
@@ -1107,6 +1102,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
