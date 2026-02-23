@@ -343,54 +343,65 @@ function triggerGoalEffect(mId, tName, logo) {
 }
         
 // --- 4. ADATKEZELÉS ---        
-async function updateData() {
-    try {
-        const res = await fetch("/live-matches");
-        const data = await res.json();
+async function checkBetResults() {
+    if (!activeBets || activeBets.length === 0) return;
+
+    let updatedAny = false;
+
+    for (let i = activeBets.length - 1; i >= 0; i--) {
+        const bet = activeBets[i];
         
-        if (data && data.matches && Array.isArray(data.matches)) {
-            allMatches = data.matches;
-        } else if (Array.isArray(data)) {
-            allMatches = data;
-        } else {
-            allMatches = [];
+        // Megkeressük a meccset az élő adatok között
+        const match = allMatches.find(m => String(m.id) === String(bet.matchId));
+
+        if (match && match.status === "FINISHED") {
+            const homeScore = match.score.fullTime.home;
+            const awayScore = match.score.fullTime.away;
+            let won = false;
+
+            // Nyert-e a tipp?
+            if (bet.type === 'H' && homeScore > awayScore) won = true;
+            else if (bet.type === 'D' && homeScore === awayScore) won = true;
+            else if (bet.type === 'V' && awayScore > homeScore) won = true;
+
+            if (won) {
+                const prize = Math.floor(bet.amount * bet.odds);
+                const newTotal = window.userBalance + prize;
+                
+                alert(`GRATULÁLUNK! 🎉\nA(z) ${match.homeTeam.name} meccsen nyertél ${prize} LP-t!`);
+                
+                // Frissítjük a Supabase-t
+                await updateSupabaseBalance(newTotal);
+            } else {
+                alert(`Sajnos nem nyertél... ❌\nA(z) ${match.homeTeam.name} meccs végeredménye: ${homeScore}:${awayScore}`);
+            }
+
+            // Töröljük az aktív fogadások közül, mert lezárult
+            activeBets.splice(i, 1);
+            updatedAny = true;
         }
-
-        console.log("Siker! Meccsek betöltve:", allMatches.length);
-
-        if (typeof renderDateStrip === 'function') renderDateStrip();
-        if (typeof renderLeagues === 'function') renderLeagues();
-        
-        // 1. Megrajzoljuk a meccseket
-        renderMatches();
-        
-        // 2. Ellenőrizzük a gólokat (ez már benne volt)
-        if (allMatches.length > 0) checkGoals();
-
-        // 3. IDE KERÜL AZ ÚJ SOR: Ellenőrizzük, véget ért-e fogadott meccs
-        if (allMatches.length > 0) checkBetResults();
-
-    } catch (e) {
-        console.error("Hiba az updateData futásakor:", e);
-        allMatches = [];
     }
 
+    if (updatedAny) {
+        localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
+        renderMatches();
+    }
+}
+
+// Segédfüggvény a Supabase frissítéshez
+async function updateSupabaseBalance(newAmount) {
     try {
-        const oddsRes = await fetch("/api/odds-data");
-        if (oddsRes.ok) {
-            const oddsData = await oddsRes.json();
-            globalOdds = Array.isArray(oddsData) ? oddsData : [];
-            if (globalOdds.length > 0) {
-                console.log("Odds adatok frissítve.");
-                renderMatches();
-                
-                // Ha az oddsok frissítése után is történik render, 
-                // itt is érdemes ránézni a fogadásokra
-                checkBetResults();
-            }
+        const res = await fetch('/api/user/update-balance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: Clerk.user.id, balance: newAmount })
+        });
+        if (res.ok) {
+            window.userBalance = newAmount;
+            document.getElementById('user-balance').innerText = newAmount.toLocaleString();
         }
     } catch (e) {
-        console.warn("Odds API hiba:", e);
+        console.error("Hiba az egyenleg jóváírásakor:", e);
     }
 }
 function getSmartOdds(match) {
@@ -910,6 +921,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
