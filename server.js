@@ -206,56 +206,6 @@ app.post('/create-checkout-session', async (req, res) => {
 });
 
 // server.js - Fogadások kiértékelése
-app.post('/api/admin/check-results', async (req, res) => {
-    try {
-        // 1. JAVÍTÁS: 'OPEN' státuszt keresünk, mert az van az adatbázisodban
-        const { data: pendingBets, error } = await supabase
-            .from('bets')
-            .select('*')
-            .eq('status', 'OPEN'); // Figyelj a nagybetűre!
-
-        if (error) throw error;
-        if (!pendingBets || pendingBets.length === 0) {
-            return res.json({ success: true, message: "Nincs feldolgozandó fogadás." });
-        }
-
-        for (let bet of pendingBets) {
-            const response = await fetch(`https://api.football-data.org/v4/matches/${bet.match_id}`, {
-                headers: { 'X-Auth-Token': process.env.FOOTBALL_API_KEY }
-            });
-            const match = await response.json();
-
-            if (match.status === 'FINISHED') {
-                const homeScore = match.score.fullTime.home;
-                const awayScore = match.score.fullTime.away;
-                
-                let actualResult = '';
-                if (homeScore > awayScore) actualResult = 'H';
-                else if (homeScore < awayScore) actualResult = 'V';
-                else actualResult = 'D';
-
-                // 2. JAVÍTÁS: bet.type-ot használunk bet.prediction helyett
-                if (bet.type === actualResult) {
-                    const winAmount = bet.amount * bet.odds;
-                    
-                    await supabase.rpc('settle_winning_bet', { 
-                        u_id: bet.user_id, 
-                        win_amount: winAmount 
-                    });
-
-                    // 3. JAVÍTÁS: WON státuszra írjuk át (nagybetűvel a konzisztencia miatt)
-                    await supabase.from('bets').update({ status: 'WON' }).eq('id', bet.id);
-                } else {
-                    await supabase.from('bets').update({ status: 'LOST' }).eq('id', bet.id);
-                }
-            }
-        }
-        res.json({ success: true, message: "Fogadások sikeresen frissítve!" });
-    } catch (err) {
-        console.error("Admin check error:", err);
-        res.status(500).json({ error: err.message });
-    }
-});
 
 // --- OLDALAK KISZOLGÁLÁSA ---
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
@@ -275,6 +225,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
