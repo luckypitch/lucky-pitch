@@ -368,28 +368,38 @@ function triggerGoalEffect(mId, tName, logo) {
     const b = document.getElementById('goal-banner');
     const sound = document.getElementById('goal-sound');
     
+    // --- ÚJ RÉSZ: Meccskártya villogtatás indítása ---
+    if (typeof flashingMatches !== 'undefined') {
+        const stringId = String(mId);
+        flashingMatches.add(stringId);
+        
+        // Újrarajzoljuk a meccseket, hogy megkapja a 'goal-highlight' osztályt
+        if (typeof renderMatches === 'function') renderMatches();
+
+        // 10 másodperc után levesszük a villogást
+        setTimeout(() => {
+            flashingMatches.delete(stringId);
+            if (typeof renderMatches === 'function') renderMatches();
+        }, 10000);
+    }
+    // ------------------------------------------------
+
     if (b) {
-        // Csapatnév beállítása
         document.getElementById('goal-team-name').innerText = tName;
         
-        // Logó kezelése: ha nincs logó, ne jelenítsen meg üres képet
         const logoImg = document.getElementById('goal-logo');
         if (logoImg) {
             logoImg.src = logo || 'default-logo.png'; 
             logoImg.style.display = logo ? 'block' : 'none';
         }
 
-        // Banner megjelenítése
         b.classList.add('show');
 
-        // HANG LEJÁTSZÁSA
         if (sound) { 
             sound.currentTime = 0; 
-            // A böngészők csak akkor engedik, ha a felhasználó már kattintott valahová az oldalon
-            sound.play().catch(e => console.warn("Hang lejátszása sikertelen (Interakció szükséges):", e)); 
+            sound.play().catch(e => console.warn("Hang lejátszása hiba:", e)); 
         }
 
-        // Eltüntetés 5 másodperc után
         setTimeout(() => b.classList.remove('show'), 5000);
     }
 }
@@ -1109,6 +1119,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
