@@ -717,17 +717,36 @@ async function loadInitialBalance() {
     }
 }
         
-async function showStandings(leagueId, teamId, code) {
-    if(window.innerWidth <= 1100 && typeof toggleM === 'function') toggleM('sidebar-standings');
+Majdnem tökéletes, de van benne egy apró „csapda”: a target változót a függvényen belül is definiálnod kell, mielőtt elkezded használni (pl. a target.innerHTML sornál), különben a JavaScript nem fogja tudni, hova kell rajzolnia a tabellát.
+
+Így néz ki a javított, teljesen stabil verzió:
+JavaScript
+
+async function showStandings(leagueId, teamId, code, isAutoCall = false) {
+    // 1. Sidebar kezelése mobilon
+    if(!isAutoCall && window.innerWidth <= 1100 && typeof toggleM === 'function') {
+        toggleM('sidebar-standings');
+    }
+
+    // 2. A cél-elem definiálása (EZT PÓTOLNI KELL!)
     const target = document.getElementById("standings-target");
     if (!target) return;
+
+    // Loading állapot kijelzése
     target.innerHTML = `<p style="text-align:center; padding:50px; font-size:10px; font-family:'Orbitron';">LOADING...</p>`;
     
     try {
         const res = await fetch(`/api/standings/${code || leagueId}`);
         const data = await res.json();
-        const tableData = data.standings.find(s => s.type === 'TOTAL').table;
-        const total = tableData.length; // Definíció hozzáadva!
+        
+        // Ellenőrizzük, hogy van-e érvényes adat
+        if (!data || !data.standings) throw new Error("Hibás adat");
+        
+        const standings = data.standings.find(s => s.type === 'TOTAL');
+        if (!standings) throw new Error("Nincs TOTAL táblázat");
+
+        const tableData = standings.table;
+        const total = tableData.length;
 
         let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">${currentLang==='HU'?'CSAPAT':'TEAM'}</th><th>P</th></tr></thead><tbody>`;
         
@@ -962,6 +981,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
