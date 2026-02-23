@@ -609,23 +609,29 @@ async function saveBalanceToDB(userId, newBalance) {
 
 // --- EGYENLEG BETÖLTÉSE INDÍTÁSKOR ---
 async function loadInitialBalance() {
+    if (!Clerk.user) return;
+
     try {
         const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
-        if (!response.ok) throw new Error("Szerver hiba az egyenleg lekérésekor");
-        
         const data = await response.json();
         
-        // Frissítjük a globális változót (ha használsz olyat) és a kijelzőt
         if (data && data.balance !== undefined) {
-            const balanceElement = document.getElementById('user-balance');
-            if (balanceElement) {
-                balanceElement.innerText = Number(data.balance).toLocaleString();
+            const balanceSpan = document.getElementById('user-balance');
+            const balanceWrap = document.getElementById('balance-wrap'); // EZT ADTUK HOZZÁ
+            
+            if (balanceSpan) {
+                balanceSpan.innerText = Number(data.balance).toLocaleString();
             }
-            // Ha van globális változód a fogadásokhoz, itt frissítsd:
-            // currentBalance = data.balance; 
+            
+            // Itt tesszük láthatóvá a dobozt!
+            if (balanceWrap) {
+                balanceWrap.style.display = 'flex'; 
+            }
+            
+            window.userBalance = data.balance; 
         }
     } catch (err) {
-        console.error("Nem sikerült betölteni az egyenleget:", err);
+        console.error("Hiba az egyenleg megjelenítésekor:", err);
     }
 }
         
@@ -868,6 +874,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
