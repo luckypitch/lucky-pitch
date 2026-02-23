@@ -162,6 +162,27 @@
     position: relative;
     box-shadow: 0 0 50px rgba(255, 62, 62, 0.8);
 }
+        .odds-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    border-radius: 6px;
+    padding: 6px 2px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.odds-btn:hover {
+    background: var(--neon-blue);
+    color: black;
+    box-shadow: 0 0 10px var(--neon-blue);
+}
+
+.odds-label { font-size: 9px; opacity: 0.6; margin-bottom: 2px; }
+.odds-val { font-family: 'Orbitron'; font-size: 11px; font-weight: bold; }
         
     </style>
 </head>
@@ -216,6 +237,20 @@
         <main class="content-area">
             <div id="date-strip" class="date-strip"></div>
             <div id="match-container"></div>
+            <div class="bet-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 12px;">
+    <button class="odds-btn" onclick="placeBet(${m.id}, '${m.homeTeam.name}', ${odds.h}, 'H')">
+        <span class="odds-label">H</span>
+        <span class="odds-val">${odds.h}</span>
+    </button>
+    <button class="odds-btn" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
+        <span class="odds-label">D</span>
+        <span class="odds-val">${odds.d}</span>
+    </button>
+    <button class="odds-btn" onclick="placeBet(${m.id}, '${m.awayTeam.name}', ${odds.a}, 'V')">
+        <span class="odds-label">V</span>
+        <span class="odds-val">${odds.a}</span>
+    </button>
+</div>
         </main>
         <aside class="standings-sidebar" id="sidebar-standings">
             <div class="sidebar-header" id="h-table">📊 Élő Tabella</div>
@@ -244,7 +279,8 @@ let selectedLeagues = savedLeagues ? new Set(JSON.parse(savedLeagues)) : new Set
 let allMatches = [];
 let prevScores = new Map();
 let flashingMatches = new Set();
-        
+let globalOdds = []; // Itt tároljuk az API-ból jött oddsokat
+
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
     if (!status) return 'transparent';
@@ -283,10 +319,14 @@ async function refreshBalance() {
 // --- 4. ADATKEZELÉS ---
 async function updateData() {
     try {
-        const res = await fetch("/live-matches");
-        const data = await res.json();
-        allMatches = data.matches || data || [];
+        const [matchRes, oddsRes] = await Promise.all([
+            fetch("/live-matches"),
+            fetch("/api/odds-data")
+        ]);
 
+        allMatches = await matchRes.json();
+        globalOdds = await oddsRes.json();
+        
         // Gólfigyelő logika
         allMatches.forEach(m => {
             const mId = m.id;
@@ -306,6 +346,35 @@ async function updateData() {
     } catch (e) { console.error("Adat hiba:", e); }
 }
 
+function getSmartOdds(match) {
+    // 1. Megkeressük az API adatok között a meccset (Név egyezés alapján)
+    const found = globalOdds.find(o => 
+        (o.home_team === match.homeTeam.name || o.away_team === match.awayTeam.name)
+    );
+
+    if (found && found.bookmakers && found.bookmakers.length > 0) {
+        const market = found.bookmakers[0].markets[0];
+        if (market) {
+            const h = market.outcomes.find(out => out.name === found.home_team)?.price || 2.0;
+            const a = market.outcomes.find(out => out.name === found.away_team)?.price || 2.0;
+            const d = market.outcomes.find(out => out.name === 'Draw')?.price || 3.0;
+            
+            return { h: h.toFixed(2), d: d.toFixed(2), a: a.toFixed(2) };
+        }
+    }
+
+    // 2. AI GENERÁTOR (Ha nincs az API-ban, pl. kisebb bajnokság)
+    // A match.id-t használjuk alapnak (seed), hogy az odds ne változzon minden másodpercben
+    const seed = match.id || 1;
+    const rng = (offset) => Math.abs(Math.sin(seed + offset));
+
+    return {
+        h: (1.3 + rng(10) * 2.5).toFixed(2),
+        d: (2.8 + rng(20) * 1.5).toFixed(2),
+        a: (1.5 + rng(30) * 3.5).toFixed(2)
+    };
+}
+        
 // --- 5. MEGJELENÍTÉS ---
 function renderMatches() {
     const cont = document.getElementById("match-container");
@@ -544,6 +613,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
