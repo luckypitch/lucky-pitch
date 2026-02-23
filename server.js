@@ -1,135 +1,99 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const app = express();
+
+// BIZTONSÁGOS FETCH: Kezeli a node-fetch verziókat
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
+// Konfiguráció betöltése
+require('dotenv').config({ path: path.resolve(__dirname, 'api.env') });
+
+const app = express(); // CSAK EGYSZER DEKLARÁLVA
 app.use(express.json());
+app.use(cors());
 
-// FÁJL HELYETT: Csak a memóriában tárolunk (Deploy-biztos)
+// Statikus fájlok kiszolgálása (A gyökérkönyvtárból)
+app.use(express.static(path.join(__dirname)));
+
+// API Kulcsok
+const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
+const ODDS_API_KEY = process.env.ODDS_API_KEY;
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+const stripe = require('stripe')(STRIPE_SECRET_KEY);
+
+// --- MEMÓRIA TÁROLÓK (EGYENLEG ÉS CACHE) ---
 let userBalances = {}; 
+let matchCache = { data: null, lastFetch: 0 };
+let oddsCache = { data: null, lastFetch: 0 };
+let standingsCache = {};
 
-// API: Egyenleg lekérése
+// --- VIRTUAL BALANCE API ---
+
+// Egyenleg lekérése
 app.get('/api/user/balance', (req, res) => {
     try {
         const userId = req.query.userId;
         if (!userId) return res.status(400).json({ error: "No UserID" });
-
-        // Ha új a felhasználó, kap 1000 pontot
-        if (userBalances[userId] === undefined) {
-            userBalances[userId] = 1000;
-        }
-
+        if (userBalances[userId] === undefined) userBalances[userId] = 1000;
         res.json({ balance: userBalances[userId] });
     } catch (err) {
         res.status(500).json({ error: "Server error" });
     }
 });
 
-// API: Fogadás vagy Pontlevonás
+// Pontlevonás vagy hozzáadás
 app.post('/api/user/update-balance', (req, res) => {
     try {
         const { userId, amount } = req.body;
-        
         if (!userId) return res.status(400).json({ error: "No UserID" });
-        
-        if (userBalances[userId] === undefined) {
-            userBalances[userId] = 1000;
-        }
-        
-        // Ellenőrzés: Ne mehessen mínuszba
+        if (userBalances[userId] === undefined) userBalances[userId] = 1000;
         if (userBalances[userId] + amount < 0) {
             return res.status(400).json({ error: "Nincs elég egyenleged!" });
         }
-
         userBalances[userId] += amount;
-        
-        res.json({ 
-            success: true, 
-            newBalance: userBalances[userId] 
-        });
+        res.json({ success: true, newBalance: userBalances[userId] });
     } catch (err) {
         res.status(500).json({ error: "Update failed" });
     }
 });
 
-// BIZTONSÁGOS FETCH: Kezeli a node-fetch 2-es és 3-as verzióját is, megakadályozva a leállást
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+// --- FOOTBALL DATA API VÉGPONTOK ---
 
-require('dotenv').config({ path: path.resolve(__dirname, 'api.env') });
-
-const app = express();
-app.use(express.json());
-app.use(cors());
-
-// Statikus fájlok kiszolgálása
-app.use(express.static(path.join(__dirname)));
-
-const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
-const ODDS_API_KEY = process.env.ODDS_API_KEY;
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-const stripe = require('stripe')(STRIPE_SECRET_KEY);
-
-// --- CACHE TÁROLÓK ---
-let matchCache = { data: null, lastFetch: 0 };
-let oddsCache = { data: null, lastFetch: 0 };
-let standingsCache = {};
-
-// --- API VÉGPONTOK ---
-
-// ⚽ MECCSEK (Optimalizált 30 mp-es cache az élő adatokhoz)
 app.get("/live-matches", async (req, res) => {
     const now = Date.now();
-    
-    // Ha van cache és friss (30mp), azt adjuk vissza
-    if (matchCache.data && (now - matchCache.lastFetch < 30000)) {
-        return res.json(matchCache.data);
-    }
+    if (matchCache.data && (now - matchCache.lastFetch < 30000)) return res.json(matchCache.data);
 
     try {
-        // Időintervallum kiszámítása (3 nap vissza, 3 nap előre)
         const dateFrom = new Date();
         dateFrom.setDate(dateFrom.getDate() - 3);
         const dateTo = new Date();
         dateTo.setDate(dateTo.getDate() + 3);
-
         const fromStr = dateFrom.toISOString().split('T')[0];
         const toStr = dateTo.toISOString().split('T')[0];
 
-        // URL kiegészítése az intervallummal
         const url = `https://api.football-data.org/v4/matches?dateFrom=${fromStr}&dateTo=${toStr}`;
-        
-        console.log("Lekérés az API-ból:", url);
-
         const response = await fetch(url, { 
-            headers: { 
-                "X-Auth-Token": FOOTBALL_DATA_API_KEY,
-                "Accept-Encoding": "identity"
-            } 
+            headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY, "Accept-Encoding": "identity" } 
         });
 
         if (!response.ok) throw new Error(`API hiba: ${response.status}`);
-
         const data = await response.json();
-
         if (data.matches) {
             matchCache.data = data;
             matchCache.lastFetch = now;
         }
-
-        res.json(matchCache.data || data);
+        res.json(data);
     } catch (error) {
-        console.error("Szerver hiba lekéréskor:", error.message);
         if (matchCache.data) res.json(matchCache.data);
         else res.status(500).json({ error: "API elérhetetlen" });
     }
 });
-// --- JAVÍTOTT TICKER VÉGPONT (Összes mai meccs) ---
+
 app.get('/api/live-ticker', async (req, res) => {
     try {
-        // Ma - tegnap - holnap intervallum, hogy biztosan legyen adat a tickerben
         const d = new Date();
         const from = new Date(d); from.setDate(d.getDate() - 1);
         const to = new Date(d); to.setDate(d.getDate() + 1);
-        
         const fromStr = from.toISOString().split('T')[0];
         const toStr = to.toISOString().split('T')[0];
 
@@ -138,9 +102,7 @@ app.get('/api/live-ticker', async (req, res) => {
         });
         const data = await response.json();
         
-        if (!data.matches || data.matches.length === 0) {
-            return res.json(["LuckyPitch Engine Online - Analyzing Markets"]);
-        }
+        if (!data.matches || data.matches.length === 0) return res.json(["LuckyPitch Engine Online"]);
 
         const formattedMatches = data.matches.slice(0, 15).map(m => {
             const home = m.homeTeam.shortName || m.homeTeam.name;
@@ -148,56 +110,42 @@ app.get('/api/live-ticker', async (req, res) => {
             if (m.status === "IN_PLAY" || m.status === "FINISHED") {
                 return `${home} ${m.score.fullTime.home} - ${m.score.fullTime.away} ${away}`;
             }
-            const time = new Date(m.utcDate).toLocaleTimeString('hu-HU', { hour: '2d-digit', minute: '2d-digit' });
+            const time = new Date(m.utcDate).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
             return `${home} vs ${away} (${time})`;
         });
-        
         res.json(formattedMatches);
     } catch (err) {
-        res.status(500).json(["Neural Link Stable - Fetching Data..."]);
+        res.status(500).json(["Neural Link Stable..."]);
     }
 });
-// 📊 TABELLA (10 perces cache)
+
 app.get("/api/standings/:leagueCode", async (req, res) => {
     const league = req.params.leagueCode;
     const now = Date.now();
-    if (standingsCache[league] && (now - standingsCache[league].lastFetch < 600000)) {
-        return res.json(standingsCache[league].data);
-    }
+    if (standingsCache[league] && (now - standingsCache[league].lastFetch < 600000)) return res.json(standingsCache[league].data);
     try {
         const url = `https://api.football-data.org/v4/competitions/${league}/standings`;
         const response = await fetch(url, { headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY } });
         const data = await response.json();
         standingsCache[league] = { data: data, lastFetch: now };
         res.json(data);
-    } catch (err) { 
-        console.error("Tabella hiba:", err.message);
-        res.status(500).json({ error: "Nem sikerült betölteni a tabellát" }); 
-    }
+    } catch (err) { res.status(500).json({ error: "Standings error" }); }
 });
 
-// 📈 ODDS (5 perces cache)
 app.get('/api/odds-data', async (req, res) => {
     const now = Date.now();
-    if (oddsCache.data && (now - oddsCache.lastFetch < 300000)) {
-        return res.json(oddsCache.data);
-    }
+    if (oddsCache.data && (now - oddsCache.lastFetch < 300000)) return res.json(oddsCache.data);
     try {
         const url = `https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h&bookmakers=betfair,unibet,williamhill`;
         const response = await fetch(url);
         const data = await response.json();
-        
-        if (!Array.isArray(data)) throw new Error("Érvénytelen válasz az Odds API-tól");
-
+        if (!Array.isArray(data)) throw new Error("Invalid API response");
         oddsCache = { data: data, lastFetch: now };
         res.json(data);
-    } catch (error) { 
-        console.error("Odds API hiba:", error.message);
-        res.status(500).json({ error: "Az oddsok jelenleg nem elérhetőek" }); 
-    }
+    } catch (error) { res.status(500).json({ error: "Odds unavailable" }); }
 });
 
-// 💳 STRIPE FIZETÉS
+// --- STRIPE FIZETÉS ---
 app.post('/create-checkout-session', async (req, res) => {
     try {
         const session = await stripe.checkout.sessions.create({
@@ -223,6 +171,7 @@ app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/home", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
 app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
+app.get("*", (req, res) => res.redirect("/"));
 
 // Fallback: Ha olyan URL-t ütnek be ami nincs, irányítsuk a főoldalra
 app.get("*", (req, res) => res.redirect("/"));
@@ -238,6 +187,7 @@ app.listen(PORT, '0.0.0.0', () => {
     💳 Stripe: ${STRIPE_SECRET_KEY ? "AKTÍV" : "HIÁNYZIK"}
     `);
 });
+
 
 
 
