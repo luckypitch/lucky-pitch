@@ -948,16 +948,24 @@ function renderLeagues() {
 async function loadUserBetsFromServer() {
     if (typeof Clerk === 'undefined' || !Clerk.user) return;
     try {
-        // Itt kérjük le a szervertől a user fogadásait
         const res = await fetch(`/api/user/get-bets?userId=${Clerk.user.id}`);
-        if (res.ok) {
-            const bets = await res.json();
-            // Elmentjük a gépünkre, hogy a renderMatches lássa
+        
+        // Ellenőrizzük, hogy a válasz egyáltalán OK-e
+        if (!res.ok) {
+            console.warn("A szerver hibát jelzett a fogadások lekérésekor:", res.status);
+            return;
+        }
+
+        const text = await res.text(); // Először szövegként olvassuk be
+        try {
+            const bets = JSON.parse(text); // Csak most próbáljuk parse-olni
             localStorage.setItem('lp_activeBets', JSON.stringify(bets));
-            console.log("Fogadások szinkronizálva a szerverrel.");
+            console.log("Fogadások szinkronizálva.");
+        } catch (e) {
+            console.error("A szerver nem érvényes JSON-t küldött. Ezt kaptuk:", text);
         }
     } catch (e) {
-        console.error("Nem sikerült a fogadások betöltése:", e);
+        console.error("Hiba a lekérés során:", e);
     }
 }
         
@@ -1053,6 +1061,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
