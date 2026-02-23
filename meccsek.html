@@ -594,13 +594,9 @@ async function placeBet(matchId, teamName, odds, type) {
 
     // 2. ÖSSZEG BEKÉRÉSE
     const amountStr = prompt(`Mennyit teszel a következőre: ${teamName}? (Szorzó: ${odds})`, "100");
-    
-    // Ha a felhasználó a "Mégse" gombra kattint
     if (amountStr === null) return; 
 
     const amount = parseInt(amountStr);
-
-    // Érvényesség ellenőrzése
     if (isNaN(amount) || amount <= 0) {
         alert("Kérlek adj meg egy érvényes összeget!");
         return;
@@ -615,63 +611,55 @@ async function placeBet(matchId, teamName, odds, type) {
     try {
         const newBalance = window.userBalance - amount;
 
-        // 4. SZERVER FRISSÍTÉSE
-        // Elküldjük a szervernek az új egyenleget és a fogadás adatait
+        // --- SUPABASE MENTÉS KEZDETE ---
+        // Ez a rész rakja bele a fogadást a Supabase "Excel" táblájába
+        const { data, error } = await supabase
+            .from('bets') // A tábla neve a Supabase-en
+            .insert([
+                { 
+                    user_id: Clerk.user.id, 
+                    match_id: String(matchId), 
+                    team_name: teamName,
+                    amount: amount, 
+                    odds: odds, 
+                    type: type,
+                    status: 'OPEN',
+                    created_at: new Date()
+                }
+            ]);
+
+        if (error) throw error; // Ha a Supabase hibaüzenetet küld
+
+        // 4. EGYENLEG FRISSÍTÉSE A SZERVEREN (Hogy a pénzed is levonódjon)
         const res = await fetch('/api/user/update-balance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: Clerk.user.id,
-                balance: newBalance,
-                bet: {
-                    matchId: String(matchId),
-                    teamName: teamName,
-                    amount: amount,
-                    odds: odds,
-                    type: type,
-                    timestamp: new Date().getTime()
-                }
-            })
+            body: JSON.stringify({ userId: Clerk.user.id, balance: newBalance })
         });
 
         if (res.ok) {
-            // SIKER: Frissítjük a lokális változókat
+            // UI és Helyi adatok frissítése
             window.userBalance = newBalance;
-            
-            // UI frissítése (egyenleg kijelző)
             const balanceElem = document.getElementById('user-balance');
             if (balanceElem) balanceElem.innerText = newBalance.toLocaleString();
             
-            // 5. HELYI LISTA FRISSÍTÉSE (localStorage)
-            // Hogy a renderMatches azonnal lássa a "LIVE BET" jelzést
+            // LocalStorage-ba is elmentjük, hogy frissítés után is azonnal látszódjon a "LIVE BET"
             let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
-            
             currentBets.push({
                 matchId: String(matchId),
                 teamName: teamName,
                 amount: amount,
                 odds: odds,
-                type: type,
-                status: 'OPEN',
-                timestamp: new Date().getTime()
+                status: 'OPEN'
             });
-
             localStorage.setItem('lp_activeBets', JSON.stringify(currentBets));
             
-            alert(`Sikeres fogadás: ${amount} LP -> ${teamName}`);
-            
-            // 6. OLDAL ÚJRARAJZAOLÁSA
-            // Ez fogja kitenni a narancssárga feliratot a meccs alá
-            if (typeof renderMatches === 'function') {
-                renderMatches();
-            }
-        } else {
-            const errorData = await res.json();
-            throw new Error(errorData.message || "Szerver hiba");
+            alert(`Sikeres fogadás mentve a Supabase-be!`);
+            if (typeof renderMatches === 'function') renderMatches();
         }
     } catch (err) {
-        console.error("Fogadási hiba:", err);
-        alert("Hiba történt a fogadás közben. Kérlek próbáld újra!");
+        console.error("Supabase/Szerver hiba:", err);
+        alert("Hiba történt a mentés során.");
     }
 }
 
@@ -1116,6 +1104,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
