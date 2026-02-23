@@ -909,11 +909,6 @@ function renderLeagues() {
 }
 
 // --- 7. INDÍTÁS ---
-Ahhoz, hogy a kijelentkezéskor minden adat törlődjön, és az oldal "tiszta lappal" induljon újra, a Clerk.load() után be kell regisztrálnunk egy figyelőt (listener), illetve módosítanunk kell a mountUserButton paramétereit.
-
-Így frissítsd a startApp függvényedet:
-JavaScript
-
 async function startApp() {
     let t = 0;
     while (typeof Clerk === 'undefined' && t < 30) { await new Promise(r => setTimeout(r, 100)); t++; }
@@ -999,6 +994,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
