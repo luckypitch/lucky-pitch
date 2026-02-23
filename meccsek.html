@@ -945,7 +945,29 @@ function renderLeagues() {
             <img src="${l.emblem}" width="18"> <span>${l.name}</span>
         </div>`).join('');
 }
+async function loadUserBetsFromServer() {
+    if (!Clerk.user) return;
+    try {
+        // Kérjük le a szervertől a user korábbi fogadásait
+        const res = await fetch(`/api/user/get-bets?userId=${Clerk.user.id}`);
+        if (res.ok) {
+            const bets = await res.json();
+            // Elmentjük a gépünkre, hogy a renderMatches tudja használni
+            localStorage.setItem('lp_activeBets', JSON.stringify(bets));
+            console.log("Fogadások szinkronizálva.");
+        }
+    } catch (e) {
+        console.error("Nem sikerült a fogadások betöltése:", e);
+    }
+}
 
+// A startApp-on belül hívd meg:
+if (Clerk.user) {
+    await loadInitialBalance(); 
+    await loadUserBetsFromServer(); // <--- EZT SZÚRD BE IDE
+    renderMatches();
+}
+        
 // --- 7. INDÍTÁS ---
 async function startApp() {
     let t = 0;
@@ -1037,6 +1059,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
