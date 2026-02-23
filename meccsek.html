@@ -525,7 +525,7 @@ function renderMatches() {
             const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
 
             // Fogadás megkeresése (String-re kényszerítve az ID-kat)
-            const myBet = activeBets.find(b => String(b.matchId) === String(m.id));
+            const myBet = currentUserBets.find(b => String(b.matchId) === String(m.id));
 
             // Csak most jöhet a return!
             return `
@@ -1044,6 +1044,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
