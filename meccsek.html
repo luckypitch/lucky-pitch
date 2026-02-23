@@ -227,19 +227,19 @@
     </div>
 
     <script>
-       // --- ÁLLAPOT KEZELÉS ---
-        let currentLang = localStorage.getItem('lp_lang') || 'HU';
-        const todayStr = new Date().toLocaleDateString('sv');
-        let selectedDate = localStorage.getItem('lp_selectedDate') || todayStr;
-        let savedLeagues = localStorage.getItem('lp_selectedLeagues');
-        let selectedLeagues = savedLeagues ? new Set(JSON.parse(savedLeagues)) : new Set();
-        let allMatches = [];
-        let prevScores = new Map();
-        let flashingMatches = new Set();
-        let originalTitle = document.title;
-        let titleInterval = null;
+      // --- 1. ÁLLAPOT KEZELÉS ---
+let currentLang = localStorage.getItem('lp_lang') || 'HU';
+const todayStr = new Date().toLocaleDateString('sv');
+let selectedDate = localStorage.getItem('lp_selectedDate') || todayStr;
+let savedLeagues = localStorage.getItem('lp_selectedLeagues');
+let selectedLeagues = savedLeagues ? new Set(JSON.parse(savedLeagues)) : new Set();
+let allMatches = [];
+let prevScores = new Map();
+let flashingMatches = new Set();
+let originalTitle = document.title;
+let titleInterval = null;
 
-        // --- 2. EGYENLEG FRISSÍTÉSE ---
+// --- 2. EGYENLEG FRISSÍTÉSE ---
 async function refreshBalance() {
     if (window.Clerk && Clerk.user) {
         try {
@@ -251,7 +251,7 @@ async function refreshBalance() {
 
             if (balanceSpan && balanceWrap) {
                 balanceSpan.innerText = Number(data.balance).toLocaleString();
-                balanceWrap.style.display = 'flex'; // Itt válik láthatóvá
+                balanceWrap.style.display = 'flex';
                 console.log("Egyenleg frissítve:", data.balance);
             }
         } catch (error) {
@@ -260,39 +260,9 @@ async function refreshBalance() {
     }
 }
 
-// --- 3. FŐ INDÍTÓ FÜGGVÉNY ---
-// --- 3. FŐ INDÍTÓ FÜGGVÉNY ---
-async function startApp() {
-    console.log("LuckyPitch indítása...");
-    
-    try {
-        // Várunk, amíg a Clerk betöltődik
-        if (typeof Clerk === 'undefined') {
-            console.log("Várakozás a Clerk-re...");
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
-
-        await Clerk.load();
-        console.log("Clerk betöltve.");
-
-        if (Clerk.user) {
-            console.log("Bejelentkezett felhasználó:", Clerk.user.id);
-            const userBtnDiv = document.getElementById('user-button');
-            if (userBtnDiv) Clerk.mountUserButton(userBtnDiv);
-            
-            // Egyenleg lekérése
-            await refreshBalance();
-        } else {
-            console.log("Nincs bejelentkezett felhasználó.");
-        }
-
-        // Meccsek és felület betöltése
-        updateStaticTexts(); 
-        await updateData();
-        
+// --- 3. UI ÉS SEGÉDFÜGGVÉNYEK ---
 function animateTitle(scrollingText) {
     if (titleInterval) clearInterval(titleInterval);
-    
     let fullText = scrollingText + "  *** ";
     titleInterval = setInterval(() => {
         fullText = fullText.substring(1) + fullText.substring(0, 1);
@@ -305,127 +275,94 @@ function animateTitle(scrollingText) {
         titleInterval = null;
     }, 6000);
 }
-        
-        function saveState() {
-            localStorage.setItem('lp_selectedDate', selectedDate);
-            localStorage.setItem('lp_selectedLeagues', JSON.stringify([...selectedLeagues]));
-            localStorage.setItem('lp_lang', currentLang);
-        }
 
-        // --- UI FUNKCIÓK ---
-        function toggleTheme() { 
-            document.body.classList.toggle('light'); 
-            localStorage.setItem('lp_theme', document.body.classList.contains('light'));
-        }
-        if(localStorage.getItem('lp_theme') === 'true') document.body.classList.add('light');
+function saveState() {
+    localStorage.setItem('lp_selectedDate', selectedDate);
+    localStorage.setItem('lp_selectedLeagues', JSON.stringify([...selectedLeagues]));
+    localStorage.setItem('lp_lang', currentLang);
+}
 
-        function toggleLang() {
-            currentLang = currentLang === 'HU' ? 'EN' : 'HU';
-            updateStaticTexts();
-            saveState();
-            renderMatches();
-            renderDateStrip();
-            renderLeagues();
-        }
+function toggleTheme() { 
+    document.body.classList.toggle('light'); 
+    localStorage.setItem('lp_theme', document.body.classList.contains('light'));
+}
 
-        function updateStaticTexts() {
-            const isHU = currentLang === 'HU';
-            document.getElementById('lang-btn').innerText = currentLang;
-            document.getElementById('h-leagues').innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
-            document.getElementById('h-table').innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
-            document.getElementById('back-link').innerText = isHU ? 'VISSZA' : 'BACK';
-            
-            // Mobil gombok
-            document.getElementById('m-leagues').innerText = isHU ? 'LIGÁK' : 'LEAGUES';
-            document.getElementById('m-matches').innerText = isHU ? 'MECCSEK' : 'MATCHES';
-            document.getElementById('m-table').innerText = isHU ? 'TABELLA' : 'TABLE';
+function toggleLang() {
+    currentLang = currentLang === 'HU' ? 'EN' : 'HU';
+    updateStaticTexts();
+    saveState();
+    renderMatches();
+    renderDateStrip();
+    renderLeagues();
+}
 
-            // Placeholder szöveg
-            const placeholder = document.getElementById('standings-placeholder');
-            if (placeholder) {
-                placeholder.innerText = isHU ? 'VÁLASSZ EGY CSAPATOT' : 'CHOOSE A TEAM';
-            }
-        }
+function updateStaticTexts() {
+    const isHU = currentLang === 'HU';
+    const langBtn = document.getElementById('lang-btn');
+    const hLeagues = document.getElementById('h-leagues');
+    const hTable = document.getElementById('h-table');
+    const backLink = document.getElementById('back-link');
 
-        function toggleM(id) { closeM(); document.getElementById(id).classList.add('open'); }
-        function closeM() { document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => s.classList.remove('open')); }
-
-        function showGoal(teamName) {
-            const banner = document.getElementById('goal-banner');
-            document.getElementById('goal-team').innerText = teamName.toUpperCase();
-            banner.classList.add('show');
-            setTimeout(() => banner.classList.remove('show'), 5000);
-        }
-
-        async function updateData() {
-            try {
-                const res = await fetch("/live-matches");
-                const data = await res.json();
-                const newMatches = data.matches || [];
-
-                newMatches.forEach(match => {
-                    const matchId = match.id;
-                    const newScore = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
-                    if (prevScores.has(matchId) && prevScores.get(matchId) !== newScore) {
-                        const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
-                        const [newH, newA] = newScore.split('-').map(Number);
-                        if (newH > oldH) showGoal(match.homeTeam.name);
-                        if (newA > oldA) showGoal(match.awayTeam.name);
-                    }
-                    prevScores.set(matchId, newScore);
-                });
-
-                allMatches = newMatches;
-                renderDateStrip();
-                renderLeagues();
-                renderMatches();
-            } catch (e) { console.error("Update error", e); }
-        }
-
-        function getStatusColor(text) {
-            if (!text) return "transparent";
-            text = text.toLowerCase();
-            if (text.includes("champions league")) return "var(--cl-gs)";
-            if (text.includes("europa league")) return "var(--el-gs)";
-            if (text.includes("conference league")) return "var(--ecl-q)";
-            if (text.includes("relegation") || text.includes("kiesés")) return "var(--rel)";
-            if (text.includes("play-off") || text.includes("promotion") || text.includes("osztályozó") || text.includes("feljutás") || text.includes("bajnok")) return "var(--po)";
-            return "transparent";
-        }
-
-function runMobileTest() {
-    // Megkeressük az első kártyát, amit a telefon kijelzőjén látsz
-    const firstMatch = document.querySelector('.match-card');
+    if (langBtn) langBtn.innerText = currentLang;
+    if (hLeagues) hLeagues.innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
+    if (hTable) hTable.innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
+    if (backLink) backLink.innerText = isHU ? 'VISSZA' : 'BACK';
     
-    if (firstMatch) {
-        const teamName = firstMatch.querySelector('.team-link span')?.innerText || "TESZT CSAPAT";
-        const logoUrl = firstMatch.querySelector('.team-link img')?.src || "";
-        const matchId = firstMatch.id ? firstMatch.id.replace('match-', '') : 'test';
+    // Mobil gombok
+    const mLeagues = document.getElementById('m-leagues');
+    const mMatches = document.getElementById('m-matches');
+    const mTable = document.getElementById('m-table');
+    if (mLeagues) mLeagues.innerText = isHU ? 'LIGÁK' : 'LEAGUES';
+    if (mMatches) mMatches.innerText = isHU ? 'MECCSEK' : 'MATCHES';
+    if (mTable) mTable.innerText = isHU ? 'TABELLA' : 'TABLE';
 
-        // Meghívjuk a már megírt függvényedet
-        if (typeof triggerGoalEffect === 'function') {
-            triggerGoalEffect(matchId, teamName, logoUrl);
-        }
-    } else {
-        alert("Nincsenek betöltve meccsek! Válassz egy ligát előbb.");
+    const placeholder = document.getElementById('standings-placeholder');
+    if (placeholder) placeholder.innerText = isHU ? 'VÁLASSZ EGY CSAPATOT' : 'CHOOSE A TEAM';
+}
+
+function toggleM(id) { closeM(); document.getElementById(id).classList.add('open'); }
+function closeM() { document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => s.classList.remove('open')); }
+
+function showGoal(teamName) {
+    const banner = document.getElementById('goal-banner');
+    const goalTeam = document.getElementById('goal-team');
+    if (goalTeam) goalTeam.innerText = teamName.toUpperCase();
+    if (banner) {
+        banner.classList.add('show');
+        setTimeout(() => banner.classList.remove('show'), 5000);
     }
 }
-        
-        function translateStatus(text) {
-            if (!text) return "";
-            if (text.includes("Champions League")) return "BL";
-            if (text.includes("Europa League")) return "EL";
-            if (text.includes("Conference League")) return "KL";
-            if (text.includes("Relegation")) return "KIESŐ";
-            if (text.includes("Osztályozó")) return "OSZT.";
-            if (text.includes("Feljutás")) return "FELJ.";
-            return "ZÓNA";
-        }
+
+async function updateData() {
+    try {
+        const res = await fetch("/live-matches");
+        const data = await res.json();
+        const newMatches = data.matches || [];
+
+        newMatches.forEach(match => {
+            const matchId = match.id;
+            const newScore = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
+            if (prevScores.has(matchId) && prevScores.get(matchId) !== newScore) {
+                const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
+                const [newH, newA] = newScore.split('-').map(Number);
+                
+                // Megkeressük a logót a hatáshoz
+                const logo = match.homeTeam.crest || match.awayTeam.crest;
+                if (newH > oldH) triggerGoalEffect(matchId, match.homeTeam.name, match.homeTeam.crest);
+                if (newA > oldA) triggerGoalEffect(matchId, match.awayTeam.name, match.awayTeam.crest);
+            }
+            prevScores.set(matchId, newScore);
+        });
+
+        allMatches = newMatches;
+        renderDateStrip();
+        renderLeagues();
+        renderMatches();
+    } catch (e) { console.error("Update error", e); }
+}
 
 function triggerGoalEffect(matchId, teamName, logoUrl) {
-    // Itt hívjuk meg az animateTitle-t, ami most már létezik
-    animateTitle(`⚽ GÓÓÓL! - ${teamName.toUpperCase()} betalált!`);
-
+    animateTitle(`⚽ GÓÓÓL! - ${teamName.toUpperCase()}!`);
     const banner = document.getElementById('goal-banner');
     const teamDisplay = document.getElementById('goal-team-name');
     const logoImg = document.getElementById('goal-logo');
@@ -441,10 +378,7 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
     }
 
     if (banner) banner.classList.add('show');
-    if (sound) {
-        sound.currentTime = 0;
-        sound.play().catch(() => {});
-    }
+    if (sound) { sound.currentTime = 0; sound.play().catch(() => {}); }
 
     if (matchCard) {
         matchCard.classList.add('goal-highlight');
@@ -461,24 +395,42 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
     }, 5000);
 }
 
-       async function showStandings(leagueId, teamId, code) {
-            if(window.innerWidth <= 1100) toggleM('sidebar-standings');
-            const target = document.getElementById("standings-target");
-            target.innerHTML = `<p style="text-align:center; padding:50px; font-family:'Orbitron'; font-size:10px;">LOADING...</p>`;
-            
-            try {
-                const res = await fetch(`/api/standings/${code || leagueId}`);
-                const data = await res.json();
-                const tableData = data.standings.find(s => s.type === 'TOTAL').table;
-                const total = tableData.length;
+function getStatusColor(text) {
+    if (!text) return "transparent";
+    text = text.toLowerCase();
+    if (text.includes("champions league")) return "var(--cl-gs)";
+    if (text.includes("europa league")) return "var(--el-gs)";
+    if (text.includes("conference league")) return "var(--ecl-q)";
+    if (text.includes("relegation") || text.includes("kiesés")) return "var(--rel)";
+    if (text.includes("play-off") || text.includes("promotion") || text.includes("bajnok")) return "var(--po)";
+    return "transparent";
+}
 
-                let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">${currentLang==='HU'?'CSAPAT':'TEAM'}</th><th>P</th></tr></thead><tbody>`;
-                
-                tableData.forEach(r => {
-                    let status = r.description || "";
-                    let pos = r.position;
+function translateStatus(text) {
+    if (!text) return "";
+    if (text.includes("Champions League")) return "BL";
+    if (text.includes("Europa League")) return "EL";
+    if (text.includes("Conference League")) return "KL";
+    if (text.includes("Relegation")) return "KIESŐ";
+    return "ZÓNA";
+}
 
-                   if (!status || status === "") {
+async function showStandings(leagueId, teamId, code) {
+    if(window.innerWidth <= 1100) toggleM('sidebar-standings');
+    const target = document.getElementById("standings-target");
+    target.innerHTML = `<p style="text-align:center; padding:50px; font-size:10px;">LOADING...</p>`;
+    
+    try {
+        const res = await fetch(`/api/standings/${code || leagueId}`);
+        const data = await res.json();
+        const tableData = data.standings.find(s => s.type === 'TOTAL').table;
+        
+        let html = `<table class="standings-table"><thead><tr><th>#</th><th>${currentLang==='HU'?'CSAPAT':'TEAM'}</th><th>P</th></tr></thead><tbody>`;
+        
+        tableData.forEach(r => {
+            let status = r.description || "";
+
+            if (!status || status === "") {
                         if (['PL', 'PD', 'SA'].includes(code)) {
                             if (pos <= 4) status = "Champions League Group Stage";
                             else if (pos === 5) status = "Europa League Group Stage";
@@ -518,85 +470,99 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
                             else if (pos >= total - 2) status = "Relegation";
                         }
                     }
+            
+            const color = getStatusColor(status);
+            const isTarget = r.team.id == teamId;
+            const boxBg = color !== 'transparent' ? color : 'rgba(255,255,255,0.05)';
+            const boxText = color !== 'transparent' ? '#000' : 'var(--neon-blue)';
 
-                    const color = getStatusColor(status);
-                    const isTarget = r.team.id == teamId;
-                    const boxBg = color !== 'transparent' ? color : 'rgba(255,255,255,0.05)';
-                    const boxText = color !== 'transparent' ? '#000' : 'var(--neon-blue)';
+            html += `<tr class="${isTarget ? 'highlight' : ''}">
+                <td class="pos-col">
+                    <div class="pos-num-box" style="background:${boxBg};">${r.position}</div>
+                </td>
+                <td style="text-align:left;">
+                    <img src="${r.team.crest}" width="20"> ${r.team.shortName || r.team.name}
+                </td>
+                <td>${r.points}</td>
+            </tr>`;
+        });
+        target.innerHTML = html + "</tbody></table>";
+    } catch (e) { target.innerHTML = "Error loading standings."; }
+}
 
-                    html += `<tr class="${isTarget ? 'highlight' : ''}">
-                        <td class="pos-col" style="border-left-color: ${color}">
-                            ${status ? `<span class="zone-tag" style="color:${color}">${translateStatus(status)}</span>` : ''}
-                            <div class="pos-num-box" style="background:${boxBg}; color:${boxText};">${pos}</div>
-                        </td>
-                        <td style="text-align:left; font-weight:800;">
-                            <img src="${r.team.crest}" width="24" style="vertical-align:middle; margin-right:10px;">
-                            ${r.team.shortName || r.team.name}
-                        </td>
-                        <td style="font-weight:bold; color:var(--neon-green); font-family:'Orbitron'; font-size:14px;">${r.points}</td>
-                    </tr>`;
-                });
-                target.innerHTML = html + "</tbody></table>";
-            } catch (e) { target.innerHTML = "Error loading standings."; }
+function renderDateStrip() {
+    const strip = document.getElementById("date-strip");
+    if (!strip) return;
+    const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
+    strip.innerHTML = dates.map(d => {
+        const isToday = d === todayStr;
+        const label = isToday ? (currentLang === 'HU' ? 'MA' : 'TODAY') : d.split('-')[1]+'.'+d.split('-')[2];
+        return `<div class="date-pill ${d === selectedDate ? 'active' : ''}" onclick="selectedDate='${d}';saveState();updateData();">${label}</div>`;
+    }).join('');
+}
+
+function renderLeagues() {
+    const cont = document.getElementById("league-list");
+    if (!cont) return;
+    const unique = new Map();
+    allMatches.filter(m => m.utcDate.startsWith(selectedDate)).forEach(m => unique.set(m.competition.id, m.competition));
+    cont.innerHTML = "";
+    unique.forEach((l, id) => {
+        const div = document.createElement("div");
+        div.className = `league-item ${selectedLeagues.has(id.toString()) ? 'active' : ''}`;
+        div.onclick = () => {
+            selectedLeagues.has(id.toString()) ? selectedLeagues.delete(id.toString()) : selectedLeagues.add(id.toString());
+            saveState(); renderLeagues(); renderMatches();
+        };
+        div.innerHTML = `<img src="${l.emblem}" width="25"> <span>${l.name}</span>`;
+        cont.appendChild(div);
+    });
+}
+
+function renderMatches() {
+    const cont = document.getElementById("match-container");
+    if (!cont) return;
+    const matches = allMatches.filter(m => m.utcDate.startsWith(selectedDate) && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString())));
+    cont.innerHTML = matches.map(m => {
+        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+        let score = isLive || m.status === 'FINISHED' ? m.score.fullTime.home+':'+m.score.fullTime.away : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+        return `
+        <div class="match-card" id="match-${m.id}">
+            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
+                <img src="${m.homeTeam.crest}"><span>${m.homeTeam.name}</span>
+            </div>
+            <div style="text-align:center; width:140px;">
+                <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
+                <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size:9px;">${currentLang==='HU'?'ELEMZÉS':'ANALYSIS'}</a>
+            </div>
+            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
+                <img src="${m.awayTeam.crest}"><span>${m.awayTeam.name}</span>
+            </div>
+        </div>`;
+    }).join('') || `<p style="text-align:center; padding:50px;">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
+}
+
+// --- 4. INDÍTÁS ---
+async function startApp() {
+    console.log("LuckyPitch indítása...");
+    try {
+        if (typeof Clerk === 'undefined') {
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        await Clerk.load();
+
+        if (Clerk.user) {
+            const userBtnDiv = document.getElementById('user-button');
+            if (userBtnDiv) Clerk.mountUserButton(userBtnDiv);
+            await refreshBalance();
         }
 
-        function renderDateStrip() {
-            const strip = document.getElementById("date-strip");
-            const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
-            strip.innerHTML = dates.map(d => {
-                const isToday = d === todayStr;
-                const label = isToday ? (currentLang === 'HU' ? 'MA' : 'TODAY') : d.split('-')[1]+'.'+d.split('-')[2];
-                return `<div class="date-pill ${d === selectedDate ? 'active' : ''} ${isToday ? 'is-today' : ''}" 
-                             onclick="selectedDate='${d}';saveState();renderMatches();renderLeagues();renderDateStrip();">
-                            ${label}
-                        </div>`;
-            }).join('');
-        }
+        updateStaticTexts();
+        if(localStorage.getItem('lp_theme') === 'true') document.body.classList.add('light');
+        
+        await updateData();
 
-        function renderLeagues() {
-            const cont = document.getElementById("league-list");
-            const unique = new Map();
-            allMatches.filter(m => m.utcDate.startsWith(selectedDate)).forEach(m => unique.set(m.competition.id, m.competition));
-            cont.innerHTML = "";
-            unique.forEach((l, id) => {
-                const div = document.createElement("div");
-                div.className = `league-item ${selectedLeagues.has(id.toString()) ? 'active' : ''}`;
-                div.onclick = () => {
-                    selectedLeagues.has(id.toString()) ? selectedLeagues.delete(id.toString()) : selectedLeagues.add(id.toString());
-                    saveState(); renderLeagues(); renderMatches();
-                };
-                div.innerHTML = `<img src="${l.emblem}" width="25"> <span>${l.name}</span>`;
-                cont.appendChild(div);
-            });
-        }
-
-        function renderMatches() {
-            const cont = document.getElementById("match-container");
-            const matches = allMatches.filter(m => m.utcDate.startsWith(selectedDate) && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString())));
-            cont.innerHTML = matches.map(m => {
-                const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-                let score = isLive || m.status === 'FINISHED' ? m.score.fullTime.home+':'+m.score.fullTime.away : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
-                return `
-                <div class="match-card">
-                    <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
-                        <img src="${m.homeTeam.crest}"><span>${m.homeTeam.name}</span>
-                    </div>
-                    <div style="text-align:center; width:140px;">
-                        <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
-                        <a href="/elemzes?id=${m.id}" style="text-decoration:none; display:inline-block; margin-top:8px; background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding:4px 12px; border-radius:8px; color:var(--neon-green); font-family:'Orbitron'; font-size:9px; font-weight:800; transition:0.3s;">
-                            ${currentLang==='HU'?'ELEMZÉS':'ANALYSIS'}
-                        </a>
-                    </div>
-                    <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                        <img src="${m.awayTeam.crest}"><span>${m.awayTeam.name}</span>
-                    </div>
-                </div>`;
-            }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
-        }
-       
-        // Automatikus frissítés indítása
         setInterval(() => {
-            console.log("Automatikus frissítés...");
             updateData();
             refreshBalance();
         }, 30000);
@@ -606,12 +572,12 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
     }
 }
 
-// --- 4. ESEMÉNYKEZELŐK ---
 window.addEventListener('load', startApp);
 
     </script>
 </body>
 </html>
+
 
 
 
