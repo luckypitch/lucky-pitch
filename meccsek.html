@@ -188,9 +188,11 @@
         <div class="logo">LUCKYPITCH</div>
         <div class="nav-tools">
          <div class="nav-buttons">
-            <div id="balance-wrap" style="display:none; font-family:'Orbitron'; color:#00ff88; font-size:12px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px; align-items: center;">
-                <span id="user-balance">0</span> LP </div>
-        <div id="user-button"></div> </div>
+                <div id="balance-wrap" style="display:none; font-family:'Orbitron'; color:#00ff88; font-size:12px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px; align-items: center;">
+                    <span id="user-balance">0</span>&nbsp;LP
+                </div>
+                <div id="user-button"></div>
+            </div>
             <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
             <a href="/home" class="tool-btn" id="back-link" style="text-decoration:none;">VISSZA</a>
@@ -224,13 +226,7 @@
     </div>
 
     <script>
-        async 
-  crossorigin="anonymous" 
-  data-clerk-publishable-key="pk_test_YWxsb3dlZC1pbnNlY3QtOTguY2xlcmsuYWNjb3VudHMuZGV2JA" 
-  src="https://allowed-insect-98.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" 
-  type="text/javascript">
-        
-        // --- MEMÓRIA (STATE MANAGEMENT) ---
+       // --- ÁLLAPOT KEZELÉS ---
         let currentLang = localStorage.getItem('lp_lang') || 'HU';
         const todayStr = new Date().toLocaleDateString('sv');
         let selectedDate = localStorage.getItem('lp_selectedDate') || todayStr;
@@ -238,9 +234,38 @@
         let selectedLeagues = savedLeagues ? new Set(JSON.parse(savedLeagues)) : new Set();
         let allMatches = [];
         let prevScores = new Map();
-        let flashingMatches = new Set(); // Itt tároljuk a villogó meccsek ID-it
+        let flashingMatches = new Set();
         let originalTitle = document.title;
         let titleInterval = null;
+
+        // --- CLERK ÉS EGYENLEG ---
+        async function refreshBalance() {
+            if (window.Clerk && Clerk.user) {
+                try {
+                    const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
+                    const data = await response.json();
+                    const balanceSpan = document.getElementById('user-balance');
+                    const balanceWrap = document.getElementById('balance-wrap');
+                    if (balanceSpan && balanceWrap) {
+                        balanceSpan.innerText = Number(data.balance).toLocaleString();
+                        balanceWrap.style.display = 'flex';
+                    }
+                } catch (error) { console.error("Balance Error:", error); }
+            }
+        }
+
+        async function initApp() {
+            try {
+                await Clerk.load();
+                if (Clerk.user) {
+                    Clerk.mountUserButton(document.getElementById('user-button'));
+                    await refreshBalance();
+                }
+                // Adatok betöltése
+                await updateData();
+                setInterval(updateData, 30000); // 30 mp frissítés
+            } catch (err) { console.error("Init Error:", err); }
+        }
 
 function animateTitle(scrollingText) {
     if (titleInterval) clearInterval(titleInterval);
@@ -545,88 +570,14 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
                 </div>`;
             }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
         }
-
-async function initMeccsekPage() {
-    await Clerk.load(); // Ez inicializálja a Clerket az oldalon
-
-    if (Clerk.user) {
-        // 1. Megjelenítjük a profil gombot
-        Clerk.mountUserButton(document.getElementById('user-button'));
-        
-        // 2. Lekérjük az egyenleget a szerverről
-        try {
-            const res = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
-            const data = await res.json();
-            
-            const balanceSpan = document.getElementById('user-balance');
-            const balanceWrap = document.getElementById('balance-wrap');
-            
-            if (balanceSpan && balanceWrap) {
-                balanceSpan.innerText = data.balance.toLocaleString();
-                balanceWrap.style.display = 'flex'; // Itt válik láthatóvá!
-            }
-        } catch (err) {
-            console.error("Egyenleg hiba:", err);
-        }
-    } else {
-        // Ha nincs belépve, visszadobhatjuk a főoldalra vagy mutathatunk egy LOGIN gombot
-        console.log("Nincs bejelentkezett felhasználó.");
-    }
-}
-
-window.addEventListener('load', initMeccsekPage);
-        
-       async function refreshBalance() {
-    // Ellenőrizzük, hogy a Clerk objektum és a bejelentkezett felhasználó létezik-e
-    if (window.Clerk && Clerk.user) {
-        try {
-            const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
-            if (!response.ok) throw new Error("Hiba a lekérésnél");
-            
-            const data = await response.json();
-            
-            const balanceSpan = document.getElementById('user-balance');
-            const balanceWrap = document.getElementById('balance-wrap');
-
-            if (balanceSpan && balanceWrap) {
-                balanceSpan.innerText = Number(data.balance).toLocaleString();
-                balanceWrap.style.display = 'flex'; // Itt kapcsoljuk be a láthatóságot
-            }
-        } catch (error) {
-            console.error("Balance Error:", error);
-        }
-    }
-}
-
-async function startApp() {
-    try {
-        await Clerk.load(); // Inicializálás
-        
-        if (Clerk.user) {
-            // Profil gomb megjelenítése
-            const userButtonDiv = document.getElementById('user-button');
-            if (userButtonDiv) Clerk.mountUserButton(userButtonDiv);
-            
-            // Egyenleg lekérése
-            await refreshBalance();
-        } else {
-            // Opcionális: Ha nincs belépve, elrejtheted az egyenleget vagy mutathatsz login gombot
-            console.log("Nincs bejelentkezett felhasználó.");
-        }
-    } catch (err) {
-        console.error("Clerk betöltési hiba:", err);
-    }
-}
-
-// Biztosítjuk, hogy az oldal betöltése után induljon el
-window.addEventListener('load', startApp);
-        
+        window.addEventListener('load', initApp);
         updateStaticTexts();
         updateData();
         setInterval(updateData, 30000);
     </script>
 </body>
 </html>
+
 
 
 
