@@ -195,6 +195,10 @@
         <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
         <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
         <a href="/home" class="tool-btn" id="back-link" style="text-decoration:none;">VISSZA</a>
+        <div id="auth-container">
+    <div id="user-button"></div>
+    <button id="login-btn" class="tool-btn" style="display:none;" onclick="Clerk.openSignIn()">BEJELENTKEZÉS</button>
+</div>
     </div>
     </nav>
 
@@ -237,6 +241,10 @@ let flashingMatches = new Set();
 let originalTitle = document.title;
 let titleInterval = null;
 
+function toggleM(id) { closeM(); document.getElementById(id).classList.add('open'); }
+function closeM() { document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => s.classList.remove('open')); }
+
+        
 // --- 2. EGYENLEG ÉS CLERK ---
 async function refreshBalance() {
     if (window.Clerk && Clerk.user) {
@@ -285,6 +293,16 @@ function animateTitle(scrollingText) {
     }, 6000);
 }
 
+function showGoal(teamName) {
+    const banner = document.getElementById('goal-banner');
+    const goalTeam = document.getElementById('goal-team');
+    if (goalTeam) goalTeam.innerText = teamName.toUpperCase();
+    if (banner) {
+        banner.classList.add('show');
+        setTimeout(() => banner.classList.remove('show'), 5000);
+    }
+}
+        
 function triggerGoalEffect(matchId, teamName, logoUrl) {
     animateTitle(`⚽ GÓÓÓL! - ${teamName.toUpperCase()}!`);
     const banner = document.getElementById('goal-banner');
@@ -496,22 +514,62 @@ function renderLeagues() {
 
 function updateStaticTexts() {
     const isHU = currentLang === 'HU';
-    const mapping = {'lang-btn': currentLang, 'h-leagues': isHU?'🏆 Ligák':'🏆 Leagues', 'h-table': isHU?'📊 Tabella':'📊 Table'};
-    for(let id in mapping) { if(document.getElementById(id)) document.getElementById(id).innerText = mapping[id]; }
+    const langBtn = document.getElementById('lang-btn');
+    const hLeagues = document.getElementById('h-leagues');
+    const hTable = document.getElementById('h-table');
+    const backLink = document.getElementById('back-link');
+
+    if (langBtn) langBtn.innerText = currentLang;
+    if (hLeagues) hLeagues.innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
+    if (hTable) hTable.innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
+    if (backLink) backLink.innerText = isHU ? 'VISSZA' : 'BACK';
+    
+    // Mobil gombok
+    const mLeagues = document.getElementById('m-leagues');
+    const mMatches = document.getElementById('m-matches');
+    const mTable = document.getElementById('m-table');
+    if (mLeagues) mLeagues.innerText = isHU ? 'LIGÁK' : 'LEAGUES';
+    if (mMatches) mMatches.innerText = isHU ? 'MECCSEK' : 'MATCHES';
+    if (mTable) mTable.innerText = isHU ? 'TABELLA' : 'TABLE';
+
+    const placeholder = document.getElementById('standings-placeholder');
+    if (placeholder) placeholder.innerText = isHU ? 'VÁLASSZ EGY CSAPATOT' : 'CHOOSE A TEAM';
 }
 
 // --- 7. START ---
 async function startApp() {
-    if (window.Clerk) {
-        await Clerk.load();
-        if (Clerk.user) {
-            Clerk.mountUserButton(document.getElementById('user-button'));
-            await refreshBalance();
+    console.log("LuckyPitch indítása...");
+    try {
+        if (typeof Clerk === 'undefined') {
+            await new Promise(r => setTimeout(r, 600));
         }
+        await Clerk.load();
+
+        const loginBtn = document.getElementById('login-btn');
+        const balanceWrap = document.getElementById('balance-wrap');
+        const userBtnDiv = document.getElementById('user-button');
+
+        if (Clerk.user) {
+            // BE VAN JELENTKEZVE
+            console.log("Felhasználó aktív:", Clerk.user.id);
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (userBtnDiv) Clerk.mountUserButton(userBtnDiv);
+            
+            // Csak most kérünk egyenleget!
+            await refreshBalance();
+        } else {
+            // NINCS BEJELENTKEZVE
+            console.log("Nincs felhasználó, login gomb megjelenítése.");
+            if (loginBtn) loginBtn.style.display = 'block';
+            if (balanceWrap) balanceWrap.style.display = 'none';
+        }
+
+        updateStaticTexts();
+        await updateData();
+
+    } catch (err) {
+        console.error("Hiba az indításnál:", err);
     }
-    updateStaticTexts();
-    await updateData();
-    setInterval(() => { updateData(); refreshBalance(); }, 30000);
 }
 
 window.addEventListener('load', startApp);
@@ -519,6 +577,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
