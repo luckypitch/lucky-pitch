@@ -1,9 +1,47 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // BIZTONSÁGOS FETCH: Kezeli a node-fetch verziókat
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
+// --- 1. Egyenleg LEKÉRÉSE ---
+app.get('/api/user/balance', async (req, res) => {
+    const { userId } = req.query;
+    
+    // Lekérjük az egyenleget, ha nincs, létrehozzuk 1000-el (upsert)
+    const { data, error } = await supabase
+        .from('user_balances')
+        .select('balance')
+        .eq('user_id', userId)
+        .single();
+
+    if (error && error.code === 'PGRST116') { // Nincs még ilyen user
+        const { data: newUser } = await supabase
+            .from('user_balances')
+            .insert({ user_id: userId, balance: 1000 })
+            .select()
+            .single();
+        return res.json({ balance: 1000 });
+    }
+
+    res.json(data);
+});
+
+// --- 2. Egyenleg FRISSÍTÉSE ---
+app.post('/api/user/update-balance', async (req, res) => {
+    const { userId, balance } = req.body;
+
+    const { error } = await supabase
+        .from('user_balances')
+        .update({ balance: balance })
+        .eq('user_id', userId);
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+});
 
 // Konfiguráció betöltése
 require('dotenv').config({ path: path.resolve(__dirname, 'api.env') });
@@ -187,6 +225,7 @@ app.listen(PORT, '0.0.0.0', () => {
     💳 Stripe: ${STRIPE_SECRET_KEY ? "AKTÍV" : "HIÁNYZIK"}
     `);
 });
+
 
 
 
