@@ -577,28 +577,31 @@ function renderMatches() {
                 </div>
 
                 <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
-                    ${myBet ? `
-                        <div style="background: rgba(255, 170, 0, 0.1); border: 1px dashed #ffaa00; border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <span style="font-size: 9px; color: #ffaa00; display: block; font-family: 'Orbitron';">${myBet.type} TIPP</span>
-                                <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
-                            </div>
-                            <div style="text-align: right;">
-                                <span style="font-size: 9px; opacity: 0.6; display: block;">NYEREMÉNY:</span>
-                                <span style="font-size: 13px; font-weight: bold; color: #00ff88;">${Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP</span>
-                            </div>
-                        </div>
-                    ` : !isFinished ? `
-                        <div style="display: flex; gap: 8px; width: 100%;">
-                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">H ${odds.h}</button>
-                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">D ${odds.d}</button>
-                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">V ${odds.a}</button>
-                        </div>
-                    ` : `
-                        <div style="text-align:center; font-size: 10px; opacity: 0.4;">FOGADÁS LEZÁRVA</div>
-                    `}
-                </div>
-            </div>`;
+    ${myBet ? `
+        <div style="background: rgba(255, 170, 0, 0.1); border: 1px dashed #ffaa00; border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span style="font-size: 9px; color: #ffaa00; display: block; font-family: 'Orbitron';">${myBet.type} TIPP</span>
+                <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 9px; opacity: 0.6; display: block;">NYEREMÉNY:</span>
+                <span style="font-size: 13px; font-weight: bold; color: #00ff88;">${Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP</span>
+            </div>
+        </div>
+    ` : (m.status === 'TIMED' || m.status === 'SCHEDULED') ? `
+        <div style="display: flex; gap: 8px; width: 100%;">
+            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">H ${odds.h}</button>
+            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">D ${odds.d}</button>
+            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">V ${odds.a}</button>
+        </div>
+    ` : isLive ? `
+        <div style="text-align:center; font-size: 10px; color: #ff3e3e; font-weight: bold; font-family: 'Orbitron'; letter-spacing: 1px;">
+            <span class="pulse-red">●</span> ÉLŐ MECCS - FOGADÁS LEZÁRVA
+        </div>
+    ` : `
+        <div style="text-align:center; font-size: 10px; opacity: 0.4;">FOGADÁS LEZÁRVA</div>
+    `}
+</div>
         } catch (err) {
             console.error("Hiba a kártya renderelésekor:", err);
             return '';
@@ -1127,6 +1130,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
