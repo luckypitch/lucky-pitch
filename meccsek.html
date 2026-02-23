@@ -142,6 +142,10 @@
             .standings-sidebar { right: 0; transform: translateX(105%); }
             .sidebar.open, .standings-sidebar.open { transform: translateX(0); }
             .mobile-nav { display: flex; }
+            body {
+        /* Azt mondja a böngészőnek, hogy adjon hozzá extra helyet az alján */
+        padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+    }
         }
         
 @keyframes goal-flash {
@@ -1150,6 +1154,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
