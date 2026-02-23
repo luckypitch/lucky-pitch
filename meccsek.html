@@ -626,8 +626,7 @@ async function placeBet(matchId, teamName, odds, type) {
             const balanceElem = document.getElementById('user-balance');
             if (balanceElem) balanceElem.innerText = newBalance.toLocaleString();
             
-            // 5. HELYI LISTA FRISSÍTÉSE (localStorage)
-            // Itt beolvassuk a meglévőket, hozzáadjuk az újat, majd mentjük
+            // 5. HELYI LISTA FRISSÍTÉSE
             let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
             
             currentBets.push({
@@ -651,9 +650,9 @@ async function placeBet(matchId, teamName, odds, type) {
         }
     } catch (err) {
         console.error("Fogadási hiba:", err);
-        alert("Hiba történt a fogadás közben. Ellenőrizd az internetkapcsolatot!");
+        alert("Hiba történt a fogadás közben.");
     }
-}
+    
     // --- 3. EGYENLEG ELLENŐRZÉSE ---
     if (amount > window.userBalance) {
         alert("Nincs elég egyenleged! Jelenlegi: " + window.userBalance + " LP");
@@ -1045,6 +1044,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
