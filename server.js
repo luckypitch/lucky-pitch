@@ -256,6 +256,55 @@ app.post('/create-checkout-session', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// --- AUTOMATIKUS ELLENŐRZŐ FUNKCIÓ ---
+async function autoCheckResults() {
+    console.log("--- [AUTO] Eredmények ellenőrzése indult... ---");
+    try {
+        // Meghívjuk a már megírt logikát (kivonva egy külön függvénybe vagy belső fetch-el)
+        // Itt a legegyszerűbb, ha egy belső függvényt hívsz meg, ami ugyanazt csinálja, mint az admin POST
+        
+        const { data: pendingBets } = await supabase
+            .from('bets')
+            .select('*')
+            .eq('status', 'OPEN');
+
+        if (pendingBets && pendingBets.length > 0) {
+            for (let bet of pendingBets) {
+                const apiRes = await fetch(`https://api.football-data.org/v4/matches/${bet.match_id}`, {
+                    headers: { 'X-Auth-Token': process.env.FOOTBALL_API_KEY }
+                });
+                const match = await apiRes.json();
+
+                if (match.status === 'FINISHED') {
+                    const homeScore = match.score.fullTime.home;
+                    const awayScore = match.score.fullTime.away;
+                    let actualResult = (homeScore > awayScore) ? 'H' : (homeScore < awayScore ? 'V' : 'D');
+
+                    if (bet.type === actualResult) {
+                        const winAmount = Math.floor(bet.amount * bet.odds);
+                        await supabase.rpc('settle_winning_bet', { u_id: bet.user_id, win_amount: winAmount });
+                        await supabase.from('bets').update({ status: 'WON' }).eq('id', bet.id);
+                        console.log(`[AUTO] Bet ${bet.id} lezárva: WON`);
+                    } else {
+                        await supabase.from('bets').update({ status: 'LOST' }).eq('id', bet.id);
+                        console.log(`[AUTO] Bet ${bet.id} lezárva: LOST`);
+                    }
+                }
+                // API védelem
+                await new Promise(r => setTimeout(r, 1000));
+            }
+        }
+    } catch (err) {
+        console.error("[AUTO ERROR]:", err.message);
+    }
+    
+    // Időzítés: 5 perc múlva újra (5 * 60 * 1000 ms)
+    setTimeout(autoCheckResults, 300000);
+}
+
+// Első indítás a szerver indulásakor
+autoCheckResults();
+
 // server.js - Fogadások kiértékelése
 
 // --- OLDALAK KISZOLGÁLÁSA ---
@@ -276,6 +325,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
