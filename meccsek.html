@@ -239,6 +239,57 @@
         let originalTitle = document.title;
         let titleInterval = null;
 
+        // --- 2. EGYENLEG FRISSÍTÉSE ---
+async function refreshBalance() {
+    if (window.Clerk && Clerk.user) {
+        try {
+            const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
+            const data = await response.json();
+            
+            const balanceSpan = document.getElementById('user-balance');
+            const balanceWrap = document.getElementById('balance-wrap');
+
+            if (balanceSpan && balanceWrap) {
+                balanceSpan.innerText = Number(data.balance).toLocaleString();
+                balanceWrap.style.display = 'flex'; // Itt válik láthatóvá
+                console.log("Egyenleg frissítve:", data.balance);
+            }
+        } catch (error) {
+            console.error("Balance Fetch Error:", error);
+        }
+    }
+}
+
+// --- 3. FŐ INDÍTÓ FÜGGVÉNY ---
+async function startApp() {
+    console.log("LuckyPitch indítása...");
+    
+    try {
+        // Várunk, amíg a Clerk betöltődik a head-ből
+        if (typeof Clerk === 'undefined') {
+            console.log("Várakozás a Clerk-re...");
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        await Clerk.load();
+        console.log("Clerk betöltve.");
+
+        if (Clerk.user) {
+            console.log("Bejelentkezett felhasználó:", Clerk.user.id);
+            // Profil gomb kirakása
+            const userBtnDiv = document.getElementById('user-button');
+            if (userBtnDiv) Clerk.mountUserButton(userBtnDiv);
+            
+            // Egyenleg lekérése
+            refreshBalance();
+        } else {
+            console.log("Nincs bejelentkezett felhasználó.");
+        }
+
+        // Meccsek és felület betöltése
+        updateData();
+        updateStaticTexts();        
+        
 function animateTitle(scrollingText) {
     if (titleInterval) clearInterval(titleInterval);
     
@@ -542,66 +593,26 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
                 </div>`;
             }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
         }
-        async function refreshBalance() {
-    // Szigorú ellenőrzés: csak ha Clerk be van töltve ÉS van user
-    if (typeof Clerk !== 'undefined' && Clerk.user) {
-        try {
-            console.log("Egyenleg lekérése user-hez:", Clerk.user.id);
-            const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
-            const data = await response.json();
-            
-            const balanceSpan = document.getElementById('user-balance');
-            const balanceWrap = document.getElementById('balance-wrap');
-
-            if (balanceSpan && balanceWrap) {
-                balanceSpan.innerText = Number(data.balance).toLocaleString();
-                // Fontos: kényszerítjük a megjelenítést
-                balanceWrap.style.setProperty('display', 'flex', 'important');
-                console.log("Egyenleg sikeresen frissítve!");
-            }
-        } catch (error) {
-            console.error("Hiba az egyenleg frissítésekor:", error);
-        }
-    }
-}
-
-async function initApp() {
-    try {
-        console.log("App indul...");
-        await Clerk.load();
-        
-        if (Clerk.user) {
-            console.log("Felhasználó felismerve!");
-            Clerk.mountUserButton(document.getElementById('user-button'));
-            // Várunk egy picit, hogy a DOM biztosan készen álljon
-            setTimeout(refreshBalance, 500);
-        }
-        
-        // Meccsek betöltése
-        await updateData();
-        // 30 másodpercenként frissítjük az adatokat ÉS az egyenleget is
+       
+        // Automatikus frissítés 30 másodpercenként
         setInterval(() => {
             updateData();
+            updateStaticTexts();
             refreshBalance();
         }, 30000);
 
     } catch (err) {
-        console.error("Clerk betöltési hiba a meccsek oldalon:", err);
+        console.error("Hiba az indítás során:", err);
     }
 }
 
-// Biztosítjuk az indulást
-if (document.readyState === 'complete') {
-    initApp();
-} else {
-    window.addEventListener('load', initApp);
-}
-        updateStaticTexts();
-        updateData();
-        setInterval(updateData, 30000);
+// --- 4. ESEMÉNYKEZELŐK ---
+window.addEventListener('load', startApp);
+
     </script>
 </body>
 </html>
+
 
 
 
