@@ -63,6 +63,43 @@ app.get('/api/user/balance', async (req, res) => {
     }
 });
 
+app.post('/api/user/update-balance', async (req, res) => {
+    try {
+        const { userId, balance, bet } = req.body;
+        if (!userId) return res.status(400).json({ error: "No UserID" });
+
+        // 1. Egyenleg frissítése a Supabase-ben
+        const { error: balanceError } = await supabase
+            .from('user_balances')
+            .update({ balance: balance })
+            .eq('user_id', userId);
+
+        if (balanceError) throw balanceError;
+
+        // 2. HA VAN FOGADÁS (bet objektum), MENTJÜK A 'bets' TÁBLÁBA
+        if (bet) {
+            const { error: betError } = await supabase
+                .from('bets')
+                .insert([{ 
+                    user_id: userId, 
+                    match_id: String(bet.matchId), 
+                    team_name: bet.teamName,
+                    amount: bet.amount,
+                    odds: bet.odds,
+                    type: bet.type,
+                    status: 'OPEN'
+                }]);
+            
+            if (betError) console.error("Supabase mentési hiba (bets):", betError);
+        }
+
+        res.json({ success: true, newBalance: balance });
+    } catch (err) {
+        console.error("Balance update error:", err);
+        res.status(500).json({ error: "Frissítés sikertelen" });
+    }
+});
+
 // --- FOOTBALL DATA API VÉGPONTOK ---
 
 app.get("/live-matches", async (req, res) => {
@@ -182,6 +219,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
