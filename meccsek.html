@@ -515,17 +515,14 @@ function renderMatches() {
 }
 
 async function placeBet(matchId, teamName, odds, type) {
-    // 1. Megkérdezzük a felhasználótól az összeget (vagy veheted egy input mezőből is)
     const amountStr = prompt(`Mennyit teszel a következőre: ${teamName}? (Szorzó: ${odds})`, "100");
     const amount = parseInt(amountStr);
 
-    // 2. Ellenőrizzük, hogy érvényes szám-e
     if (isNaN(amount) || amount <= 0) {
         alert("Kérlek adj meg egy érvényes összeget!");
         return;
     }
 
-    // 3. Ellenőrizzük az egyenleget (window.userBalance a loadInitialBalance-ból jön)
     if (amount > window.userBalance) {
         alert("Nincs elég egyenleged! Jelenlegi: " + window.userBalance + " LP");
         return;
@@ -534,7 +531,6 @@ async function placeBet(matchId, teamName, odds, type) {
     try {
         const newBalance = window.userBalance - amount;
 
-        // 4. Küldjük a kérést a backendnek a Supabase frissítéséhez
         const res = await fetch('/api/user/update-balance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -545,13 +541,27 @@ async function placeBet(matchId, teamName, odds, type) {
         });
 
         if (res.ok) {
-            // 5. Frissítjük a kijelzőt és a lokális változót
             window.userBalance = newBalance;
             document.getElementById('user-balance').innerText = newBalance.toLocaleString();
             
+            // --- EZT A RÉSZT ADTUK HOZZÁ ---
+            // 1. Hozzáadjuk a helyi listához (hogy a renderMatches lássa)
+            activeBets.push({
+                matchId: matchId,
+                teamName: teamName,
+                amount: amount,
+                odds: odds,
+                type: type,
+                status: 'OPEN',
+                timestamp: new Date().getTime()
+            });
+
+            // 2. Elmentjük a böngészőbe (hogy frissítéskor ne tűnjön el)
+            localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
+            // ------------------------------
+            
             alert(`Sikeres fogadás: ${amount} LP -> ${teamName}`);
             
-            // Itt frissítheted a meccsek listáját, hogy látszódjon a "LIVE BET" felirat
             renderMatches(); 
         } else {
             throw new Error("Szerver hiba a fogadáskor");
@@ -897,6 +907,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
