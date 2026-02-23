@@ -105,18 +105,69 @@ app.get('/api/user/bets', async (req, res) => {
         const userId = req.query.userId;
         if (!userId) return res.status(400).json({ error: "No UserID" });
 
-        // Lekérjük a Supabase 'bets' táblájából a júzer fogadásait
         const { data, error } = await supabase
             .from('bets')
             .select('*')
             .eq('user_id', userId)
-            .order('created_at', { ascending: false }); // A legfrissebb legyen felül
+            .order('created_at', { ascending: false });
 
         if (error) throw error;
         res.json(data);
     } catch (err) {
         console.error("Hiba a fogadások lekérésekor:", err);
-        res.status(500).json({ error: "Nem sikerült betölteni a fogadásokat" });
+        res.status(500).json({ error: "Szerver hiba" });
+    }
+});
+
+// --- 2. Admin: Eredmények ellenőrzése és kifizetése ---
+app.post('/api/admin/check-results', async (req, res) => {
+    console.log("Admin: Ellenőrzés indul...");
+    try {
+        // Csak az OPEN státuszúakat nézzük meg
+        const { data: pendingBets, error: fetchError } = await supabase
+            .from('bets')
+            .select('*')
+            .eq('status', 'OPEN');
+
+        if (fetchError) throw fetchError;
+
+        if (!pendingBets || pendingBets.length === 0) {
+            return res.json({ success: true, message: "Nincs feldolgozandó fogadás." });
+        }
+
+        for (let bet of pendingBets) {
+            const apiRes = await fetch(`https://api.football-data.org/v4/matches/${bet.match_id}`, {
+                headers: { 'X-Auth-Token': process.env.FOOTBALL_API_KEY }
+            });
+            const match = await apiRes.json();
+
+            if (match.status === 'FINISHED') {
+                const homeScore = match.score.fullTime.home;
+                const awayScore = match.score.fullTime.away;
+                let actualResult = (homeScore > awayScore) ? 'H' : (homeScore < awayScore ? 'V' : 'D');
+
+                if (bet.type === actualResult) {
+                    const winAmount = Math.floor(bet.amount * bet.odds);
+                    
+                    // SQL RPC hívás a pénz jóváírásához
+                    await supabase.rpc('settle_winning_bet', { 
+                        u_id: bet.user_id, 
+                        win_amount: winAmount 
+                    });
+
+                    await supabase.from('bets').update({ status: 'WON' }).eq('id', bet.id);
+                } else {
+                    await supabase.from('bets').update({ status: 'LOST' }).eq('id', bet.id);
+                }
+            }
+            // API limit védelem
+            await new Promise(r => setTimeout(r, 500));
+        }
+
+        res.json({ success: true, message: "Fogadások frissítve!" });
+    } catch (err) {
+        console.error("Admin hiba:", err);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -225,6 +276,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
