@@ -187,9 +187,9 @@
     <nav>
         <div class="logo">LUCKYPITCH</div>
         <div class="nav-tools">
-            <div class="nav-buttons">
-    <div id="balance-wrap" style="display:none; font-family:'Orbitron'; color:var(--neon-green); font-size:12px; border-right: 1px solid var(--border); padding-right: 15px;">
-        <span id="user-balance">0</span> LP
+            <div class="nav-buttons" style="display: flex; align-items: center; gap: 15px;">
+    <div id="balance-wrap" style="display: none; align-items: center; font-family: 'Orbitron'; color: #00ff88; font-size: 13px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px; font-weight: bold;">
+        <span id="user-balance" style="margin-right: 5px;">0</span> LP
     </div>
             <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
@@ -540,65 +540,41 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
             }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
         }
 
-        // 1. Egyenleg lekérése a szervertől és megjelenítés
-async function refreshBalance() {
-    if (Clerk.user) {
+       async function refreshBalance() {
+    // Csak akkor fut le, ha van bejelentkezett felhasználó
+    if (window.Clerk && Clerk.user) {
         try {
-            const res = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
-            const data = await res.json();
+            const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
+            if (!response.ok) throw new Error("Hiba a lekérésnél");
             
-            // Megkeressük a már létező elemeidet
+            const data = await response.json();
+            
             const balanceSpan = document.getElementById('user-balance');
             const balanceWrap = document.getElementById('balance-wrap');
-            
-            if (balanceSpan) balanceSpan.innerText = data.balance.toLocaleString();
-            if (balanceWrap) balanceWrap.style.display = 'flex'; // Megmutatjuk, ha be van lépve
-        } catch (e) {
-            console.error("Hiba az egyenleg frissítésekor");
+
+            if (balanceSpan && balanceWrap) {
+                // Szám formázása (pl. 1,000)
+                balanceSpan.innerText = Number(data.balance).toLocaleString();
+                // Megjelenítés (fontos, hogy 'flex' legyen a szép igazításért)
+                balanceWrap.style.display = 'flex';
+            }
+        } catch (error) {
+            console.error("Balance Error:", error);
         }
     }
 }
 
-// 2. Fogadás leadása gombnyomásra
-async function placeBet(matchName) {
-    if (!Clerk.user) {
-        Clerk.openSignIn();
-        return;
-    }
-
-    const amount = prompt(`Mennyit teszel meg a(z) ${matchName} meccsre?`, "100");
-    
-    // Alapvető ellenőrzések
-    if (amount === null) return; // Mégse gomb
-    const betAmount = parseInt(amount);
-    
-    if (isNaN(betAmount) || betAmount <= 0) {
-        alert("Kérlek érvényes összeget adj meg!");
-        return;
-    }
-
-    try {
-        const res = await fetch('/api/user/update-balance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                userId: Clerk.user.id, 
-                amount: -betAmount // Negatív, mert levonjuk
-            })
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-            alert(`Sikeres fogadás! ${betAmount} LP levonva.`);
-            refreshBalance(); // Azonnal frissítjük a kijelzőt a nav-ban
-        } else {
-            alert(data.error || "Hiba történt a fogadás során.");
-        }
-    } catch (err) {
-        alert("Hálózati hiba történt.");
+// Clerk inicializálása utáni hívás
+async function startApp() {
+    await Clerk.load();
+    if (Clerk.user) {
+        Clerk.mountUserButton(document.getElementById('user-button'));
+        // Frissítjük az egyenleget belépés után
+        refreshBalance();
     }
 }
+
+window.onload = startApp;
         
         updateStaticTexts();
         updateData();
@@ -606,6 +582,7 @@ async function placeBet(matchName) {
     </script>
 </body>
 </html>
+
 
 
 
