@@ -621,39 +621,32 @@ async function placeBet(matchId, teamName, odds, type) {
     try {
         const newBalance = window.userBalance - amount;
 
-        // --- SUPABASE MENTÉS KEZDETE ---
-        // Ez a rész rakja bele a fogadást a Supabase "Excel" táblájába
-        const { data, error } = await supabase
-            .from('bets') // A tábla neve a Supabase-en
-            .insert([
-                { 
-                    user_id: Clerk.user.id, 
-                    match_id: String(matchId), 
-                    team_name: teamName,
-                    amount: amount, 
-                    odds: odds, 
-                    type: type,
-                    status: 'OPEN',
-                    created_at: new Date()
-                }
-            ]);
-
-        if (error) throw error; // Ha a Supabase hibaüzenetet küld
-
-        // 4. EGYENLEG FRISSÍTÉSE A SZERVEREN (Hogy a pénzed is levonódjon)
+        // --- A TRÜKK: CSAK EGYETLEN HÍVÁS A SZERVERNEK ---
+        // Itt nem használjuk a 'supabase' változót, mert a backend elintézi!
         const res = await fetch('/api/user/update-balance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: Clerk.user.id, balance: newBalance })
+            body: JSON.stringify({ 
+                userId: Clerk.user.id, 
+                balance: newBalance,
+                // Beküldjük a fogadás adatait is, a backend majd ebből ment a Supabase-be
+                bet: {
+                    matchId: String(matchId),
+                    teamName: teamName,
+                    amount: amount,
+                    odds: odds,
+                    type: type
+                }
+            })
         });
 
         if (res.ok) {
-            // UI és Helyi adatok frissítése
+            // SIKER: UI és Helyi adatok frissítése
             window.userBalance = newBalance;
             const balanceElem = document.getElementById('user-balance');
             if (balanceElem) balanceElem.innerText = newBalance.toLocaleString();
             
-            // LocalStorage-ba is elmentjük, hogy frissítés után is azonnal látszódjon a "LIVE BET"
+            // LocalStorage-ba is elmentjük a "LIVE BET" jelvény miatt
             let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
             currentBets.push({
                 matchId: String(matchId),
@@ -664,12 +657,14 @@ async function placeBet(matchId, teamName, odds, type) {
             });
             localStorage.setItem('lp_activeBets', JSON.stringify(currentBets));
             
-            alert(`Sikeres fogadás mentve a Supabase-be!`);
+            alert(`Sikeres fogadás!`);
             if (typeof renderMatches === 'function') renderMatches();
+        } else {
+            throw new Error("A szerver elutasította a kérést.");
         }
     } catch (err) {
-        console.error("Supabase/Szerver hiba:", err);
-        alert("Hiba történt a mentés során.");
+        console.error("Hiba:", err);
+        alert("Hiba történt a mentés során. Kérlek próbáld újra!");
     }
 }
 
@@ -1114,6 +1109,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
