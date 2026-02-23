@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_YWxsb3dlZC1pbnNlY3QtOTguY2xlcmsuYWNjb3VudHMuZGV2JA" src="https://allowed-insect-98.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
     <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -440,21 +441,30 @@ async function checkBetResults() {
 }
 
 // Segédfüggvény a Supabase frissítéshez
-async function updateSupabaseBalance(newAmount) {
+async function updateSupabaseBalance(newAmount, betData = null) {
     try {
         const res = await fetch('/api/user/update-balance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: Clerk.user.id, balance: newAmount })
+            body: JSON.stringify({ 
+                userId: Clerk.user.id, 
+                balance: newAmount,
+                bet: betData // Itt küldjük el a fogadás részleteit is!
+            })
         });
+        
         if (res.ok) {
             window.userBalance = newAmount;
-            document.getElementById('user-balance').innerText = newAmount.toLocaleString();
+            const balanceElem = document.getElementById('user-balance');
+            if (balanceElem) balanceElem.innerText = newAmount.toLocaleString();
+            return true;
         }
     } catch (e) {
-        console.error("Hiba az egyenleg jóváírásakor:", e);
+        console.error("Hiba a szerverrel való kommunikáció során:", e);
+        return false;
     }
 }
+        
 function getSmartOdds(match) {
     const seed = match.id || 0;
     const rng = (s) => Math.abs(Math.sin(seed + s));
@@ -1104,6 +1114,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
