@@ -348,24 +348,37 @@ function renderMatches() {
     const cont = document.getElementById("match-container");
     if (!cont) return;
 
-    const filtered = allMatches.filter(m => {
+    // 1. Szűrés
+    let filtered = allMatches.filter(m => {
         const mDate = m.utcDate ? m.utcDate.split('T')[0] : "";
         return mDate === selectedDate && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString()));
     });
+
+    // 2. Rendezés (az ugrálás ellen)
+    filtered.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
 
     if (filtered.length === 0) {
         cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3; font-family:'Orbitron';">NINCS MECCS</p>`;
         return;
     }
 
+    // 3. Renderelés
     cont.innerHTML = filtered.map(m => {
+        // --- BIZTONSÁGI ZÓNA ---
+        // Először legeneráljuk az odds-ot. Ha a getSmartOdds nem futna le jól, 
+        // adunk egy "fallback" értéket, hogy ne legyen ReferenceError
+        let odds = { h: "1.00", d: "1.00", a: "1.00" }; 
+        try {
+            odds = getSmartOdds(m);
+        } catch (e) {
+            console.warn("Nem sikerült oddsot generálni a meccshez:", m.id);
+        }
+        // --- BIZTONSÁGI ZÓNA VÉGE ---
+
         const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
         const score = isLive || m.status === 'FINISHED' 
             ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
             : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
-
-        // EZ A SOR KELL! Létrehozzuk az odds objektumot minden egyes meccshez
-        const odds = getSmartOdds(m); 
 
         return `
         <div class="match-card ${flashingMatches.has(m.id) ? 'goal-highlight' : ''}" id="match-${m.id}">
@@ -718,6 +731,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
