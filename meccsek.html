@@ -318,32 +318,47 @@ async function refreshBalance() {
 
 // --- 4. ADATKEZELÉS ---
 async function updateData() {
-    // 1. Meccsek lekérése (Ez a prioritás!)
     try {
-        const matchRes = await fetch("/live-matches");
-        if (!matchRes.ok) throw new Error("Match API hiba");
-        allMatches = await matchRes.json();
+        const res = await fetch("/live-matches");
+        const data = await res.json();
         
-        // Ha idáig eljutott, a meccseket már ki tudjuk rajzolni
+        // BIZTONSÁGI ÖV: Ha a szerver hibát küld, vagy nem tömb jön, üres listát adunk neki
+        if (data && data.matches && Array.isArray(data.matches)) {
+            allMatches = data.matches;
+        } else if (Array.isArray(data)) {
+            allMatches = data;
+        } else {
+            allMatches = []; // Ha semmi nem stimmel, legyen üres tömb
+        }
+
+        console.log("Meccsek betöltve:", allMatches.length);
+
+        // Csak akkor hívjuk meg a renderelőket, ha van mit (vagy legalább az üres állapotot lekezelik)
         renderDateStrip();
         renderLeagues();
         renderMatches();
+        
+        // Gólfigyelés csak ha vannak meccsek
+        if (allMatches.length > 0) checkGoals();
+
     } catch (e) {
         console.error("Meccs betöltési hiba:", e);
+        allMatches = []; // Hiba esetén is tömb legyen, hogy ne omoljon össze a többi függvény
     }
 
-    // 2. Oddsok lekérése külön (Ha hibázik, nem rántja magával a meccseket)
+    // Oddsok lekérése
     try {
         const oddsRes = await fetch("/api/odds-data");
         if (oddsRes.ok) {
-            globalOdds = await oddsRes.json();
-            // Miután megjöttek az oddsok, frissítjük a nézetet
-            renderMatches();
+            const oddsData = await oddsRes.json();
+            globalOdds = Array.isArray(oddsData) ? oddsData : [];
+            if (globalOdds.length > 0) renderMatches();
         }
     } catch (e) {
-        console.warn("Odds API nem elérhető, AI generátort használunk.");
+        console.warn("Odds API hiba:", e);
     }
 }
+
 
 function getSmartOdds(match) {
     // Ha van adat az API-ból, megpróbáljuk párosítani
@@ -531,13 +546,26 @@ if (localStorage.getItem('lp_theme') === 'light') {
         
 // --- 6. UI LOGIKA ---
 function renderDateStrip() {
-    const s = document.getElementById("date-strip");
-    if (!s) return;
-    const dates = [...new Set(allMatches.map(m => m.utcDate.split('T')[0]))].sort();
-    s.innerHTML = dates.map(d => `
-        <div class="date-pill ${d === selectedDate ? 'active' : ''}" onclick="selectedDate='${d}';renderMatches();renderDateStrip();">
-            ${d === todayStr ? 'MA' : d.split('-')[1]+'.'+d.split('-')[2]}
-        </div>`).join('');
+    const strip = document.getElementById("date-strip");
+    if (!strip) return;
+
+    // Ha nincs meccs, ne is próbáljuk meg a map-et, tegyünk ki egy üres állapotot
+    if (!Array.isArray(allMatches) || allMatches.length === 0) {
+        strip.innerHTML = `<div class="date-pill active">${todayStr === selectedDate ? 'MA' : selectedDate}</div>`;
+        return;
+    }
+
+    try {
+        const dates = [...new Set(allMatches.map(m => m.utcDate ? m.utcDate.split('T')[0] : ""))].filter(d => d !== "").sort();
+        
+        strip.innerHTML = dates.map(d => `
+            <div class="date-pill ${d === selectedDate ? 'active' : ''}" 
+                 onclick="selectedDate='${d}'; renderMatches(); renderDateStrip();">
+                ${d === todayStr ? 'MA' : d.split('-')[1]+'.'+d.split('-')[2]}
+            </div>`).join('');
+    } catch (err) {
+        console.error("Hiba a dátumsáv renderelésekor:", err);
+    }
 }
 
 function renderLeagues() {
@@ -612,6 +640,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
