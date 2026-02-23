@@ -250,6 +250,7 @@ function getStatusColor(status) {
     if (!status) return 'transparent';
     const s = status.toLowerCase();
     if (s.includes('champions league')) return '#0044ff';
+    if (s.includes('premier league')) return '#0044ff';
     if (s.includes('europa league')) return '#cc7a00';
     if (s.includes('conference league')) return '#00cc6a';
     if (s.includes('relegation')) return '#ff3e3e';
@@ -260,6 +261,7 @@ function translateStatus(status) {
     if (currentLang !== 'HU') return status;
     const s = status.toLowerCase();
     if (s.includes('champions league')) return 'BL Zóna';
+    if (s.includes('premier league')) return 'PL feljutási Zóna';
     if (s.includes('relegation')) return 'Kieső hely';
     return status;
 }
@@ -381,13 +383,24 @@ async function showStandings(leagueId, teamId, code) {
                     else if (pos >= 5 && pos <= 8) status = "Conference League Play-offs";
                     else if (pos === 16) status = "Osztályozó";
                     else if (pos >= 17) status = "Relegation";
-                } else if (code === 'FL1') {
+                }   else if (code === 'FL1') {
                     if (pos <= 3) status = "Champions League Group Stage";
                     else if (pos === 4) status = "Champions League Qualifiers";
                     else if (pos === 5) status = "Europa League Group Stage";
                     else if (pos === 16) status = "Osztályozó";
                     else if (pos >= 17) status = "Relegation";
-                } else {
+                } else if (code === 'PPL') {
+                            if (pos === 1) status = "Champions League Group Stage";
+                            else if (pos === 2) status = "Champions League Qualifiers";
+                            else if (pos === 3) status = "Europa League Qualifiers";
+                            else if (pos === 4) status = "Conference League Qualifiers";
+                            else if (pos === 16) status = "Osztályozó";
+                            else if (pos >= 17) status = "Relegation"; 
+                } else if (code === 'ELC') {
+                            if (pos <= 2) status = "Feljutás - Premier League";
+                            else if (pos <= 6) status = "Play-off (Championship)";
+                            else if (pos >= total - 2) status = "Relegation";
+                }else {
                     if (pos === 1) status = "Bajnok / Feljutó";
                     else if (pos >= total - 2) status = "Relegation";
                 }
@@ -531,6 +544,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
