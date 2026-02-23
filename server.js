@@ -205,6 +205,36 @@ app.post('/create-checkout-session', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// server.js - Példa egy kiértékelő végpontra
+app.post('/api/admin/settle-bets', async (req, res) => {
+    try {
+        // 1. Függő fogadások lekérése
+        const { data: pendingBets } = await supabase.from('bets').select('*').eq('status', 'pending');
+
+        for (let bet of pendingBets) {
+            // 2. Meccs adat lekérése az API-ból
+            const match = await fetchMatchFromAPI(bet.match_id); 
+            
+            if (match.status === 'FINISHED') {
+                const result = getResult(match.score); // 'H', 'D' vagy 'V'
+                const isWinner = bet.prediction === result;
+
+                if (isWinner) {
+                    const payout = bet.amount * bet.odds;
+                    // Egyenleg növelése a Supabase-ben
+                    await supabase.rpc('increment_balance', { user_id: bet.user_id, amount: payout });
+                    await supabase.from('bets').update({ status: 'won' }).eq('id', bet.id);
+                } else {
+                    await supabase.from('bets').update({ status: 'lost' }).eq('id', bet.id);
+                }
+            }
+        }
+        res.json({ message: "Sikeres kiértékelés!" });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
 // --- OLDALAK KISZOLGÁLÁSA ---
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
@@ -223,6 +253,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
