@@ -100,6 +100,26 @@ app.post('/api/user/update-balance', async (req, res) => {
     }
 });
 
+app.get('/api/user/bets', async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        if (!userId) return res.status(400).json({ error: "No UserID" });
+
+        // Lekérjük a Supabase 'bets' táblájából a júzer fogadásait
+        const { data, error } = await supabase
+            .from('bets')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false }); // A legfrissebb legyen felül
+
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        console.error("Hiba a fogadások lekérésekor:", err);
+        res.status(500).json({ error: "Nem sikerült betölteni a fogadásokat" });
+    }
+});
+
 // --- FOOTBALL DATA API VÉGPONTOK ---
 
 app.get("/live-matches", async (req, res) => {
@@ -203,6 +223,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
