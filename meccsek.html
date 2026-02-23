@@ -629,7 +629,7 @@ function checkBetResults() {
     activeBets.forEach((bet, index) => {
         if (bet.status !== 'OPEN') return;
 
-        const match = allMatches.find(m => m.id === bet.matchId);
+        const match = allMatches.find(x => String(x.id) === String(bet.matchId));
         
         if (match && match.status === 'FINISHED') {
             const homeScore = match.score.fullTime.home;
@@ -958,6 +958,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
