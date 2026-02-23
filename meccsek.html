@@ -546,7 +546,8 @@ function renderMatches() {
 
             return `
             <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; transition: all 0.3s ease;">
-                ${myBet ? `<div style="position: absolute; top: 0; left: 0; background: #ffaa00; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">LIVE BET</div>` : ''}
+                
+                ${myBet ? `<div style="position: absolute; top: 0; left: 0; background: ${myBet.status === 'won' ? '#00ff88' : myBet.status === 'lost' ? '#ff3e3e' : '#ffaa00'}; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">${myBet.status === 'won' ? 'WINNER' : myBet.status === 'lost' ? 'LOST' : 'LIVE BET'}</div>` : ''}
 
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px;">
                     <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
@@ -567,13 +568,17 @@ function renderMatches() {
 
                 <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
                     ${myBet ? `
-                        <div style="background: rgba(255, 170, 0, 0.1); border: 1px dashed #ffaa00; border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="background: ${myBet.status === 'won' ? 'rgba(0, 255, 136, 0.1)' : myBet.status === 'lost' ? 'rgba(255, 62, 62, 0.1)' : 'rgba(255, 170, 0, 0.1)'}; 
+                                    border: 1px dashed ${myBet.status === 'won' ? '#00ff88' : myBet.status === 'lost' ? '#ff3e3e' : '#ffaa00'}; 
+                                    border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <span style="font-size: 9px; color: #ffaa00; display: block; font-family: 'Orbitron';">${myBet.type} TIPP</span>
+                                <span style="font-size: 9px; color: ${myBet.status === 'won' ? '#00ff88' : myBet.status === 'lost' ? '#ff3e3e' : '#ffaa00'}; display: block; font-family: 'Orbitron';">
+                                    ${myBet.status === 'won' ? 'NYERTES' : myBet.status === 'lost' ? 'VESZTETT' : myBet.type + ' TIPP'}
+                                </span>
                                 <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
                             </div>
                             <div style="text-align: right;">
-                                <span style="font-size: 9px; opacity: 0.6; display: block;">NYEREMÉNY:</span>
+                                <span style="font-size: 9px; opacity: 0.6; display: block;">${myBet.status === 'won' ? 'NYEREMÉNY:' : 'VÁRHATÓ:'}</span>
                                 <span style="font-size: 13px; font-weight: bold; color: #00ff88;">${Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP</span>
                             </div>
                         </div>
@@ -1120,6 +1125,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
