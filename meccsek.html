@@ -539,27 +539,34 @@ function updateStaticTexts() {
 // --- 7. START ---
 async function startApp() {
     console.log("LuckyPitch indítása...");
+    
+    // --- HIBA JAVÍTÁSA: Várakozás a Clerk objektumra ---
+    let retryCount = 0;
+    while (typeof Clerk === 'undefined' && retryCount < 10) {
+        console.log("Clerk még nem elérhető, várakozás... (" + retryCount + ")");
+        await new Promise(r => setTimeout(r, 500)); // Fél másodperc szünet
+        retryCount++;
+    }
+
+    if (typeof Clerk === 'undefined') {
+        console.error("Hiba: A Clerk scriptet nem sikerült betölteni a head-ből!");
+        return; // Itt megállunk, hogy ne dobjon piros hibát
+    }
+    // --- Eddig tart a javítás ---
+
     try {
-        if (typeof Clerk === 'undefined') {
-            await new Promise(r => setTimeout(r, 600));
-        }
         await Clerk.load();
+        console.log("Clerk sikeresen inicializálva.");
 
         const loginBtn = document.getElementById('login-btn');
         const balanceWrap = document.getElementById('balance-wrap');
         const userBtnDiv = document.getElementById('user-button');
 
         if (Clerk.user) {
-            // BE VAN JELENTKEZVE
-            console.log("Felhasználó aktív:", Clerk.user.id);
             if (loginBtn) loginBtn.style.display = 'none';
             if (userBtnDiv) Clerk.mountUserButton(userBtnDiv);
-            
-            // Csak most kérünk egyenleget!
             await refreshBalance();
         } else {
-            // NINCS BEJELENTKEZVE
-            console.log("Nincs felhasználó, login gomb megjelenítése.");
             if (loginBtn) loginBtn.style.display = 'block';
             if (balanceWrap) balanceWrap.style.display = 'none';
         }
@@ -568,7 +575,7 @@ async function startApp() {
         await updateData();
 
     } catch (err) {
-        console.error("Hiba az indításnál:", err);
+        console.error("Hiba az inicializálás alatt:", err);
     }
 }
 
@@ -577,6 +584,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
