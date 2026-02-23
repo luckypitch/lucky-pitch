@@ -303,12 +303,12 @@ async function refreshBalance() {
     }
 }
 // --- 4. ADATKEZELÉS ---        
+// --- 4. ADATKEZELÉS ---        
 async function updateData() {
     try {
         const res = await fetch("/live-matches");
         const data = await res.json();
         
-        // Adat validálás
         if (data && data.matches && Array.isArray(data.matches)) {
             allMatches = data.matches;
         } else if (Array.isArray(data)) {
@@ -319,7 +319,6 @@ async function updateData() {
 
         console.log("Siker! Meccsek betöltve:", allMatches.length);
 
-        // Renderelés
         if (typeof renderDateStrip === 'function') renderDateStrip();
         if (typeof renderLeagues === 'function') renderLeagues();
         renderMatches();
@@ -331,34 +330,22 @@ async function updateData() {
         allMatches = [];
     }
 
-    // Oddsok lekérése és ellenőrzése
     try {
         const oddsRes = await fetch("/api/odds-data");
         if (oddsRes.ok) {
             const oddsData = await oddsRes.json();
-            
-            // ELMENTJÜK ÉS KIÍRJUK, MIT TALÁLTUNK
             globalOdds = Array.isArray(oddsData) ? oddsData : [];
-            
             if (globalOdds.length > 0) {
-                console.log("Siker! Odds adatok érkeztek:");
-                console.table(globalOdds.slice(0, 5)); // Csak az első 5 meccset írja ki táblázatban, hogy ne legyen káosz
-                
-                // Csak akkor hívjuk újra, ha a renderMatches már létezik és stabil
-                if (typeof renderMatches === 'function') {
-                    renderMatches();
-                }
-            } else {
-                console.log("Az Odds API válaszolt, de üres listát küldött.");
+                console.log("Odds adatok frissítve.");
+                renderMatches();
             }
         }
     } catch (e) {
-        console.warn("Hiba az Odds lekérése közben:", e);
+        console.warn("Odds API hiba:", e);
     }
-
+} // <--- EZ A ZÁRÓJEL HIÁNYZOTT!
 
 function getSmartOdds(match) {
-    // Alapértelmezett AI oddsok (ha nincs API adat)
     const seed = match.id || 0;
     const rng = (s) => Math.abs(Math.sin(seed + s));
     
@@ -368,7 +355,6 @@ function getSmartOdds(match) {
         a: (1.6 + rng(3) * 3).toFixed(2)
     };
 
-    // Ha van API adatunk, felülírjuk az AI-t
     if (globalOdds && globalOdds.length > 0) {
         const found = globalOdds.find(o => 
             o.home_team === match.homeTeam.name || o.away_team === match.awayTeam.name
@@ -387,26 +373,6 @@ function getSmartOdds(match) {
     }
     return result;
 }
-        
-// --- 2. A HIÁNYZÓ GÓLFIGYELŐ ---
-function checkGoals() {
-    if (!allMatches || !Array.isArray(allMatches)) return;
-
-    allMatches.forEach(match => {
-        const matchId = match.id;
-        const currentScore = (match.score && match.score.fullTime) ? 
-            `${match.score.fullTime.home}-${match.score.fullTime.away}` : "0-0";
-
-        if (prevScores.has(matchId) && prevScores.get(matchId) !== currentScore) {
-            const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
-            const [newH, newA] = currentScore.split('-').map(Number);
-
-            if (newH > oldH) triggerGoalEffect(matchId, match.homeTeam.name, match.homeTeam.crest);
-            if (newA > oldA) triggerGoalEffect(matchId, match.awayTeam.name, match.awayTeam.crest);
-        }
-        prevScores.set(matchId, currentScore);
-    });
-}
 
 // --- 5. MEGJELENÍTÉS ---
 function renderMatches() {
@@ -414,7 +380,7 @@ function renderMatches() {
     if (!cont) return;
 
     const filtered = allMatches.filter(m => {
-        const mDate = m.utcDate.split('T')[0];
+        const mDate = m.utcDate ? m.utcDate.split('T')[0] : "";
         return mDate === selectedDate && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString()));
     });
 
@@ -423,11 +389,17 @@ function renderMatches() {
         return;
     }
 
+    // RENDEZÉS, HOGY NE UGRÁLJANAK A MECCSEK
+    filtered.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+
     cont.innerHTML = filtered.map(m => {
         const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
         const score = isLive || m.status === 'FINISHED' 
             ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
             : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+
+        // !!! EZ A SOR MENTI MEG A KÓDOT !!!
+        const odds = getSmartOdds(m); 
 
         return `
         <div class="match-card ${flashingMatches.has(m.id) ? 'goal-highlight' : ''}" id="match-${m.id}">
@@ -690,6 +662,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
