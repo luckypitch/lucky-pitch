@@ -186,13 +186,11 @@
 
     <nav>
         <div class="logo">LUCKYPITCH</div>
-    <div class="nav-tools">
-        <div class="nav-buttons" style="display: flex; align-items: center; gap: 12px;">
-            <div id="balance-wrap" style="display: none; align-items: center; font-family: 'Orbitron'; color: #00ff88; font-size: 13px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 12px; font-weight: bold;">
-                <span id="user-balance">0</span>&nbsp;LP
-            </div>
-            <div id="user-button"></div>
+    <div class="nav-tools" style="display: flex; align-items: center; gap: 15px;">
+        <div id="balance-wrap" style="display: none; align-items: center; font-family: 'Orbitron'; color: #00ff88; font-weight: bold;">
+            <span id="user-balance">0</span>&nbsp;LP
         </div>
+        <div id="user-button"></div>
         
         <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
         <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
@@ -243,13 +241,32 @@ let titleInterval = null;
 async function refreshBalance() {
     if (window.Clerk && Clerk.user) {
         try {
+            console.log("Egyenleg lekérése a felhasználónak:", Clerk.user.id);
             const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
+            
+            if (!response.ok) throw new Error("Szerver hiba az egyenlegnél");
+            
             const data = await response.json();
+            console.log("Kapott egyenleg adat:", data);
+
             const balanceSpan = document.getElementById('user-balance');
             const balanceWrap = document.getElementById('balance-wrap');
-            if (balanceSpan) balanceSpan.innerText = Number(data.balance).toLocaleString();
-            if (balanceWrap) balanceWrap.style.display = 'flex';
-        } catch (e) { console.error("Balance hiba:", e); }
+
+            if (balanceSpan && balanceWrap) {
+                // Biztosítjuk, hogy szám legyen és szépen formázzuk
+                balanceSpan.innerText = Number(data.balance || 0).toLocaleString();
+                
+                // Kényszerítjük a megjelenítést
+                balanceWrap.style.setProperty('display', 'flex', 'important');
+                console.log("Egyenleg sikeresen kiírva a felületre.");
+            } else {
+                console.warn("Hiba: Nem találom a 'user-balance' vagy 'balance-wrap' ID-t a HTML-ben!");
+            }
+        } catch (error) {
+            console.error("Balance Fetch Error:", error);
+        }
+    } else {
+        console.log("Nincs bejelentkezett felhasználó, az egyenleg nem lekérhető.");
     }
 }
 
@@ -502,6 +519,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
