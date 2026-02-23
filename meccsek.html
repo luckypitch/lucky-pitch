@@ -239,24 +239,91 @@ let flashingMatches = new Set();
 let originalTitle = document.title;
 let titleInterval = null;
 
-// --- 2. EGYENLEG FRISSÍTÉSE ---
+// --- 2. ADATLEKÉRÉS (A SZÍV) ---
+async function updateData() {
+    try {
+        console.log("Adatok lekérése a szerverről...");
+        const res = await fetch("/live-matches");
+        if (!res.ok) throw new Error("Szerver hiba: " + res.status);
+        
+        const data = await res.json();
+        allMatches = data.matches || [];
+        console.log("Beérkezett meccsek száma:", allMatches.length);
+
+        // Gól figyelés
+        allMatches.forEach(match => {
+            const matchId = match.id;
+            const newScore = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
+            if (prevScores.has(matchId) && prevScores.get(matchId) !== newScore) {
+                const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
+                const [newH, newA] = newScore.split('-').map(Number);
+                if (newH > oldH) triggerGoalEffect(matchId, match.homeTeam.name, match.homeTeam.crest);
+                if (newA > oldA) triggerGoalEffect(matchId, match.awayTeam.name, match.awayTeam.crest);
+            }
+            prevScores.set(matchId, newScore);
+        });
+
+        renderDateStrip();
+        renderLeagues();
+        renderMatches();
+    } catch (e) {
+        console.error("Fetch hiba!", e);
+        document.getElementById("match-container").innerHTML = `<p style="text-align:center; color:orange; padding:20px;">Hiba történt az adatok lekérésekor. Ellenőrizd a szervert!</p>`;
+    }
+}
+
+// --- 3. MEGJELENÍTÉS ---
+function renderMatches() {
+    const cont = document.getElementById("match-container");
+    if (!cont) return;
+
+    const filtered = allMatches.filter(m => {
+        const matchDate = m.utcDate.split('T')[0];
+        return matchDate === selectedDate && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString()));
+    });
+
+    if (filtered.length === 0) {
+        cont.innerHTML = `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
+        return;
+    }
+
+    cont.innerHTML = filtered.map(m => {
+        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+        const score = isLive || m.status === 'FINISHED' 
+            ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
+            : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+
+        return `
+        <div class="match-card" id="match-${m.id}">
+            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
+                <img src="${m.homeTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/30'">
+                <span>${m.homeTeam.name}</span>
+            </div>
+            <div style="text-align:center; width:140px;">
+                <div class="score-display ${isLive ? 'score-live' : ''}">${score}</div>
+                <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size:9px; margin-top:8px; display:inline-block; text-decoration:none; border:1px solid var(--neon-green); color:var(--neon-green); padding:3px 8px; border-radius:5px;">
+                    ${currentLang==='HU'?'ELEMZÉS':'ANALYSIS'}
+                </a>
+            </div>
+            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
+                <img src="${m.awayTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/30'">
+                <span>${m.awayTeam.name}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+        
+// --- 4. CLERK ÉS EGYENLEG ---
 async function refreshBalance() {
     if (window.Clerk && Clerk.user) {
         try {
             const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
             const data = await response.json();
-            
             const balanceSpan = document.getElementById('user-balance');
             const balanceWrap = document.getElementById('balance-wrap');
-
-            if (balanceSpan && balanceWrap) {
-                balanceSpan.innerText = Number(data.balance).toLocaleString();
-                balanceWrap.style.display = 'flex';
-                console.log("Egyenleg frissítve:", data.balance);
-            }
-        } catch (error) {
-            console.error("Balance Fetch Error:", error);
-        }
+            if (balanceSpan) balanceSpan.innerText = Number(data.balance).toLocaleString();
+            if (balanceWrap) balanceWrap.style.display = 'flex';
+        } catch (e) { console.error("Balance hiba", e); }
     }
 }
 
@@ -331,92 +398,6 @@ function showGoal(teamName) {
         banner.classList.add('show');
         setTimeout(() => banner.classList.remove('show'), 5000);
     }
-}
-
-async function updateData() {
-    try {
-        console.log("Adatok lekérése...");
-        const res = await fetch("/live-matches");
-        if (!res.ok) throw new Error("Hálózati hiba");
-        
-        const data = await res.json();
-        const newMatches = data.matches || [];
-
-        // Gólfigyelő logika javítva
-        newMatches.forEach(match => {
-            if (!match.id || !match.score || !match.score.fullTime) return;
-
-            const matchId = match.id;
-            const newScore = `${match.score.fullTime.home}-${match.score.fullTime.away}`;
-            
-            if (prevScores.has(matchId) && prevScores.get(matchId) !== newScore) {
-                const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
-                const [newH, newA] = newScore.split('-').map(Number);
-                
-                if (newH > oldH) triggerGoalEffect(matchId, match.homeTeam.name, match.homeTeam.crest);
-                if (newA > oldA) triggerGoalEffect(matchId, match.awayTeam.name, match.awayTeam.crest);
-            }
-            prevScores.set(matchId, newScore);
-        });
-
-        allMatches = newMatches;
-        
-        // UI frissítése sorrendben
-        renderDateStrip();
-        renderLeagues();
-        renderMatches();
-        console.log("Meccsek frissítve:", allMatches.length);
-    } catch (e) { 
-        console.error("Update hiba:", e);
-        const cont = document.getElementById("match-container");
-        if (cont) cont.innerHTML = `<p style="text-align:center; color:red;">Hiba az adatok betöltésekor.</p>`;
-    }
-}
-
-function renderMatches() {
-    const cont = document.getElementById("match-container");
-    if (!cont) return;
-
-    // Szűrés a dátumra és a választott ligákra
-    const filteredMatches = allMatches.filter(m => {
-        const matchDate = m.utcDate.split('T')[0];
-        const dateMatch = matchDate === selectedDate;
-        const leagueMatch = selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString());
-        return dateMatch && leagueMatch;
-    });
-
-    if (filteredMatches.length === 0) {
-        cont.innerHTML = `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang === 'HU' ? 'NINCS MECCS EZEN A NAPON' : 'NO MATCHES FOR THIS DATE'}</p>`;
-        return;
-    }
-
-    cont.innerHTML = filteredMatches.map(m => {
-        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-        const homeScore = m.score.fullTime.home ?? 0;
-        const awayScore = m.score.fullTime.away ?? 0;
-        
-        let displayScore = isLive || m.status === 'FINISHED' 
-            ? `${homeScore}:${awayScore}` 
-            : new Date(m.utcDate).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
-
-        return `
-        <div class="match-card" id="match-${m.id}">
-            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
-                <img src="${m.homeTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/50'">
-                <span>${m.homeTeam.name}</span>
-            </div>
-            <div style="text-align:center; width:140px;">
-                <div class="score-display ${isLive ? 'score-live' : ''}">${displayScore}</div>
-                <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size:9px; margin-top:10px; display:inline-block; text-decoration:none;">
-                    ${currentLang === 'HU' ? 'ELEMZÉS' : 'ANALYSIS'}
-                </a>
-            </div>
-            <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                <img src="${m.awayTeam.crest || ''}" onerror="this.src='https://via.placeholder.com/50'">
-                <span>${m.awayTeam.name}</span>
-            </div>
-        </div>`;
-    }).join('');
 }
 
 function triggerGoalEffect(matchId, teamName, logoUrl) {
@@ -600,34 +581,29 @@ function renderMatches() {
     }).join('') || `<p style="text-align:center; padding:50px;">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
 }
 
-// --- 4. INDÍTÁS ---
+// --- 6. INDÍTÁS ---
 async function startApp() {
-    console.log("LuckyPitch indítása...");
+    console.log("LuckyPitch Start...");
     try {
-        if (typeof Clerk === 'undefined') {
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
+        if (typeof Clerk === 'undefined') await new Promise(r => setTimeout(r, 600));
         await Clerk.load();
 
         if (Clerk.user) {
-            const userBtnDiv = document.getElementById('user-button');
-            if (userBtnDiv) Clerk.mountUserButton(userBtnDiv);
+            const btn = document.getElementById('user-button');
+            if (btn) Clerk.mountUserButton(btn);
             await refreshBalance();
         }
 
         updateStaticTexts();
-        if(localStorage.getItem('lp_theme') === 'true') document.body.classList.add('light');
-        
         await updateData();
 
+        // Automata frissítés 30 másodpercenként
         setInterval(() => {
             updateData();
             refreshBalance();
         }, 30000);
 
-    } catch (err) {
-        console.error("Hiba az indítás során:", err);
-    }
+    } catch (err) { console.error("StartApp hiba", err); }
 }
 
 window.addEventListener('load', startApp);
@@ -635,6 +611,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
