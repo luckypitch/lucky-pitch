@@ -583,31 +583,77 @@ function renderMatches() {
         }
     }).join('');
 }
-async function placeBet(matchId, teamName, odds, type) {
-    // --- 1. BELÉPÉS ELLENŐRZÉSE ---
-    if (typeof Clerk !== 'undefined' && !Clerk.user) {
-        alert("A fogadáshoz előbb be kell jelentkezned!");
         
-        // Megnyitjuk a bejelentkezési ablakot
-        Clerk.openSignIn({
-            afterSignInUrl: window.location.href 
-        });
-        return; // Megállítjuk a függvényt, nem fut tovább a prompt-ra
+async function placeBet(matchId, teamName, odds, type) {
+    // 1. BELÉPÉS ELLENŐRZÉSE
+    if (typeof Clerk === 'undefined' || !Clerk.user) {
+        alert("A fogadáshoz előbb be kell jelentkezned!");
+        Clerk.openSignIn({ afterSignInUrl: window.location.href });
+        return;
     }
 
-    // --- 2. ÖSSZEG BEKÉRÉSE (csak ha be van lépve) ---
+    // 2. ÖSSZEG BEKÉRÉSE
     const amountStr = prompt(`Mennyit teszel a következőre: ${teamName}? (Szorzó: ${odds})`, "100");
-    
-    // Ha a felhasználó a "Mégse" gombra kattint a promptban
     if (amountStr === null) return; 
 
     const amount = parseInt(amountStr);
-
     if (isNaN(amount) || amount <= 0) {
         alert("Kérlek adj meg egy érvényes összeget!");
         return;
     }
 
+    // 3. EGYENLEG ELLENŐRZÉSE
+    if (amount > window.userBalance) {
+        alert(`Nincs elég egyenleged! Jelenlegi: ${window.userBalance} LP`);
+        return;
+    }
+
+    try {
+        const newBalance = window.userBalance - amount;
+
+        // 4. SZERVER FRISSÍTÉSE
+        const res = await fetch('/api/user/update-balance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: Clerk.user.id,
+                balance: newBalance
+            })
+        });
+
+        if (res.ok) {
+            window.userBalance = newBalance;
+            const balanceElem = document.getElementById('user-balance');
+            if (balanceElem) balanceElem.innerText = newBalance.toLocaleString();
+            
+            // 5. HELYI LISTA FRISSÍTÉSE (localStorage)
+            // Itt beolvassuk a meglévőket, hozzáadjuk az újat, majd mentjük
+            let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
+            
+            currentBets.push({
+                matchId: matchId,
+                teamName: teamName,
+                amount: amount,
+                odds: odds,
+                type: type,
+                status: 'OPEN',
+                timestamp: new Date().getTime()
+            });
+
+            localStorage.setItem('lp_activeBets', JSON.stringify(currentBets));
+            
+            alert(`Sikeres fogadás: ${amount} LP -> ${teamName}`);
+            
+            // 6. OLDAL ÚJRARAJZAOLÁSA
+            if (typeof renderMatches === 'function') renderMatches(); 
+        } else {
+            throw new Error("Szerver hiba");
+        }
+    } catch (err) {
+        console.error("Fogadási hiba:", err);
+        alert("Hiba történt a fogadás közben. Ellenőrizd az internetkapcsolatot!");
+    }
+}
     // --- 3. EGYENLEG ELLENŐRZÉSE ---
     if (amount > window.userBalance) {
         alert("Nincs elég egyenleged! Jelenlegi: " + window.userBalance + " LP");
@@ -999,6 +1045,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
