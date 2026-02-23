@@ -1029,19 +1029,12 @@ async function startApp() {
         if (typeof Clerk !== 'undefined') {
             await Clerk.load();
 
-            // --- JAVÍTOTT KIJELENTKEZÉS FIGYELÉS ---
             Clerk.addListener(({ user }) => {
-                // Csak akkor frissítünk, ha kijelentkezett ÉS még ott van a régi adat a storage-ban
-                // Ez megakadályozza a végtelen újratöltést!
                 if (!user && localStorage.getItem('lp_activeBets')) {
                     console.log("Kijelentkezés észlelve, adatok törlése...");
                     localStorage.removeItem('lp_activeBets');
                     window.userBalance = 0;
-                    
-                    // Rövid szünet, hogy a Clerk befejezze a műveletet, majd frissítés
-                    setTimeout(() => {
-                        window.location.href = '/meccsek.html';
-                    }, 100);
+                    setTimeout(() => { window.location.href = '/meccsek.html'; }, 100);
                 }
             });
 
@@ -1052,26 +1045,36 @@ async function startApp() {
                         afterSignOutUrl: window.location.origin + '/meccsek.html'
                     });
                 }
-                await loadInitialBalance();
-                await loadUserBetsFromServer();
+                
+                await loadInitialBalance(); 
+                // Csak akkor hívjuk meg, ha már megírtuk a loadUserBetsFromServer-t
+                if (typeof loadUserBetsFromServer === 'function') {
+                    await loadUserBetsFromServer();
+                }
             } else {
-                // Ha nincs user, alapból elrejtjük a belépés gombot, amíg az adatok be nem töltődnek
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
                     lb.style.display = 'block'; 
                     lb.onclick = () => Clerk.openSignIn({ afterSignInUrl: window.location.href });
                 }
-                // Itt NE törölj localStorage-ot, azt elintézi az addListener okosabban!
             }
         }
 
+        // Első adatbetöltés
         await updateData();
+        await checkBetResults(); // Rögtön az elején is ellenőrizzük a fogadásokat
 
         if (typeof renderDateStrip === 'function') renderDateStrip();
         if (typeof renderLeagues === 'function') renderLeagues();
         if (typeof renderMatches === 'function') renderMatches();
 
-        setInterval(updateData, 30000);
+        // --- AUTOMATIKUS FRISSÍTÉS 30 MÁSODPERCENKÉNT ---
+        setInterval(async () => {
+            await updateData();        // Friss meccsadatok
+            await checkBetResults();   // Eredmények ellenőrzése és nyeremény jóváírása
+            console.log("Adatok és fogadások frissítve...");
+        }, 30000);
+
     } catch (e) { console.error("StartApp error:", e); }
 }
 
@@ -1112,6 +1115,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
