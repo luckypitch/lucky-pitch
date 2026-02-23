@@ -1011,7 +1011,7 @@ async function loadUserBetsFromServer() {
     if (typeof Clerk === 'undefined' || !Clerk.user) return;
     
     try {
-        const res = await fetch(`/api/user/bets?userId=${Clerk.user.id}`);
+        const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}`);
         
         // --- HIBAKERESÉS KEZDETE ---
         const text = await res.text(); // Előbb szövegként olvassuk be
@@ -1146,6 +1146,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
