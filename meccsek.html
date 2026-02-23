@@ -441,7 +441,11 @@ function renderMatches() {
 
     cont.innerHTML = filtered.map(m => {
         const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-        const score = isLive || m.status === 'FINISHED' 
+        
+        // --- KRITIKUS MÓDOSÍTÁS: Ellenőrizzük, vége van-e ---
+        const isFinished = ["FINISHED", "AWARDED", "POSTPONED", "CANCELLED"].includes(m.status);
+        
+        const score = isLive || isFinished 
             ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
             : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
 
@@ -470,18 +474,24 @@ function renderMatches() {
             </div>
 
             <div class="bet-row" style="display: flex; gap: 10px; width: 100%; justify-content: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
-                <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">
-                    <span style="font-size: 10px; display: block; opacity: 0.6;">H</span>
-                    <span style="font-size: 13px; font-weight: bold;">${odds.h}</span>
-                </button>
-                <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
-                    <span style="font-size: 10px; display: block; opacity: 0.6;">D</span>
-                    <span style="font-size: 13px; font-weight: bold;">${odds.d}</span>
-                </button>
-                <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">
-                    <span style="font-size: 10px; display: block; opacity: 0.6;">V</span>
-                    <span style="font-size: 13px; font-weight: bold;">${odds.a}</span>
-                </button>
+                ${!isFinished ? `
+                    <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">
+                        <span style="font-size: 10px; display: block; opacity: 0.6;">H</span>
+                        <span style="font-size: 13px; font-weight: bold;">${odds.h}</span>
+                    </button>
+                    <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
+                        <span style="font-size: 10px; display: block; opacity: 0.6;">D</span>
+                        <span style="font-size: 13px; font-weight: bold;">${odds.d}</span>
+                    </button>
+                    <button class="odds-btn" style="flex: 1; max-width: 90px; padding: 6px 0;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">
+                        <span style="font-size: 10px; display: block; opacity: 0.6;">V</span>
+                        <span style="font-size: 13px; font-weight: bold;">${odds.a}</span>
+                    </button>
+                ` : `
+                    <div style="font-family: 'Orbitron'; font-size: 11px; opacity: 0.4; letter-spacing: 1px; text-transform: uppercase;">
+                        ${currentLang === 'HU' ? 'Fogadás lezárva' : 'Betting closed'}
+                    </div>
+                `}
             </div>
         </div>`;
     }).join('');
@@ -813,6 +823,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
