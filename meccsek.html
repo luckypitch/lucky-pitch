@@ -304,36 +304,46 @@ async function refreshBalance() {
 }
 
 // --- 4. ADATKEZELÉS ---
+Ez a szakasz már majdnem tökéletes, de ahhoz, hogy a meccsek meg is jelenjenek, és a checkGoals hiba ne állítsa meg az oldalt, a teljes scriptnek tartalmaznia kell azokat a segédfüggvényeket, amiket az updateData meghív.
+
+Itt van az összefésült kód, amiben benne van a te updateData függvényed, a hiányzó checkGoals, és a renderMatches is a fogadó gombokkal:
+JavaScript
+
+// --- GLOBÁLIS VÁLTOZÓK (Ellenőrizd, hogy megvannak-e!) ---
+let allMatches = [];
+let globalOdds = [];
+let prevScores = new Map();
+let selectedDate = new Date().toLocaleDateString('sv');
+let selectedLeagues = new Set();
+
+// --- 1. A TE JAVÍTOTT FRISSÍTŐ FÜGGVÉNYED ---
 async function updateData() {
     try {
         const res = await fetch("/live-matches");
         const data = await res.json();
         
-        // BIZTONSÁGI ÖV: Ha a szerver hibát küld, vagy nem tömb jön, üres listát adunk neki
         if (data && data.matches && Array.isArray(data.matches)) {
             allMatches = data.matches;
         } else if (Array.isArray(data)) {
             allMatches = data;
         } else {
-            allMatches = []; // Ha semmi nem stimmel, legyen üres tömb
+            allMatches = [];
         }
 
         console.log("Meccsek betöltve:", allMatches.length);
 
-        // Csak akkor hívjuk meg a renderelőket, ha van mit (vagy legalább az üres állapotot lekezelik)
         renderDateStrip();
         renderLeagues();
         renderMatches();
         
-        // Gólfigyelés csak ha vannak meccsek
+        // Ez a sor dobott hibát, mert hiányzott a függvény:
         if (allMatches.length > 0) checkGoals();
 
     } catch (e) {
         console.error("Meccs betöltési hiba:", e);
-        allMatches = []; // Hiba esetén is tömb legyen, hogy ne omoljon össze a többi függvény
+        allMatches = [];
     }
 
-    // Oddsok lekérése
     try {
         const oddsRes = await fetch("/api/odds-data");
         if (oddsRes.ok) {
@@ -346,26 +356,22 @@ async function updateData() {
     }
 }
 
+// --- 2. A HIÁNYZÓ GÓLFIGYELŐ ---
 function checkGoals() {
-    // Ha nincs allMatches vagy nem lista, ne csináljon semmit
     if (!allMatches || !Array.isArray(allMatches)) return;
 
     allMatches.forEach(match => {
         const matchId = match.id;
-        // Biztonságos pontszám lekérés
         const currentScore = (match.score && match.score.fullTime) ? 
             `${match.score.fullTime.home}-${match.score.fullTime.away}` : "0-0";
 
-        // Ha már ismertük ezt a meccset és változott a pontszám
         if (prevScores.has(matchId) && prevScores.get(matchId) !== currentScore) {
             const [oldH, oldA] = prevScores.get(matchId).split('-').map(Number);
             const [newH, newA] = currentScore.split('-').map(Number);
 
-            // Megnézzük ki lőtte a gólt és villantunk
             if (newH > oldH) triggerGoalEffect(matchId, match.homeTeam.name, match.homeTeam.crest);
             if (newA > oldA) triggerGoalEffect(matchId, match.awayTeam.name, match.awayTeam.crest);
         }
-        // Frissítjük a tárolt eredményt
         prevScores.set(matchId, currentScore);
     });
 }
@@ -667,6 +673,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
