@@ -545,27 +545,27 @@ async function renderMatches() {
     filtered.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
 
     cont.innerHTML = filtered.map(m => {
-        try {
-            const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-            const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
-            
-            const score = (isLive || isFinished) && m.score && m.score.fullTime
-                ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
-                : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+    try {
+        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+        const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
+        
+        const score = (isLive || isFinished) && m.score && m.score.fullTime
+            ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
+            : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
 
-            const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
+        const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
+        
+        // 1. Megkeressük a fogadást
+        const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
 
-// CSAK EGYSZER deklaráljuk!
-const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
+        // 2. MEGHATÁROZZUK az isFlashing-et (EZ HIÁNYZIK NÁLAD!)
+        const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
 
-// A log maradhat, de a 'const myBet' deklaráció már nem kell elé!
-if (String(m.id) === '537065') {
-    console.log("Fiorentina bet adatok:", myBet);
-}
+        // 3. Státusz kezelése
+        const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
 
-const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
-            
-            return `
+        // Most már használhatod az isFlashing-et a return-ben:
+        return `
             <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; transition: all 0.3s ease;">
                 
                 ${myBet ? `
@@ -1149,6 +1149,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
