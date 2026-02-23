@@ -993,16 +993,30 @@ async function loadUserBetsFromServer() {
     
     try {
         const res = await fetch(`/api/user/get-bets?userId=${Clerk.user.id}`);
-        if (res.ok) {
-            const bets = await res.json();
+        
+        // --- HIBAKERESÉS KEZDETE ---
+        const text = await res.text(); // Előbb szövegként olvassuk be
+        console.log("Szerver válasza:", text); 
+
+        if (!res.ok) {
+            console.error(`Szerver hiba: ${res.status}`);
+            return;
+        }
+
+        // Megpróbáljuk parsolni, ha nem üres a válasz
+        try {
+            const bets = JSON.parse(text);
             if (Array.isArray(bets)) {
                 localStorage.setItem('lp_activeBets', JSON.stringify(bets));
-                console.log("Fogadások szinkronizálva a szerverrel.");
                 if (typeof renderMatches === 'function') renderMatches();
             }
+        } catch (parseErr) {
+            console.error("A szerver válasza nem érvényes JSON! Valószínűleg HTML hibaoldalt kaptál.");
         }
+        // --- HIBAKERESÉS VÉGE ---
+
     } catch (e) {
-        console.warn("Helyi módban maradunk:", e);
+        console.warn("Hálózati hiba:", e);
     }
 }
         
@@ -1113,6 +1127,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
