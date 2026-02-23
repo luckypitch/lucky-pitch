@@ -514,19 +514,26 @@ async function renderMatches() {
         return;
     }
 
-    // --- FRISSÍTÉS: Adatok lekérése a szerverről a localStorage helyett ---
     let currentUserBets = [];
     if (typeof Clerk !== 'undefined' && Clerk.user) {
         try {
-            const response = await fetch(`/api/user-bets?userId=${Clerk.user.id}`);
+            // JAVÍTÁS: Pontos útvonal használata (/api/user/bets)
+            const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}`);
+            
             if (response.ok) {
-                currentUserBets = await response.json();
-                // Frissítjük a cache-t is
-                localStorage.setItem('lp_activeBets', JSON.stringify(currentUserBets));
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    currentUserBets = await response.json();
+                    localStorage.setItem('lp_activeBets', JSON.stringify(currentUserBets));
+                } else {
+                    throw new Error("A szerver nem JSON-t küldött, hanem valami mást (HTML?)");
+                }
+            } else {
+                console.warn("A szerver hibaüzenetet küldött, a tárolt fogadásokat használom.");
+                currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
             }
         } catch (err) {
             console.error("Nem sikerült lekérni a friss fogadásokat:", err);
-            // Ha a szerver hiba, fallback a localStorage-ra
             currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
         }
     }
@@ -554,11 +561,10 @@ async function renderMatches() {
 
             const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
             
-            // Megkeressük a fogadást a friss listában (státusz ellenőrzéssel)
             const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
             const isFlashing = typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id)) ? 'goal-highlight' : '';
 
-            // Dinamikus státusz meghatározás (Kisbetű/Nagybetű kezelés)
+            // Státusz egységesítése nagybetűre (WON, LOST, OPEN)
             const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
 
             return `
@@ -1146,6 +1152,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
