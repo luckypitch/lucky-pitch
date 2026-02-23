@@ -260,6 +260,8 @@ app.post('/create-checkout-session', async (req, res) => {
 const autoCheckResults = async () => {
     console.log(`[${new Date().toLocaleTimeString()}] --- AUTO CHECK START ---`);
     console.log("DEBUG: API Key létezik?", !!process.env.FOOTBALL_API_KEY);
+    console.log(`DEBUG: Kulcs hossza: ${process.env.FOOTBALL_API_KEY.length} karakter`);
+    console.log(`DEBUG: Kulcs kezdete: ${process.env.FOOTBALL_API_KEY.substring(0, 3)}...`);
     try {
         const { data: pendingBets, error } = await supabase
             .from('bets')
@@ -275,8 +277,10 @@ const autoCheckResults = async () => {
         for (let bet of pendingBets) {
             console.log(`Ellenőrzés: Match ${bet.match_id}`);
             const apiRes = await fetch(`https://api.football-data.org/v4/matches/${bet.match_id}`, {
-                headers: { 'X-Auth-Token': process.env.FOOTBALL_API_KEY }
-            });
+    headers: { 
+        'X-Auth-Token': String(process.env.FOOTBALL_API_KEY).trim() 
+    }
+});
             
             const match = await apiRes.json();
             
@@ -336,6 +340,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
