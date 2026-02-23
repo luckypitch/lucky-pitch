@@ -364,7 +364,8 @@ function renderMatches() {
             ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
             : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
 
-        const odds = getSmartOdds(m);
+        // EZ A SOR KELL! Létrehozzuk az odds objektumot minden egyes meccshez
+        const odds = getSmartOdds(m); 
 
         return `
         <div class="match-card ${flashingMatches.has(m.id) ? 'goal-highlight' : ''}" id="match-${m.id}">
@@ -419,32 +420,34 @@ function checkGoals() {
 }
 
 function getSmartOdds(match) {
-    // Ha van adat az API-ból, megpróbáljuk párosítani
-    if (Array.isArray(globalOdds) && globalOdds.length > 0) {
-        const found = globalOdds.find(o => 
-            o.home_team === match.homeTeam.name || 
-            o.away_team === match.awayTeam.name
-        );
+    // Alapértelmezett AI oddsok (ha nincs API adat)
+    const seed = match.id || 0;
+    const rng = (s) => Math.abs(Math.sin(seed + s));
+    
+    let result = {
+        h: (1.4 + rng(1) * 2).toFixed(2),
+        d: (2.8 + rng(2) * 1.5).toFixed(2),
+        a: (1.6 + rng(3) * 3).toFixed(2)
+    };
 
+    // Ha van API adatunk, felülírjuk az AI-t
+    if (globalOdds && globalOdds.length > 0) {
+        const found = globalOdds.find(o => 
+            o.home_team === match.homeTeam.name || o.away_team === match.awayTeam.name
+        );
         if (found && found.bookmakers && found.bookmakers[0]) {
             const market = found.bookmakers[0].markets.find(m => m.key === 'h2h');
             if (market) {
                 const h = market.outcomes.find(out => out.name === found.home_team)?.price;
                 const a = market.outcomes.find(out => out.name === found.away_team)?.price;
                 const d = market.outcomes.find(out => out.name === 'Draw')?.price;
-                if (h && a && d) return { h: h.toFixed(2), d: d.toFixed(2), a: a.toFixed(2) };
+                if (h && a && d) {
+                    result = { h: h.toFixed(2), d: d.toFixed(2), a: a.toFixed(2) };
+                }
             }
         }
     }
-
-    // AI GENERÁTOR (Ha nincs API adat, vagy hiba történt)
-    const seed = match.id || 0;
-    const rng = (s) => Math.abs(Math.sin(seed + s));
-    return {
-        h: (1.4 + rng(1) * 2).toFixed(2),
-        d: (2.8 + rng(2) * 1.5).toFixed(2),
-        a: (1.6 + rng(3) * 3).toFixed(2)
-    };
+    return result;
 }
         
 // --- 5. MEGJELENÍTÉS ---
@@ -715,6 +718,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
