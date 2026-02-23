@@ -100,22 +100,33 @@ app.post('/api/user/update-balance', async (req, res) => {
     }
 });
 
-app.get('/api/user/bets', async (req, res) => {
+app.get('/api/user/balance', async (req, res) => {
     try {
         const userId = req.query.userId;
         if (!userId) return res.status(400).json({ error: "No UserID" });
 
-        const { data, error } = await supabase
+        // 1. Megnézzük, van-e lezáratlan fogadása (OPEN)
+        const { data: openBets } = await supabase
             .from('bets')
             .select('*')
             .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+            .eq('status', 'OPEN');
 
-        if (error) throw error;
+        // 2. Ha van, lefuttatjuk rájuk az ellenőrzést (Opcionális: itt meghívhatod az autoCheck-et)
+        // De a leggyorsabb, ha egyszerűen lekérjük az egyenleget:
+        let { data, error } = await supabase
+            .from('user_balances')
+            .select('balance')
+            .eq('user_id', userId)
+            .single();
+
+        if (error && error.code === 'PGRST116') {
+            // ... (új user létrehozása, ha nem létezik)
+        }
+
         res.json(data);
     } catch (err) {
-        console.error("Hiba a fogadások lekérésekor:", err);
-        res.status(500).json({ error: "Szerver hiba" });
+        res.status(500).json({ error: "Hiba" });
     }
 });
 
@@ -341,6 +352,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
