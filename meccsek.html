@@ -465,10 +465,7 @@ function getSmartOdds(match) {
         }
     }
     return result;
-}
-
-// A renderMatches elején:
-const myBet = activeBets.find(b => String(b.matchId) === String(m.id) && b.status === 'OPEN');        
+} 
         
 // --- 5. MEGJELENÍTÉS ---
 function renderMatches() {
@@ -958,6 +955,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
