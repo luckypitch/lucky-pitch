@@ -286,6 +286,40 @@ function translateStatus(status) {
     return status;
 }
 
+async function updateData() {
+    try {
+        // 1. Meccsek letöltése
+        const res = await fetch("/live-matches");
+        const data = await res.json();
+        allMatches = data.matches || data || [];
+
+        // 2. Oddsok letöltése (párhuzamosan is futhatna, de maradjunk a biztosnál)
+        try {
+            const oddsRes = await fetch("/api/odds-data");
+            if (oddsRes.ok) {
+                const oddsData = await oddsRes.json();
+                globalOdds = Array.isArray(oddsData) ? oddsData : [];
+            }
+        } catch (e) { console.warn("Odds API hiba"); }
+
+        // 3. Renderelés és logika futtatása
+        if (typeof renderDateStrip === 'function') renderDateStrip();
+        if (typeof renderLeagues === 'function') renderLeagues();
+        
+        renderMatches();
+        
+        if (allMatches.length > 0) {
+            checkGoals();      // Gól-animációk
+            checkBetResults(); // Fogadások kiértékelése
+        }
+
+        console.log("Adatok frissítve. Meccsek:", allMatches.length);
+
+    } catch (e) {
+        console.error("Hiba az updateData futásakor:", e);
+    }
+}
+        
 // --- 3. EGYENLEG ÉS AUTH ---
 async function refreshBalance() {
     if (window.Clerk && Clerk.user) {
@@ -921,6 +955,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
