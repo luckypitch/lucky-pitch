@@ -1,63 +1,43 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const fs = require('fs');
-const path = require('path');
 
-const BALANCES_FILE = path.join(__dirname, 'user_balances.json');
+let userBalances = {}; 
 
-// Segédfüggvény: Adatok betöltése a fájlból
-function loadBalances() {
-    try {
-        if (fs.existsSync(BALANCES_FILE)) {
-            const data = fs.readFileSync(BALANCES_FILE, 'utf8');
-            return JSON.parse(data);
-        }
-    } catch (err) {
-        console.error("Hiba az egyenlegek betöltésekor:", err);
-    }
-    return {};
-}
-
-// Segédfüggvény: Adatok mentése a fájlba
-function saveBalances(balances) {
-    try {
-        fs.writeFileSync(BALANCES_FILE, JSON.stringify(balances, null, 2));
-    } catch (err) {
-        console.error("Hiba a mentéskor:", err);
-    }
-}
-
-// API: Egyenleg lekérése (vagy létrehozása, ha új a felhasználó)
+// API: Egyenleg lekérése
 app.get('/api/user/balance', (req, res) => {
     const userId = req.query.userId;
     if (!userId) return res.status(400).json({ error: "No UserID" });
 
-    let balances = loadBalances();
-
-    // Ha még sose járt nálunk, kap 1000 pontot
-    if (balances[userId] === undefined) {
-        balances[userId] = 1000;
-        saveBalances(balances);
+    // Ha még nincs benne a memóriában, kap 1000 kezdőpontot
+    if (userBalances[userId] === undefined) {
+        userBalances[userId] = 1000;
     }
 
-    res.json({ balance: balances[userId] });
+    res.json({ balance: userBalances[userId] });
 });
 
 // API: Fogadás vagy Pontlevonás
 app.post('/api/user/update-balance', (req, res) => {
-    const { userId, amount } = req.body; // amount lehet negatív is (levonás)
-    let balances = loadBalances();
-
-    if (balances[userId] === undefined) balances[userId] = 1000;
+    const { userId, amount } = req.body; 
     
-    if (balances[userId] + amount < 0) {
+    // Ha még nem ismerjük a felhasználót, inicializáljuk
+    if (userBalances[userId] === undefined) {
+        userBalances[userId] = 1000;
+    }
+    
+    // Ellenőrzés: Ne mehessen mínuszba
+    if (userBalances[userId] + amount < 0) {
         return res.status(400).json({ error: "Nincs elég egyenleg!" });
     }
 
-    balances[userId] += amount;
-    saveBalances(balances);
-    res.json({ success: true, newBalance: balances[userId] });
+    // Módosítás csak a memóriában
+    userBalances[userId] += amount;
+    
+    res.json({ 
+        success: true, 
+        newBalance: userBalances[userId] 
+    });
 });
 
 // BIZTONSÁGOS FETCH: Kezeli a node-fetch 2-es és 3-as verzióját is, megakadályozva a leállást
@@ -247,6 +227,7 @@ app.listen(PORT, '0.0.0.0', () => {
     💳 Stripe: ${STRIPE_SECRET_KEY ? "AKTÍV" : "HIÁNYZIK"}
     `);
 });
+
 
 
 
