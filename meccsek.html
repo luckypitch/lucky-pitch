@@ -584,6 +584,11 @@ function renderMatches() {
     }).join('');
 }
         
+Természetesen! Itt a teljes, végleges és letisztult placeBet függvény. Ebben benne van a belépés-ellenőrzés, a biztonságos egyenleg-kezelés és a fogadások elmentése a localStorage-ba, hogy azonnal megjelenjen a "LIVE BET" felirat.
+
+Mivel a Supabase-t még nem kötöttük be, ez a verzió a te szervereden lévő /api/user/update-balance végpontot hívja meg (amit korábban használtunk).
+JavaScript
+
 async function placeBet(matchId, teamName, odds, type) {
     // 1. BELÉPÉS ELLENŐRZÉSE
     if (typeof Clerk === 'undefined' || !Clerk.user) {
@@ -594,9 +599,13 @@ async function placeBet(matchId, teamName, odds, type) {
 
     // 2. ÖSSZEG BEKÉRÉSE
     const amountStr = prompt(`Mennyit teszel a következőre: ${teamName}? (Szorzó: ${odds})`, "100");
+    
+    // Ha a felhasználó a "Mégse" gombra kattint
     if (amountStr === null) return; 
 
     const amount = parseInt(amountStr);
+
+    // Érvényesség ellenőrzése
     if (isNaN(amount) || amount <= 0) {
         alert("Kérlek adj meg egy érvényes összeget!");
         return;
@@ -611,15 +620,14 @@ async function placeBet(matchId, teamName, odds, type) {
     try {
         const newBalance = window.userBalance - amount;
 
-        // 4. SZERVER FRISSÍTÉSE (Egyenleg + Fogadás mentése)
-        // Itt feltételezzük, hogy a szervered a balance mellett a bet-et is elmenti
+        // 4. SZERVER FRISSÍTÉSE
+        // Elküldjük a szervernek az új egyenleget és a fogadás adatait
         const res = await fetch('/api/user/update-balance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId: Clerk.user.id,
                 balance: newBalance,
-                // Beküldjük a fogadás adatait is a szervernek, hogy elmentse az adatbázisba!
                 bet: {
                     matchId: String(matchId),
                     teamName: teamName,
@@ -632,12 +640,17 @@ async function placeBet(matchId, teamName, odds, type) {
         });
 
         if (res.ok) {
+            // SIKER: Frissítjük a lokális változókat
             window.userBalance = newBalance;
+            
+            // UI frissítése (egyenleg kijelző)
             const balanceElem = document.getElementById('user-balance');
             if (balanceElem) balanceElem.innerText = newBalance.toLocaleString();
             
-            // 5. HELYI LISTA FRISSÍTÉSE
+            // 5. HELYI LISTA FRISSÍTÉSE (localStorage)
+            // Hogy a renderMatches azonnal lássa a "LIVE BET" jelzést
             let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
+            
             currentBets.push({
                 matchId: String(matchId),
                 teamName: teamName,
@@ -652,63 +665,101 @@ async function placeBet(matchId, teamName, odds, type) {
             
             alert(`Sikeres fogadás: ${amount} LP -> ${teamName}`);
             
-            if (typeof renderMatches === 'function') renderMatches(); 
+            // 6. OLDAL ÚJRARAJZAOLÁSA
+            // Ez fogja kitenni a narancssárga feliratot a meccs alá
+            if (typeof renderMatches === 'function') {
+                renderMatches();
+            }
         } else {
-            throw new Error("Szerver hiba");
+            const errorData = await res.json();
+            throw new Error(errorData.message || "Szerver hiba");
         }
     } catch (err) {
         console.error("Fogadási hiba:", err);
-        alert("Hiba történt a fogadás közben.");
+        alert("Hiba történt a fogadás közben. Kérlek próbáld újra!");
     }
 }
 
-function checkBetResults() {
-    if (activeBets.length === 0) return;
+Szuper, nézzük a checkBetResults függvényt! Mivel most LocalStorage-t használunk, a kihívás az, hogy a nyereményt nem elég csak a böngészőben hozzáadni az egyenleghez, hanem a szerverre is el kell küldeni, hogy megmaradjon.
 
-    activeBets.forEach((bet, index) => {
-        if (bet.status !== 'OPEN') return;
+Itt a logikusan felépített checkBetResults és a hozzá tartozó processWin függvény:
+1. A fogadások ellenőrzése (checkBetResults)
 
+Ezt a függvényt érdemes az updateData végén vagy egy setInterval-ban hívni.
+JavaScript
+
+async function checkBetResults() {
+    // 1. Beolvassuk a helyi fogadásokat
+    let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
+    if (currentBets.length === 0) return;
+
+    let changed = false;
+
+    for (let bet of currentBets) {
+        // Csak a még nyitott fogadásokat nézzük
+        if (bet.status !== 'OPEN') continue;
+
+        // Megkeressük a meccset az élő adatok között
         const match = allMatches.find(x => String(x.id) === String(bet.matchId));
         
-        if (match && match.status === 'FINISHED') {
+        // Ha a meccs véget ért (FINISHED)
+        if (match && (match.status === 'FINISHED' || match.status === 'AWARDED')) {
             const homeScore = match.score.fullTime.home;
             const awayScore = match.score.fullTime.away;
-            let winner = '';
+            let actualWinner = '';
 
-            if (homeScore > awayScore) winner = 'H';
-            else if (homeScore < awayScore) winner = 'V';
-            else winner = 'D';
+            if (homeScore > awayScore) actualWinner = 'H';
+            else if (homeScore < awayScore) actualWinner = 'V';
+            else actualWinner = 'D';
 
-            if (bet.type === winner) {
-                // NYERT!
+            if (bet.type === actualWinner) {
+                // --- NYERT! ---
                 const prize = Math.floor(bet.amount * bet.odds);
-                processWin(prize, bet.pickName);
+                console.log(`GRATULÁLOK! Nyertél ${prize} LP-t a ${bet.teamName} meccsen!`);
+                
+                // Jóváírjuk a szerveren és a kliensen is
+                await processWin(prize, bet.matchId);
                 bet.status = 'WON';
             } else {
-                // VESZTETT
+                // --- VESZTETT ---
+                console.log(`Sajnos a ${bet.teamName} fogadásod nem jött be.`);
                 bet.status = 'LOST';
-                console.log(`Sajnos vesztettél: ${bet.pickName}`);
             }
+            changed = true;
         }
-    });
+    }
 
-    // Takarítás: csak azokat tartjuk meg, amik még futnak
-    activeBets = activeBets.filter(b => b.status === 'OPEN');
-    localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
+    // Ha történt változás, elmentjük és újrarajzolunk
+    if (changed) {
+        localStorage.setItem('lp_activeBets', JSON.stringify(currentBets));
+        if (typeof renderMatches === 'function') renderMatches();
+    }
 }
 
-async function processWin(amount, pick) {
-    const balanceElem = document.getElementById('user-balance');
-    const currentBalance = parseInt(balanceElem.innerText.replace(/\s/g, ''));
-    const newBalance = currentBalance + amount;
+async function processWin(prizeAmount, matchId) {
+    try {
+        // Kiszámoljuk az új egyenleget
+        const newBalance = window.userBalance + prizeAmount;
 
-    // UI frissítése
-    balanceElem.innerText = newBalance.toLocaleString();
-    alert(`NYERTÉL! ${amount} LP hozzáadva a számládhoz.`);
+        const res = await fetch('/api/user/update-balance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: Clerk.user.id,
+                balance: newBalance,
+                // Opcionálisan küldhetünk egy megjegyzést a szervernek
+                note: `Nyeremény a(z) ${matchId} azonosítójú meccsről`
+            })
+        });
 
-    // Mentés Supabase-be
-    if (window.Clerk && Clerk.user) {
-        await saveBalanceToDB(Clerk.user.id, newBalance);
+        if (res.ok) {
+            window.userBalance = newBalance;
+            // Frissítjük a kijelzőt
+            const balanceElem = document.getElementById('user-balance');
+            if (balanceElem) balanceElem.innerText = newBalance.toLocaleString();
+        }
+    } catch (err) {
+        console.error("Hiba a nyeremény jóváírásakor:", err);
     }
 }
 
@@ -1061,6 +1112,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
