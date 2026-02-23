@@ -1,56 +1,13 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, 'api.env') });
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// BIZTONSÁGOS FETCH: Kezeli a node-fetch verziókat
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-
-// --- 1. Egyenleg LEKÉRÉSE ---
-app.get('/api/user/balance', async (req, res) => {
-    const { userId } = req.query;
-    
-    // Lekérjük az egyenleget, ha nincs, létrehozzuk 1000-el (upsert)
-    const { data, error } = await supabase
-        .from('user_balances')
-        .select('balance')
-        .eq('user_id', userId)
-        .single();
-
-    if (error && error.code === 'PGRST116') { // Nincs még ilyen user
-        const { data: newUser } = await supabase
-            .from('user_balances')
-            .insert({ user_id: userId, balance: 1000 })
-            .select()
-            .single();
-        return res.json({ balance: 1000 });
-    }
-
-    res.json(data);
-});
-
-// --- 2. Egyenleg FRISSÍTÉSE ---
-app.post('/api/user/update-balance', async (req, res) => {
-    const { userId, balance } = req.body;
-
-    const { error } = await supabase
-        .from('user_balances')
-        .update({ balance: balance })
-        .eq('user_id', userId);
-
-    if (error) return res.status(500).json({ error: error.message });
-    res.json({ success: true });
-});
-
-// Konfiguráció betöltése
-require('dotenv').config({ path: path.resolve(__dirname, 'api.env') });
-
-const app = express(); // CSAK EGYSZER DEKLARÁLVA
+// 1. Inicializálás
+const app = express();
 app.use(express.json());
 app.use(cors());
-
-// Statikus fájlok kiszolgálása (A gyökérkönyvtárból)
 app.use(express.static(path.join(__dirname)));
 
 // API Kulcsok
@@ -59,39 +16,57 @@ const ODDS_API_KEY = process.env.ODDS_API_KEY;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const stripe = require('stripe')(STRIPE_SECRET_KEY);
 
-// --- MEMÓRIA TÁROLÓK (EGYENLEG ÉS CACHE) ---
-let userBalances = {}; 
-let matchCache = { data: null, lastFetch: 0 };
-let oddsCache = { data: null, lastFetch: 0 };
-let standingsCache = {};
+// --- SUPABASE EGYENLEG API ---
 
-// --- VIRTUAL BALANCE API ---
-
-// Egyenleg lekérése
-app.get('/api/user/balance', (req, res) => {
+// Egyenleg LEKÉRÉSE
+app.get('/api/user/balance', async (req, res) => {
     try {
-        const userId = req.query.userId;
+        const { userId } = req.query;
         if (!userId) return res.status(400).json({ error: "No UserID" });
-        if (userBalances[userId] === undefined) userBalances[userId] = 1000;
-        res.json({ balance: userBalances[userId] });
+
+        // Lekérjük a Supabase-ből
+        let { data, error } = await supabase
+            .from('user_balances')
+            .select('balance')
+            .eq('user_id', userId)
+            .single();
+
+        // Ha nincs még ilyen user, létrehozzuk 1000-el
+        if (error && (error.code === 'PGRST116' || error.message.includes("0 rows"))) {
+            const { data: newUser, error: insertError } = await supabase
+                .from('user_balances')
+                .insert({ user_id: userId, balance: 1000 })
+                .select()
+                .single();
+            
+            if (insertError) throw insertError;
+            return res.json({ balance: 1000 });
+        }
+
+        if (error) throw error;
+        res.json(data);
     } catch (err) {
-        res.status(500).json({ error: "Server error" });
+        console.error("Balance fetch error:", err);
+        res.status(500).json({ error: "Adatbázis hiba" });
     }
 });
 
-// Pontlevonás vagy hozzáadás
-app.post('/api/user/update-balance', (req, res) => {
+// Egyenleg FRISSÍTÉSE (POST)
+app.post('/api/user/update-balance', async (req, res) => {
     try {
-        const { userId, amount } = req.body;
+        const { userId, balance } = req.body; // Várjuk a teljes új összeget
         if (!userId) return res.status(400).json({ error: "No UserID" });
-        if (userBalances[userId] === undefined) userBalances[userId] = 1000;
-        if (userBalances[userId] + amount < 0) {
-            return res.status(400).json({ error: "Nincs elég egyenleged!" });
-        }
-        userBalances[userId] += amount;
-        res.json({ success: true, newBalance: userBalances[userId] });
+
+        const { error } = await supabase
+            .from('user_balances')
+            .update({ balance: balance })
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        res.json({ success: true, newBalance: balance });
     } catch (err) {
-        res.status(500).json({ error: "Update failed" });
+        console.error("Balance update error:", err);
+        res.status(500).json({ error: "Frissítés sikertelen" });
     }
 });
 
@@ -225,6 +200,7 @@ app.listen(PORT, '0.0.0.0', () => {
     💳 Stripe: ${STRIPE_SECRET_KEY ? "AKTÍV" : "HIÁNYZIK"}
     `);
 });
+
 
 
 
