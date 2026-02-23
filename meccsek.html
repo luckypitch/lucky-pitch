@@ -985,43 +985,52 @@ function renderLeagues() {
 }
 async function loadUserBetsFromServer() {
     if (typeof Clerk === 'undefined' || !Clerk.user) return;
+    
     try {
         const res = await fetch(`/api/user/get-bets?userId=${Clerk.user.id}`);
         
-        // Ellenőrizzük, hogy a válasz egyáltalán OK-e
-        if (!res.ok) {
-            console.warn("A szerver hibát jelzett a fogadások lekérésekor:", res.status);
-            return;
-        }
-
-        const text = await res.text(); // Először szövegként olvassuk be
-        try {
-            const bets = JSON.parse(text); // Csak most próbáljuk parse-olni
-            localStorage.setItem('lp_activeBets', JSON.stringify(bets));
-            console.log("Fogadások szinkronizálva.");
-        } catch (e) {
-            console.error("A szerver nem érvényes JSON-t küldött. Ezt kaptuk:", text);
+        // CSAK AKKOR próbáljuk feldolgozni, ha a válasz sikeres (200 OK)
+        if (res.ok) {
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                const bets = await res.json();
+                if (Array.isArray(bets)) {
+                    localStorage.setItem('lp_activeBets', JSON.stringify(bets));
+                    console.log("Fogadások betöltve a szerverről.");
+                }
+            }
+        } else {
+            // Ha a szerver 404-et vagy mást ad, NEM töröljük a helyi adatokat!
+            console.warn("A szerveroldali mentés még nem elérhető, helyi adatok használata.");
         }
     } catch (e) {
-        console.error("Hiba a lekérés során:", e);
+        // Ha hiba van (pl. nincs internet vagy rossz a JSON), megőrizzük a meglévőt
+        console.log("Helyi módban maradunk, refresh után is megmaradnak az adatok.");
     }
 }
         
 // --- 7. INDÍTÁS ---
+let isInitialized = false; // <--- Új változó a függvényen kívül vagy az elején
+
 async function startApp() {
     let t = 0;
-    while (typeof Clerk === 'undefined' && t < 30) { await new Promise(r => setTimeout(r, 100)); t++; }
+    while (typeof Clerk === 'undefined' && t < 30) { 
+        await new Promise(r => setTimeout(r, 100)); 
+        t++; 
+    }
     
     try {
         if (typeof Clerk !== 'undefined') {
             await Clerk.load();
 
             Clerk.addListener(({ user }) => {
-                if (!user && localStorage.getItem('lp_activeBets')) {
-                    console.log("Kijelentkezés észlelve, adatok törlése...");
+                // CSAK AKKOR törlünk, ha már egyszer rendesen betöltött az oldal (isInitialized)
+                // és a felhasználó VALÓBAN kijelentkezett
+                if (isInitialized && !user && localStorage.getItem('lp_activeBets')) {
+                    console.log("Valódi kijelentkezés, adatok törlése...");
                     localStorage.removeItem('lp_activeBets');
                     window.userBalance = 0;
-                    setTimeout(() => { window.location.href = '/meccsek.html'; }, 100);
+                    window.location.href = '/meccsek.html';
                 }
             });
 
@@ -1034,32 +1043,37 @@ async function startApp() {
                 }
                 
                 await loadInitialBalance(); 
-                // Csak akkor hívjuk meg, ha már megírtuk a loadUserBetsFromServer-t
-                if (typeof loadUserBetsFromServer === 'function') {
-                    await loadUserBetsFromServer();
+                
+                // PRÓBÁLD MEG ÍGY: Ha a szerver hibát dob, ne álljon meg a script
+                try {
+                    if (typeof loadUserBetsFromServer === 'function') {
+                        await loadUserBetsFromServer();
+                    }
+                } catch (betError) {
+                    console.warn("Szerveroldali fogadások nem elérhetők, marad a helyi tároló.");
                 }
+                
+                isInitialized = true; // <--- Itt jelezzük, hogy a belépett user adatai betöltődtek
             } else {
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
                     lb.style.display = 'block'; 
                     lb.onclick = () => Clerk.openSignIn({ afterSignInUrl: window.location.href });
                 }
+                isInitialized = true;
             }
         }
 
-        // Első adatbetöltés
         await updateData();
-        await checkBetResults(); // Rögtön az elején is ellenőrizzük a fogadásokat
+        await checkBetResults(); 
 
         if (typeof renderDateStrip === 'function') renderDateStrip();
         if (typeof renderLeagues === 'function') renderLeagues();
         if (typeof renderMatches === 'function') renderMatches();
 
-        // --- AUTOMATIKUS FRISSÍTÉS 30 MÁSODPERCENKÉNT ---
         setInterval(async () => {
-            await updateData();        // Friss meccsadatok
-            await checkBetResults();   // Eredmények ellenőrzése és nyeremény jóváírása
-            console.log("Adatok és fogadások frissítve...");
+            await updateData();
+            await checkBetResults();
         }, 30000);
 
     } catch (e) { console.error("StartApp error:", e); }
@@ -1102,6 +1116,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
