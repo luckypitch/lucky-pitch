@@ -245,6 +245,31 @@ let allMatches = [];
 let prevScores = new Map();
 let flashingMatches = new Set();
 
+function toggleTheme() { 
+    document.body.classList.toggle('light'); 
+    localStorage.setItem('lp_theme', document.body.classList.contains('light'));
+}
+
+function toggleLang() {
+    currentLang = currentLang === 'HU' ? 'EN' : 'HU';
+    updateStaticTexts();
+    renderMatches();
+    renderDateStrip();
+    renderLeagues();
+}
+
+function updateStaticTexts() {
+    const isHU = currentLang === 'HU';
+    const langBtn = document.getElementById('lang-btn');
+    const hLeagues = document.getElementById('h-leagues');
+    const hTable = document.getElementById('h-table');
+    const backLink = document.getElementById('back-link');
+
+    if (langBtn) langBtn.innerText = currentLang;
+    if (hLeagues) hLeagues.innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
+    if (hTable) hTable.innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
+    if (backLink) backLink.innerText = isHU ? 'VISSZA' : 'BACK';
+        
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
     if (!status) return 'transparent';
@@ -344,26 +369,75 @@ function renderMatches() {
 }
 
 async function showStandings(leagueId, teamId, code) {
+    if(window.innerWidth <= 1100 && typeof toggleM === 'function') toggleM('sidebar-standings');
     const target = document.getElementById("standings-target");
     if (!target) return;
-    target.innerHTML = `<p style="text-align:center; padding:30px;">...</p>`;
+    target.innerHTML = `<p style="text-align:center; padding:50px; font-size:10px; font-family:'Orbitron';">LOADING...</p>`;
+    
     try {
         const res = await fetch(`/api/standings/${code || leagueId}`);
         const data = await res.json();
-        const table = data.standings.find(s => s.type === 'TOTAL').table;
+        const tableData = data.standings.find(s => s.type === 'TOTAL').table;
+        const total = tableData.length; // Definíció hozzáadva!
+
+        let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">${currentLang==='HU'?'CSAPAT':'TEAM'}</th><th>P</th></tr></thead><tbody>`;
         
-        let html = `<table class="standings-table"><tbody>`;
-        table.forEach(r => {
-            const color = getStatusColor(r.description || "");
-            const isT = r.team.id == teamId;
-            html += `<tr class="${isT ? 'highlight' : ''}">
-                <td style="border-left: 3px solid ${color}">${r.position}</td>
-                <td style="text-align:left;"><img src="${r.team.crest}" width="18"> ${r.team.shortName || r.team.name}</td>
-                <td style="color:var(--neon-green)">${r.points}</td>
+        tableData.forEach(r => {
+            let status = r.description || "";
+            const pos = r.position; // Definíció hozzáadva!
+            const isTarget = r.team.id == teamId;
+
+            // Zóna logika beépítése
+            if (!status || status === "") {
+                if (['PL', 'PD', 'SA'].includes(code)) {
+                    if (pos <= 4) status = "Champions League Group Stage";
+                    else if (pos === 5) status = "Europa League Group Stage";
+                    else if (pos === 6) status = "Conference League Qualifiers";
+                    else if (pos >= total - 2) status = "Relegation";
+                } else if (code === 'BL1') {
+                    if (pos <= 4) status = "Champions League Group Stage";
+                    else if (pos === 5) status = "Europa League Group Stage";
+                    else if (pos === 16) status = "Osztályozó";
+                    else if (pos >= 17) status = "Relegation";
+                } else if (code === 'DED') { 
+                    if (pos <= 2) status = "Champions League Group Stage";
+                    else if (pos === 3) status = "Champions League Qualifiers";
+                    else if (pos === 4) status = "Europa League Qualifiers";
+                    else if (pos >= 5 && pos <= 8) status = "Conference League Play-offs";
+                    else if (pos === 16) status = "Osztályozó";
+                    else if (pos >= 17) status = "Relegation";
+                } else if (code === 'FL1') {
+                    if (pos <= 3) status = "Champions League Group Stage";
+                    else if (pos === 4) status = "Champions League Qualifiers";
+                    else if (pos === 5) status = "Europa League Group Stage";
+                    else if (pos === 16) status = "Osztályozó";
+                    else if (pos >= 17) status = "Relegation";
+                } else {
+                    if (pos === 1) status = "Bajnok / Feljutó";
+                    else if (pos >= total - 2) status = "Relegation";
+                }
+            }
+
+            const color = getStatusColor(status);
+            const boxBg = color !== 'transparent' ? color : 'rgba(255,255,255,0.05)';
+            const boxText = color !== 'transparent' ? '#000' : 'var(--neon-blue)';
+
+            html += `<tr class="${isTarget ? 'highlight' : ''}">
+                <td class="pos-col" style="border-left: 3px solid ${color}">
+                    <div class="pos-num-box" style="background:${boxBg}; color:${boxText}; font-weight:900;">${pos}</div>
+                </td>
+                <td style="text-align:left; font-weight:600;">
+                    <img src="${r.team.crest}" width="20" style="vertical-align:middle; margin-right:8px;"> 
+                    ${r.team.shortName || r.team.name}
+                </td>
+                <td style="font-family:'Orbitron'; color:var(--neon-green); font-weight:bold;">${r.points}</td>
             </tr>`;
         });
-        target.innerHTML = html + `</tbody></table>`;
-    } catch (e) { target.innerHTML = "Hiba."; }
+        target.innerHTML = html + "</tbody></table>";
+    } catch (e) { 
+        console.error(e);
+        target.innerHTML = "<p style='text-align:center; padding:20px;'>Error loading standings.</p>"; 
+    }
 }
 
 // --- 6. UI LOGIKA ---
@@ -449,6 +523,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
