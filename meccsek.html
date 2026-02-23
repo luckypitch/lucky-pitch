@@ -550,64 +550,7 @@ function renderMatches() {
             // --- JAVÍTÁS: String típusú ellenőrzés a villogáshoz ---
             const isFlashing = typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id)) ? 'goal-highlight' : '';
 
-            return `
-            <div class="match-card ${isFlashing}" 
-                 id="match-${m.id}" 
-                 style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; transition: all 0.3s ease;">
-                
-                ${myBet ? `<div style="position: absolute; top: 0; left: 0; background: #ffaa00; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">LIVE BET</div>` : ''}
-
-                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px;">
-                    <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" 
-                         onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
-                        <img src="${m.homeTeam.crest || ''}" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
-                        <span style="font-size: 12px; font-weight: 500;">${m.homeTeam.name}</span>
-                    </div>
-                    
-                    <div style="flex: 0 0 80px; text-align: center;">
-                        <div class="score-display ${isLive ? 'score-live' : ''}" style="font-size: 20px; font-weight: 800;">${score}</div>
-                        <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size: 8px; margin-top: 5px; display: inline-block;">ELEMZÉS</a>
-                    </div>
-
-                    <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" 
-                         onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                        <img src="${m.awayTeam.crest || ''}" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
-                        <span style="font-size: 12px; font-weight: 500;">${m.awayTeam.name}</span>
-                    </div>
-                </div>
-
-                <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
-    ${myBet ? `
-        <div style="background: rgba(255, 170, 0, 0.1); border: 1px dashed #ffaa00; border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <span style="font-size: 9px; color: #ffaa00; display: block; font-family: 'Orbitron';">${myBet.type} TIPP</span>
-                <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
-            </div>
-            <div style="text-align: right;">
-                <span style="font-size: 9px; opacity: 0.6; display: block;">NYEREMÉNY:</span>
-                <span style="font-size: 13px; font-weight: bold; color: #00ff88;">${Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP</span>
-            </div>
-        </div>
-    ` : (m.status === 'TIMED' || m.status === 'SCHEDULED') ? `
-        <div style="display: flex; gap: 8px; width: 100%;">
-            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">H ${odds.h}</button>
-            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">D ${odds.d}</button>
-            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">V ${odds.a}</button>
-        </div>
-    ` : isLive ? `
-        <div style="text-align:center; font-size: 10px; color: #ff3e3e; font-weight: bold; font-family: 'Orbitron'; letter-spacing: 1px;">
-            <span class="pulse-red">●</span> ÉLŐ MECCS - FOGADÁS LEZÁRVA
-        </div>
-    ` : `
-        <div style="text-align:center; font-size: 10px; opacity: 0.4;">FOGADÁS LEZÁRVA</div>
-    `}
-</div>
-        } catch (err) {
-            console.error("Hiba a kártya renderelésekor:", err);
-            return '';
-        }
-    }).join('');
-}
+            
         
 async function placeBet(matchId, teamName, odds, type) {
     // 1. BELÉPÉS ELLENŐRZÉSE
