@@ -205,33 +205,55 @@ app.post('/create-checkout-session', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// server.js - Példa egy kiértékelő végpontra
-app.post('/api/admin/settle-bets', async (req, res) => {
+// server.js - Fogadások kiértékelése
+app.post('/api/admin/check-results', async (req, res) => {
     try {
-        // 1. Függő fogadások lekérése
-        const { data: pendingBets } = await supabase.from('bets').select('*').eq('status', 'pending');
+        // 1. Lekérjük a függőben lévő fogadásokat
+        const { data: pendingBets, error } = await supabase
+            .from('bets')
+            .select('*')
+            .eq('status', 'pending');
+
+        if (error) throw error;
 
         for (let bet of pendingBets) {
-            // 2. Meccs adat lekérése az API-ból
-            const match = await fetchMatchFromAPI(bet.match_id); 
-            
-            if (match.status === 'FINISHED') {
-                const result = getResult(match.score); // 'H', 'D' vagy 'V'
-                const isWinner = bet.prediction === result;
+            // 2. Lekérjük a meccs eredményét az API-tól
+            const response = await fetch(`https://api.football-data.org/v4/matches/${bet.match_id}`, {
+                headers: { 'X-Auth-Token': process.env.FOOTBALL_API_KEY }
+            });
+            const match = await response.json();
 
-                if (isWinner) {
-                    const payout = bet.amount * bet.odds;
-                    // Egyenleg növelése a Supabase-ben
-                    await supabase.rpc('increment_balance', { user_id: bet.user_id, amount: payout });
+            // 3. Ha a meccs véget ért
+            if (match.status === 'FINISHED') {
+                const homeScore = match.score.fullTime.home;
+                const awayScore = match.score.fullTime.away;
+                
+                let actualResult = '';
+                if (homeScore > awayScore) actualResult = 'H';
+                else if (homeScore < awayScore) actualResult = 'V';
+                else actualResult = 'D';
+
+                // 4. Ellenőrizzük, nyert-e
+                if (bet.prediction === actualResult) {
+                    const winAmount = bet.amount * bet.odds;
+                    
+                    // Nyeremény jóváírása az SQL függvénnyel
+                    await supabase.rpc('settle_winning_bet', { 
+                        u_id: bet.user_id, 
+                        win_amount: winAmount 
+                    });
+
+                    // Fogadás státuszának frissítése
                     await supabase.from('bets').update({ status: 'won' }).eq('id', bet.id);
                 } else {
+                    // Vesztett fogadás
                     await supabase.from('bets').update({ status: 'lost' }).eq('id', bet.id);
                 }
             }
         }
-        res.json({ message: "Sikeres kiértékelés!" });
+        res.json({ success: true, message: "Fogadások frissítve!" });
     } catch (err) {
-        res.status(500).send(err.message);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -253,6 +275,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
