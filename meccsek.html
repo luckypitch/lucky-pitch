@@ -484,11 +484,11 @@ function renderMatches() {
                     <div style="background: rgba(255, 170, 0, 0.1); border: 1px dashed #ffaa00; border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
                         <div style="text-align: left;">
                             <span style="font-size: 10px; color: #ffaa00; display: block; text-transform: uppercase; font-family: 'Orbitron';">Tipped: ${myBet.type}</span>
-                            <span style="font-size: 14px; font-weight: bold; color: white;">${myBet.amount.toLocaleString()} Ft</span>
+                            <span style="font-size: 14px; font-weight: bold; color: white;">${myBet.amount.toLocaleString()} LP</span>
                         </div>
                         <div style="text-align: right;">
                             <span style="font-size: 10px; opacity: 0.6; display: block;">Várható:</span>
-                            <span style="font-size: 14px; font-weight: bold; color: #00ff88;">${Math.floor(myBet.amount * myBet.odds).toLocaleString()} Ft</span>
+                            <span style="font-size: 14px; font-weight: bold; color: #00ff88;">${Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP</span>
                         </div>
                     </div>
                 ` : !isFinished ? `
@@ -604,7 +604,7 @@ async function processWin(amount, pick) {
 
     // UI frissítése
     balanceElem.innerText = newBalance.toLocaleString();
-    alert(`NYERTÉL! ${amount} Ft hozzáadva a számládhoz.`);
+    alert(`NYERTÉL! ${amount} LP hozzáadva a számládhoz.`);
 
     // Mentés Supabase-be
     if (window.Clerk && Clerk.user) {
@@ -897,6 +897,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
