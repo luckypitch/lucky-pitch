@@ -63,24 +63,6 @@ app.get('/api/user/balance', async (req, res) => {
     }
 });
 
-app.post('/api/user/update-balance', async (req, res) => {
-    try {
-        const { userId, balance } = req.body;
-        if (!userId) return res.status(400).json({ error: "No UserID" });
-
-        const { error } = await supabase
-            .from('user_balances')
-            .update({ balance: balance })
-            .eq('user_id', userId);
-
-        if (error) throw error;
-        res.json({ success: true, newBalance: balance });
-    } catch (err) {
-        console.error("Balance update error:", err);
-        res.status(500).json({ error: "Frissítés sikertelen" });
-    }
-});
-
 // --- FOOTBALL DATA API VÉGPONTOK ---
 
 app.get("/live-matches", async (req, res) => {
@@ -200,6 +182,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
