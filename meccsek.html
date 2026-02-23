@@ -331,18 +331,30 @@ async function updateData() {
         allMatches = [];
     }
 
-    // Oddsok lekérése a háttérben
+    // Oddsok lekérése és ellenőrzése
     try {
         const oddsRes = await fetch("/api/odds-data");
         if (oddsRes.ok) {
             const oddsData = await oddsRes.json();
+            
+            // ELMENTJÜK ÉS KIÍRJUK, MIT TALÁLTUNK
             globalOdds = Array.isArray(oddsData) ? oddsData : [];
-            if (globalOdds.length > 0) renderMatches();
+            
+            if (globalOdds.length > 0) {
+                console.log("Siker! Odds adatok érkeztek:");
+                console.table(globalOdds.slice(0, 5)); // Csak az első 5 meccset írja ki táblázatban, hogy ne legyen káosz
+                
+                // Csak akkor hívjuk újra, ha a renderMatches már létezik és stabil
+                if (typeof renderMatches === 'function') {
+                    renderMatches();
+                }
+            } else {
+                console.log("Az Odds API válaszolt, de üres listát küldött.");
+            }
         }
     } catch (e) {
-        console.warn("Odds API nem elérhető.");
+        console.warn("Hiba az Odds lekérése közben:", e);
     }
-}
 
 
 function getSmartOdds(match) {
@@ -380,11 +392,13 @@ function renderMatches() {
     const cont = document.getElementById("match-container");
     if (!cont) return;
 
+    // 1. Szűrés
     let filtered = allMatches.filter(m => {
         const mDate = m.utcDate ? m.utcDate.split('T')[0] : "";
         return mDate === selectedDate && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString()));
     });
 
+    // 2. Fix rendezés (időrendben)
     filtered.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
 
     if (filtered.length === 0) {
@@ -392,32 +406,36 @@ function renderMatches() {
         return;
     }
 
+    // 3. Generálás
     cont.innerHTML = filtered.map(m => {
+        // --- KRITIKUS JAVÍTÁS: Definiáljuk az odds-ot rögtön a ciklus elején ---
+        let odds = { h: "2.10", d: "3.25", a: "2.85" }; // Alapértelmezett AI értékek
+
+        try {
+            // Megpróbáljuk meghívni a külső függvényt
+            const smartOdds = getSmartOdds(m);
+            if (smartOdds) odds = smartOdds; 
+        } catch (err) {
+            // Ha a getSmartOdds hibát dobna vagy nem létezne, generálunk egyet meccs-ID alapján
+            const s = m.id || 1;
+            const r = (off) => Math.abs(Math.sin(s + off));
+            odds = {
+                h: (1.5 + r(1) * 2).toFixed(2),
+                d: (3.1 + r(2)).toFixed(2),
+                a: (1.8 + r(3) * 3).toFixed(2)
+            };
+        }
+
         const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
         const score = isLive || m.status === 'FINISHED' 
             ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
             : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
 
-        // HELYI GENERÁTOR: Ha a getSmartOdds nem létezik, azonnal gyártunk egyet
-        const getOdds = (match) => {
-            try { return getSmartOdds(match); } 
-            catch(e) { 
-                const s = match.id || 0;
-                const r = (o) => Math.abs(Math.sin(s + o));
-                return {
-                    h: (1.5 + r(1)*2).toFixed(2),
-                    d: (3.1 + r(2)).toFixed(2),
-                    a: (1.8 + r(3)*3).toFixed(2)
-                };
-            }
-        };
-
-        const o = getOdds(m); // Rövid név 'o', hogy ne keveredjen össze semmivel
-
+        // Innentől az 'odds' változó 100%, hogy létezik a lenti sorok számára
         return `
         <div class="match-card ${flashingMatches.has(m.id) ? 'goal-highlight' : ''}" id="match-${m.id}">
             <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
-                <img src="${m.homeTeam.crest || ''}" width="30">
+                <img src="${m.homeTeam.crest || ''}" width="30" onerror="this.src='https://via.placeholder.com/30'">
                 <span>${m.homeTeam.name}</span>
             </div>
             
@@ -427,19 +445,19 @@ function renderMatches() {
             </div>
 
             <div class="team-link" onclick="showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                <img src="${m.awayTeam.crest || ''}" width="30">
+                <img src="${m.awayTeam.crest || ''}" width="30" onerror="this.src='https://via.placeholder.com/30'">
                 <span>${m.awayTeam.name}</span>
             </div>
 
             <div class="bet-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; width: 100%; grid-column: 1 / span 3;">
-                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${o.h}, 'H')">
-                    <span class="odds-label">H</span> <span class="odds-val">${o.h}</span>
+                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">
+                    <span class="odds-label">H</span> <span class="odds-val">${odds.h}</span>
                 </button>
-                <button class="odds-btn" onclick="placeBet(${m.id}, 'Döntetlen', ${o.d}, 'D')">
-                    <span class="odds-label">D</span> <span class="odds-val">${o.d}</span>
+                <button class="odds-btn" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">
+                    <span class="odds-label">D</span> <span class="odds-val">${odds.d}</span>
                 </button>
-                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${o.a}, 'V')">
-                    <span class="odds-label">V</span> <span class="odds-val">${o.a}</span>
+                <button class="odds-btn" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">
+                    <span class="odds-label">V</span> <span class="odds-val">${odds.a}</span>
                 </button>
             </div>
         </div>`;
@@ -748,6 +766,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
