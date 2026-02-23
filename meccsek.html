@@ -194,8 +194,7 @@
     </div>
 </div>
     <audio id="goal-sound" preload="auto">
-    <source src="https://actions.google.com/sounds/v1/sports/football_crowd_goal.ogg" type="audio/ogg">
-    <source src="https://www.soundjay.com/buttons/sounds/button-37a.mp3" type="audio/mpeg">
+    <source src="/sounds/driken5482-applause-cheer-236786.mp3" type="audio/mpeg">
 </audio>
     
     <div class="bg-animation">
@@ -367,12 +366,29 @@ function checkGoals() {
 function triggerGoalEffect(mId, tName, logo) {
     const b = document.getElementById('goal-banner');
     const sound = document.getElementById('goal-sound');
+    
     if (b) {
+        // Csapatnév beállítása
         document.getElementById('goal-team-name').innerText = tName;
-        document.getElementById('goal-logo').src = logo;
-        document.getElementById('goal-logo').style.display = 'block';
+        
+        // Logó kezelése: ha nincs logó, ne jelenítsen meg üres képet
+        const logoImg = document.getElementById('goal-logo');
+        if (logoImg) {
+            logoImg.src = logo || 'default-logo.png'; 
+            logoImg.style.display = logo ? 'block' : 'none';
+        }
+
+        // Banner megjelenítése
         b.classList.add('show');
-        if (sound) { sound.currentTime = 0; sound.play().catch(()=>{}); }
+
+        // HANG LEJÁTSZÁSA
+        if (sound) { 
+            sound.currentTime = 0; 
+            // A böngészők csak akkor engedik, ha a felhasználó már kattintott valahová az oldalon
+            sound.play().catch(e => console.warn("Hang lejátszása sikertelen (Interakció szükséges):", e)); 
+        }
+
+        // Eltüntetés 5 másodperc után
         setTimeout(() => b.classList.remove('show'), 5000);
     }
 }
@@ -976,6 +992,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
