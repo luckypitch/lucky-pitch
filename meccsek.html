@@ -494,6 +494,11 @@ function renderMatches() {
         return;
     }
 
+    // --- 1. CSAK AKKOR TÖLTJÜK BE A FOGADÁSOKAT, HA VAN USER ---
+    const currentUserBets = (typeof Clerk !== 'undefined' && Clerk.user) 
+        ? JSON.parse(localStorage.getItem('lp_activeBets') || '[]') 
+        : [];
+
     const filtered = allMatches.filter(m => {
         const mDate = m.utcDate ? m.utcDate.split('T')[0] : "";
         return mDate === selectedDate && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString()));
@@ -578,9 +583,24 @@ function renderMatches() {
         }
     }).join('');
 }
-
 async function placeBet(matchId, teamName, odds, type) {
+    // --- 1. BELÉPÉS ELLENŐRZÉSE ---
+    if (typeof Clerk !== 'undefined' && !Clerk.user) {
+        alert("A fogadáshoz előbb be kell jelentkezned!");
+        
+        // Megnyitjuk a bejelentkezési ablakot
+        Clerk.openSignIn({
+            afterSignInUrl: window.location.href 
+        });
+        return; // Megállítjuk a függvényt, nem fut tovább a prompt-ra
+    }
+
+    // --- 2. ÖSSZEG BEKÉRÉSE (csak ha be van lépve) ---
     const amountStr = prompt(`Mennyit teszel a következőre: ${teamName}? (Szorzó: ${odds})`, "100");
+    
+    // Ha a felhasználó a "Mégse" gombra kattint a promptban
+    if (amountStr === null) return; 
+
     const amount = parseInt(amountStr);
 
     if (isNaN(amount) || amount <= 0) {
@@ -588,49 +608,16 @@ async function placeBet(matchId, teamName, odds, type) {
         return;
     }
 
+    // --- 3. EGYENLEG ELLENŐRZÉSE ---
     if (amount > window.userBalance) {
         alert("Nincs elég egyenleged! Jelenlegi: " + window.userBalance + " LP");
         return;
     }
 
+    // ... a többi kódod (try-catch blokk) változatlan marad ...
     try {
         const newBalance = window.userBalance - amount;
-
-        const res = await fetch('/api/user/update-balance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: Clerk.user.id,
-                balance: newBalance
-            })
-        });
-
-        if (res.ok) {
-            window.userBalance = newBalance;
-            document.getElementById('user-balance').innerText = newBalance.toLocaleString();
-            
-            // --- EZT A RÉSZT ADTUK HOZZÁ ---
-            // 1. Hozzáadjuk a helyi listához (hogy a renderMatches lássa)
-            activeBets.push({
-                matchId: matchId,
-                teamName: teamName,
-                amount: amount,
-                odds: odds,
-                type: type,
-                status: 'OPEN',
-                timestamp: new Date().getTime()
-            });
-
-            // 2. Elmentjük a böngészőbe (hogy frissítéskor ne tűnjön el)
-            localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
-            // ------------------------------
-            
-            alert(`Sikeres fogadás: ${amount} LP -> ${teamName}`);
-            
-            renderMatches(); 
-        } else {
-            throw new Error("Szerver hiba a fogadáskor");
-        }
+        // ... API hívás, localStorage mentés, stb.
     } catch (err) {
         console.error("Fogadási hiba:", err);
         alert("Hiba történt a fogadás feldolgozásakor.");
@@ -922,6 +909,11 @@ function renderLeagues() {
 }
 
 // --- 7. INDÍTÁS ---
+Ahhoz, hogy a kijelentkezéskor minden adat törlődjön, és az oldal "tiszta lappal" induljon újra, a Clerk.load() után be kell regisztrálnunk egy figyelőt (listener), illetve módosítanunk kell a mountUserButton paramétereit.
+
+Így frissítsd a startApp függvényedet:
+JavaScript
+
 async function startApp() {
     let t = 0;
     while (typeof Clerk === 'undefined' && t < 30) { await new Promise(r => setTimeout(r, 100)); t++; }
@@ -929,11 +921,29 @@ async function startApp() {
     try {
         if (typeof Clerk !== 'undefined') {
             await Clerk.load();
+
+            // --- KIJELENTKEZÉS FIGYELÉSE ÉS TISZTÍTÁS ---
+            Clerk.addListener(({ user }) => {
+                if (!user) {
+                    // Ha kijelentkezik a user:
+                    localStorage.removeItem('lp_activeBets'); // Töröljük a fogadásait a gépéről
+                    window.location.href = '/meccsek.html';   // Frissítjük az oldalt
+                }
+            });
+
             if (Clerk.user) {
                 const userBtn = document.getElementById('user-button');
-                if(userBtn) Clerk.mountUserButton(userBtn);
+                if(userBtn) {
+                    // Beállítjuk, hogy kijelentkezés után hova dobjon vissza
+                    Clerk.mountUserButton(userBtn, {
+                        afterSignOutUrl: window.location.origin + '/meccsek.html'
+                    });
+                }
                 await loadInitialBalance(); 
             } else {
+                // Ha nincs belépve, biztosan ne legyenek ott a régi fogadások
+                localStorage.removeItem('lp_activeBets');
+                
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
                     lb.style.display = 'block'; 
@@ -942,11 +952,8 @@ async function startApp() {
             }
         }
 
-        // --- ADATOK LEKÉRÉSE ---
         await updateData();
 
-        // --- KÉNYSZERÍTETT RENDERELÉS ---
-        // Miután megjöttek a meccsek (allMatches), azonnal rajzoljuk ki a szűrőket is!
         if (typeof renderDateStrip === 'function') renderDateStrip();
         if (typeof renderLeagues === 'function') renderLeagues();
         if (typeof renderMatches === 'function') renderMatches();
@@ -992,6 +999,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
