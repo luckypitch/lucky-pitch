@@ -186,17 +186,18 @@
 
     <nav>
         <div class="logo">LUCKYPITCH</div>
-        <div class="nav-tools">
-         <div class="nav-buttons">
-                <div id="balance-wrap" style="display:none; font-family:'Orbitron'; color:#00ff88; font-size:12px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px; align-items: center;">
-                    <span id="user-balance">0</span>&nbsp;LP
-                </div>
-                <div id="user-button"></div>
+    <div class="nav-tools">
+        <div class="nav-buttons" style="display: flex; align-items: center; gap: 12px;">
+            <div id="balance-wrap" style="display: none; align-items: center; font-family: 'Orbitron'; color: #00ff88; font-size: 13px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 12px; font-weight: bold;">
+                <span id="user-balance">0</span>&nbsp;LP
             </div>
-            <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
-            <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
-            <a href="/home" class="tool-btn" id="back-link" style="text-decoration:none;">VISSZA</a>
+            <div id="user-button"></div>
         </div>
+        
+        <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
+        <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
+        <a href="/home" class="tool-btn" id="back-link" style="text-decoration:none;">VISSZA</a>
+    </div>
     </nav>
 
     <div class="main-wrapper">
@@ -237,35 +238,6 @@
         let flashingMatches = new Set();
         let originalTitle = document.title;
         let titleInterval = null;
-
-        // --- CLERK ÉS EGYENLEG ---
-        async function refreshBalance() {
-            if (window.Clerk && Clerk.user) {
-                try {
-                    const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
-                    const data = await response.json();
-                    const balanceSpan = document.getElementById('user-balance');
-                    const balanceWrap = document.getElementById('balance-wrap');
-                    if (balanceSpan && balanceWrap) {
-                        balanceSpan.innerText = Number(data.balance).toLocaleString();
-                        balanceWrap.style.display = 'flex';
-                    }
-                } catch (error) { console.error("Balance Error:", error); }
-            }
-        }
-
-        async function initApp() {
-            try {
-                await Clerk.load();
-                if (Clerk.user) {
-                    Clerk.mountUserButton(document.getElementById('user-button'));
-                    await refreshBalance();
-                }
-                // Adatok betöltése
-                await updateData();
-                setInterval(updateData, 30000); // 30 mp frissítés
-            } catch (err) { console.error("Init Error:", err); }
-        }
 
 function animateTitle(scrollingText) {
     if (titleInterval) clearInterval(titleInterval);
@@ -570,13 +542,67 @@ function triggerGoalEffect(matchId, teamName, logoUrl) {
                 </div>`;
             }).join('') || `<p style="text-align:center; opacity:0.3; padding:50px; font-family:'Orbitron';">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
         }
-        window.addEventListener('load', initApp);
+        async function refreshBalance() {
+    // Szigorú ellenőrzés: csak ha Clerk be van töltve ÉS van user
+    if (typeof Clerk !== 'undefined' && Clerk.user) {
+        try {
+            console.log("Egyenleg lekérése user-hez:", Clerk.user.id);
+            const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
+            const data = await response.json();
+            
+            const balanceSpan = document.getElementById('user-balance');
+            const balanceWrap = document.getElementById('balance-wrap');
+
+            if (balanceSpan && balanceWrap) {
+                balanceSpan.innerText = Number(data.balance).toLocaleString();
+                // Fontos: kényszerítjük a megjelenítést
+                balanceWrap.style.setProperty('display', 'flex', 'important');
+                console.log("Egyenleg sikeresen frissítve!");
+            }
+        } catch (error) {
+            console.error("Hiba az egyenleg frissítésekor:", error);
+        }
+    }
+}
+
+async function initApp() {
+    try {
+        console.log("App indul...");
+        await Clerk.load();
+        
+        if (Clerk.user) {
+            console.log("Felhasználó felismerve!");
+            Clerk.mountUserButton(document.getElementById('user-button'));
+            // Várunk egy picit, hogy a DOM biztosan készen álljon
+            setTimeout(refreshBalance, 500);
+        }
+        
+        // Meccsek betöltése
+        await updateData();
+        // 30 másodpercenként frissítjük az adatokat ÉS az egyenleget is
+        setInterval(() => {
+            updateData();
+            refreshBalance();
+        }, 30000);
+
+    } catch (err) {
+        console.error("Clerk betöltési hiba a meccsek oldalon:", err);
+    }
+}
+
+// Biztosítjuk az indulást
+if (document.readyState === 'complete') {
+    initApp();
+} else {
+    window.addEventListener('load', initApp);
+}
         updateStaticTexts();
         updateData();
         setInterval(updateData, 30000);
     </script>
 </body>
 </html>
+
 
 
 
