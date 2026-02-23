@@ -611,13 +611,23 @@ async function placeBet(matchId, teamName, odds, type) {
     try {
         const newBalance = window.userBalance - amount;
 
-        // 4. SZERVER FRISSÍTÉSE
+        // 4. SZERVER FRISSÍTÉSE (Egyenleg + Fogadás mentése)
+        // Itt feltételezzük, hogy a szervered a balance mellett a bet-et is elmenti
         const res = await fetch('/api/user/update-balance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId: Clerk.user.id,
-                balance: newBalance
+                balance: newBalance,
+                // Beküldjük a fogadás adatait is a szervernek, hogy elmentse az adatbázisba!
+                bet: {
+                    matchId: String(matchId),
+                    teamName: teamName,
+                    amount: amount,
+                    odds: odds,
+                    type: type,
+                    timestamp: new Date().getTime()
+                }
             })
         });
 
@@ -628,9 +638,8 @@ async function placeBet(matchId, teamName, odds, type) {
             
             // 5. HELYI LISTA FRISSÍTÉSE
             let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
-            
             currentBets.push({
-                matchId: matchId,
+                matchId: String(matchId),
                 teamName: teamName,
                 amount: amount,
                 odds: odds,
@@ -643,7 +652,6 @@ async function placeBet(matchId, teamName, odds, type) {
             
             alert(`Sikeres fogadás: ${amount} LP -> ${teamName}`);
             
-            // 6. OLDAL ÚJRARAJZAOLÁSA
             if (typeof renderMatches === 'function') renderMatches(); 
         } else {
             throw new Error("Szerver hiba");
@@ -651,21 +659,6 @@ async function placeBet(matchId, teamName, odds, type) {
     } catch (err) {
         console.error("Fogadási hiba:", err);
         alert("Hiba történt a fogadás közben.");
-    }
-    
-    // --- 3. EGYENLEG ELLENŐRZÉSE ---
-    if (amount > window.userBalance) {
-        alert("Nincs elég egyenleged! Jelenlegi: " + window.userBalance + " LP");
-        return;
-    }
-
-    // ... a többi kódod (try-catch blokk) változatlan marad ...
-    try {
-        const newBalance = window.userBalance - amount;
-        // ... API hívás, localStorage mentés, stb.
-    } catch (err) {
-        console.error("Fogadási hiba:", err);
-        alert("Hiba történt a fogadás feldolgozásakor.");
     }
 }
 
@@ -1044,6 +1037,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
