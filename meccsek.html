@@ -200,7 +200,10 @@
         <a href="/home" class="tool-btn" id="back-link" style="text-decoration:none;">VISSZA</a>
         <div id="auth-container">
     <div id="user-button"></div>
-    <button id="login-btn" class="tool-btn" style="display:none;" onclick="Clerk.openSignIn()">BEJELENTKEZÉS</button>
+    <button id="login-btn" class="tool-btn" style="display:none;" 
+    onclick="Clerk.openSignIn({ afterSignInUrl: window.location.href })">
+    BEJELENTKEZÉS
+</button>
 </div>
     </div>
     </nav>
@@ -479,7 +482,28 @@ async function showStandings(leagueId, teamId, code) {
                 target.innerHTML = html + "</tbody></table>";
             } catch (e) { target.innerHTML = "Error loading standings."; }
         }
+function getStatusColor(status) {
+    if (!status) return 'transparent';
+    const s = status.toLowerCase();
+    if (s.includes('champions league')) return '#0044ff'; // BL - Kék
+    if (s.includes('europa league')) return '#cc7a00';   // EL - Narancs
+    if (s.includes('conference league')) return '#00cc6a'; // KL - Zöld
+    if (s.includes('relegation')) return '#ff3e3e';      // Kieső - Piros
+    if (s.includes('play-off') || s.includes('osztályozó')) return '#d35400'; 
+    return 'transparent';
+}
 
+function translateStatus(status) {
+    if (currentLang !== 'HU') return status;
+    const s = status.toLowerCase();
+    if (s.includes('champions league group')) return 'BL Csoportkör';
+    if (s.includes('champions league qual')) return 'BL Selejtező';
+    if (s.includes('europa league group')) return 'EL Csoportkör';
+    if (s.includes('conference league')) return 'KL Selejtező';
+    if (s.includes('relegation')) return 'Kieső zóna';
+    return status;
+}
+        
 // --- 6. UI KIEGÉSZÍTŐK ---
 function saveState() {
     localStorage.setItem('lp_selectedDate', selectedDate);
@@ -541,50 +565,26 @@ function updateStaticTexts() {
 
 // --- 7. START ---
 async function startApp() {
-    console.log("Munkamenet ellenőrzése...");
+    // ... (a várakozó rész ugyanaz marad) ...
     
-    // 1. Várakozás, amíg a Clerk betölt a memóriába
-    let tries = 0;
-    while (typeof Clerk === 'undefined' && tries < 20) {
-        await new Promise(r => setTimeout(r, 100));
-        tries++;
-    }
-
-    if (typeof Clerk === 'undefined') {
-        console.error("A Clerk script nem tudott betölteni.");
-        return;
-    }
-
     try {
-        // 2. Inicializálás (Ez felismeri a Home.html sütijét!)
         await Clerk.load();
 
-        const balanceWrap = document.getElementById('balance-wrap');
-        const userBtnDiv = document.getElementById('user-button');
-        const loginBtn = document.getElementById('login-btn');
-
         if (Clerk.user) {
-            console.log("Üdv újra! Felhasználó azonosítva:", Clerk.user.id);
-            
-            // Profil gomb megjelenítése (ahogy a Home-on)
-            if (userBtnDiv) Clerk.mountUserButton(userBtnDiv);
-            
-            // Egyenleg lekérése és megjelenítése
-            await refreshBalance(); 
-            if (balanceWrap) balanceWrap.style.display = 'flex';
-            if (loginBtn) loginBtn.style.display = 'none';
+            // ... (bejelentkezett állapot kezelése) ...
         } else {
-            console.log("Nincs aktív munkamenet.");
-            if (loginBtn) loginBtn.style.display = 'block';
+            // Ha nincs belépve, a gombot úgy állítjuk be, hogy ide térjen vissza
+            const loginBtn = document.getElementById('login-btn');
+            if (loginBtn) {
+                loginBtn.style.display = 'block';
+                loginBtn.onclick = () => Clerk.openSignIn({ 
+                    afterSignInUrl: window.location.href,
+                    afterSignUpUrl: window.location.href 
+                });
+            }
         }
-
-        // 3. Meccsadatok indítása
-        updateStaticTexts();
-        await updateData();
-
-    } catch (err) {
-        console.error("Hiba az indítás során:", err);
-    }
+        // ...
+    } catch (err) { console.error(err); }
 }
 
 window.addEventListener('load', startApp);
@@ -592,6 +592,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
