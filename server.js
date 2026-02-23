@@ -81,6 +81,19 @@ app.post('/api/user/update-balance', async (req, res) => {
     }
 });
 
+// Példa szerveroldali kód (Express.js)
+app.get('/api/user/get-bets', async (req, res) => {
+    const { userId } = req.query;
+    try {
+        // Itt le kell kérned az adatbázisodból a user fogadásait
+        // Ha még nincs adatbázisod, küldj vissza egy üres tömböt:
+        const userBets = await db.collection('bets').find({ userId }).toArray(); // Példa
+        res.json(userBets || []); 
+    } catch (err) {
+        res.status(500).send("Szerver hiba");
+    }
+});
+
 // --- FOOTBALL DATA API VÉGPONTOK ---
 
 app.get("/live-matches", async (req, res) => {
@@ -184,3 +197,4 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
