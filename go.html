@@ -14,25 +14,37 @@
     <div class="box">
         <h2>LUCKYPITCH</h2>
         <p>Kattints a gombra a folytatáshoz!</p>
-        <a href="https://luckypitch.onrender.com/" id="openLink" class="btn">BELÉPÉS</a>
+        <a href="/Home.html" id="openLink" class="btn">BELÉPÉS</a>
     </div>
 
     <script>
-        const target = "luckypitch.onrender.com/Home.html";
+        // Pontos URL-t adunk meg
+        const targetFile = "luckypitch.onrender.com/Home.html";
         
-        if (/Android/i.test(navigator.userAgent)) {
-            setTimeout(() => {
-                window.location.href = "intent://" + target + "#Intent;scheme=https;package=com.android.chrome;end";
-            }, 500);
-        }
-
         document.getElementById('openLink').onclick = function(e) {
             if (/Android/i.test(navigator.userAgent)) {
+                // Megakadályozzuk az alapértelmezett ugrást
                 e.preventDefault();
-                window.location.href = "intent://" + target + "#Intent;scheme=https;package=com.android.chrome;end";
+                // Megpróbáljuk kényszeríteni a Chrome-ot
+                const intentUrl = "intent://" + targetFile + "#Intent;scheme=https;package=com.android.chrome;end";
+                window.location.href = intentUrl;
+                
+                // Fallback: Ha az intent 2 másodpercen belül nem indul el, simán átirányítunk
+                setTimeout(() => {
+                    window.location.href = "/Home.html";
+                }, 2000);
             }
+            // Ha nem Android, az eredeti href ("/Home.html") fog lefutni automatikusan.
         };
+
+        // Automatikus indítás mobilon
+        if (/Android/i.test(navigator.userAgent)) {
+            setTimeout(() => {
+                window.location.href = "intent://" + targetFile + "#Intent;scheme=https;package=com.android.chrome;end";
+            }, 1000);
+        }
     </script>
 </body>
 
 </html>
+
