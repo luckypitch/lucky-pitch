@@ -94,20 +94,17 @@
 
         /* STATS */
         .stats-bar { 
-    display: grid;
-    /* Alapértelmezett: 3 oszlop asztali gépen */
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 20px; 
-    margin: 45px auto 0 auto; 
-    max-width: 1000px; /* Ne nyúljon szét túl hosszan */
-    width: 90%;       /* Maradjon egy kis margó kétoldalt */
+    display: flex; 
+    gap: 40px; 
+    margin-top: 45px; 
+    justify-content: center;
+    flex-wrap: wrap; 
 }
 
 .stat-item {
     text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Vízszintes központosítás elemen belül */
+    /* Alapértelmezett szélesség asztalin */
+    flex: 0 1 auto; 
 }
 
 .stat-item b { 
@@ -162,19 +159,20 @@
             .logo { font-size: 1rem; }
             .nav-buttons button#donate-btn { display: none; }
             .stats-bar {
-        /* Egy oszlopba kényszerítjük, így minden egymás alá kerül */
-        grid-template-columns: 1fr; 
-        gap: 30px;
-        justify-content: center;
-        text-align: center;
+        display: grid;
+        /* Két egyenlő oszlopot hozunk létre */
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 20px;
+        padding: 0 20px;
     }
-    .stat-item b {
-        font-size: 2.2rem !important; /* !important, hogy biztosan felülírja a régit */
+   .stat-item b {
+        font-size: 1.8rem; /* Mobilon picit vegyünk vissza a méretből, hogy elférjenek */
     }
 
-    .stat-item span {
-        font-size: 12px;
-        letter-spacing: 1px;
+    .stat-item:nth-child(3) {
+        grid-column: span 2;
+        margin-top: 10px; /* Egy kis extra hely felülről */
+    }
     }
         }
     </style>
@@ -450,6 +448,7 @@ window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
