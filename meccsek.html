@@ -10,341 +10,174 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #020617;
-            --glass: rgba(15, 23, 42, 0.75);
-            --neon-green: #00ff88;
-            --neon-blue: #0ea5e9;
-            --neon-red: #ff3e3e;
-            --text: #f1f5f9;
-            --border: rgba(255, 255, 255, 0.1);
-            --cl-gs: #0044ff; --el-gs: #cc7a00; --ecl-q: #00cc6a; --po: #d35400; --rel: #ff3e3e;
-        }
+       :root {
+    --bg: #020617;
+    --glass: rgba(15, 23, 42, 0.75);
+    --neon-green: #00ff88;
+    --neon-blue: #0ea5e9;
+    --neon-red: #ff3e3e;
+    --text: #f1f5f9;
+    --border: rgba(255, 255, 255, 0.1);
+    --cl-gs: #0044ff; --el-gs: #cc7a00; --ecl-q: #00cc6a; --po: #d35400; --rel: #ff3e3e;
+    --sidebar-w: 70px;
+    --sidebar-expand: 260px;
+}
 
-        body.light {
-            --bg: #f8fafc;
-            --glass: rgba(255, 255, 255, 0.85);
-            --text: #0f172a;
-            --border: rgba(0, 0, 0, 0.1);
-            --neon-blue: #0284c7;
-        }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { 
+    background: var(--bg); 
+    color: var(--text); 
+    font-family: 'Inter', sans-serif; 
+    min-height: 100vh; 
+    overflow-x: hidden; 
+    transition: background 0.5s; 
+}
 
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; position: relative; transition: background 0.5s; }
+/* Background Animation */
+.bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; filter: blur(100px); opacity: 0.5; }
+.blob { position: absolute; width: 600px; height: 600px; border-radius: 50%; mix-blend-mode: screen; animation: move 25s infinite alternate ease-in-out; }
+.blob-1 { background: var(--cl-gs); top: -10%; left: -10%; }
+.blob-2 { background: var(--neon-green); bottom: -10%; right: -10%; animation-delay: -5s; }
+.blob-3 { background: var(--el-gs); top: 30%; left: 30%; animation-delay: -10s; }
+@keyframes move { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10vw, 10vh) scale(1.2); } }
 
-        .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; filter: blur(100px); opacity: 0.5; }
-        .blob { position: absolute; width: 600px; height: 600px; border-radius: 50%; mix-blend-mode: screen; animation: move 25s infinite alternate ease-in-out; }
-        .blob-1 { background: var(--cl-gs); top: -10%; left: -10%; }
-        .blob-2 { background: var(--neon-green); bottom: -10%; right: -10%; animation-delay: -5s; }
-        .blob-3 { background: var(--el-gs); top: 30%; left: 30%; animation-delay: -10s; }
-        @keyframes move { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10vw, 10vh) scale(1.2); } }
+/* Goal Banner & Sound */
+#goal-banner {
+    position: fixed; top: -100px; left: 0; right: 0; height: 65px; z-index: 9999;
+    background: var(--neon-green); color: #000; display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron'; font-weight: 900; font-size: 1.6rem;
+    transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 0 50px rgba(0,255,136,0.6);
+}
+#goal-banner.show { top: 75px; }
 
-        #goal-banner {
-            position: fixed; top: -100px; left: 0; right: 0; height: 65px; z-index: 9999 !important;
-            background: var(--neon-green); color: #000; display: flex; align-items: center; justify-content: center;
-            font-family: 'Orbitron'; font-weight: 900; font-size: 1.6rem; z-index: 2000; 
-            transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 0 50px rgba(0,255,136,0.6);
-        }
-        #goal-banner.show { top: 75px; }
+/* Navigation */
+nav { 
+    position: fixed; top: 0; left: 0; right: 0; height: 75px; 
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 0 30px; background: var(--glass); backdrop-filter: blur(20px); 
+    border-bottom: 1px solid var(--border); z-index: 1001; 
+}
+.logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 3px; }
+.nav-tools { display: flex; align-items: center; gap: 10px; }
+.tool-btn { 
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 14px; border-radius: 10px;
+    cursor: pointer; font-family: 'Orbitron'; font-size: 10px; transition: 0.3s;
+}
+.tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.2); }
 
-        nav { 
-            position: fixed; top: 0; left: 0; right: 0; height: 75px; 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 30px; background: var(--glass); backdrop-filter: blur(20px); 
-            border-bottom: 1px solid var(--border); z-index: 1000; 
-        }
-        .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 3px; }
-
-        .nav-tools { display: flex; gap: 10px; }
-        .tool-btn { 
-            background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            color: var(--text); padding: 8px 14px; border-radius: 10px;
-            cursor: pointer; font-family: 'Orbitron'; font-size: 10px; transition: 0.3s;
-        }
-        .tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.2); }
-
-      .main-wrapper {
+/* Main Layout */
+.main-wrapper {
     display: flex;
-    justify-content: center; /* Ez teszi középre a tartalom oszlopot */
+    justify-content: center;
     width: 100%;
     min-height: 100vh;
-    position: relative;
 }
-        .sidebar, .standings-sidebar { background: var(--glass); backdrop-filter: blur(25px); overflow-y: auto; border: 1px solid var(--border); }
-       .sidebar {
+
+/* Sidebar Styling */
+.sidebar {
     position: fixed;
-    left: 0;
-    top: 0;
-    width: 70px; /* Csak az ikonok alapból */
-    height: 100vh;
+    left: 0; top: 0; bottom: 0;
+    width: var(--sidebar-w);
     background: #060b18;
     z-index: 1000;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid var(--border);
+    padding-top: 75px; /* Fejléc alá */
 }
-.sidebar span, 
-.sidebar .sidebar-header {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none; /* Ne lehessen rákattintani a láthatatlan szövegre */
-}
-.sidebar-header-info {
+
+.sidebar:hover { width: var(--sidebar-expand); }
+
+.sidebar-header {
     display: flex;
     align-items: center;
     padding: 20px 15px;
     gap: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    margin-bottom: 15px;
-}
-
-.header-emoji {
-    font-size: 24px;
-    width: 50px; /* Hogy pontosan a négyzetek fölé essen */
-    text-align: center;
-    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.3));
-}
-
-.header-label {
-    font-family: 'Orbitron';
-    font-size: 11px;
-    letter-spacing: 2px;
-    color: var(--neon-blue);
-    white-space: nowrap;
-}
-        
-.sidebar:hover span, 
-.sidebar:hover .sidebar-header {
-    opacity: 1;
-    pointer-events: auto;
-}
-        
-       .standings-sidebar {
-    position: fixed;
-    top: 75px;
-    right: 0;
-    bottom: 0;
-    width: 420px;
-    background: var(--glass);
-    backdrop-filter: blur(30px);
-    border-left: 1px solid var(--border);
-    transform: translateX(100%);
-    z-index: 1001;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.sidebar:hover {
-    width: 260px; /* Kinyílva */
-}
-        
-        .standings-sidebar.open ~ .content-area {
-    margin-right: 420px;
-}
-        
-       .sidebar-header {
-    display: flex;
-    align-items: center;
-    padding: 20px 12px;
-    gap: 15px;
     height: 70px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
     white-space: nowrap;
 }
-        
-    .content-area {
-    width: 100%;
-    max-width: 850px; /* Ideális szélesség 1920-on */
-    margin: 0 auto;
-    padding: 80px 20px 20px 20px; /* 80px hely a felső LuckyPitch sávnak */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
 
-#league-list {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 10px 0;
+.header-emoji { font-size: 24px; min-width: 40px; text-align: center; }
+.header-text { 
+    font-family: 'Orbitron'; font-size: 11px; letter-spacing: 2px; color: var(--neon-blue);
+    opacity: 0; transition: opacity 0.2s;
 }
+.sidebar:hover .header-text { opacity: 1; }
 
-/* Az ikon tárolója - ez a titka a fix elrendezésnek */
-.league-icon-wrapper {
-    width: 48px;
-    height: 48px;
-    flex-shrink: 0;
+#league-list { display: flex; flex-direction: column; gap: 5px; padding: 10px 0; }
+
+.league-item {
     display: flex;
     align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-}
-        
-.league-icon-wrapper img {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-    filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
-}        
- .league-icon-wrapper {
-    border-color: var(--neon-green);
-    background: rgba(0, 255, 136, 0.08);
-    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3); /* Erősebb neon fény */
-}
- .league-icon-wrapper img {
-    filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.5));
-}     
-.league-item.active .league-icon-wrapper {
-    border-color: #00ff88;
-    box-shadow: 0 0 15px rgba(0, 255, 136, 0.4); /* Neon izzás */
-}
-        
-/* A szöveg kezelése */
-.league-name-text {
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    margin-left: 15px;
-    opacity: 0; /* PC-n alapból rejtve */
-    transition: opacity 0.2s ease;
-}
-
-/* Ha a sidebar fölé viszed az egeret, megjelenik a szöveg */
-#sidebar-leagues:hover .league-name-text {
-    opacity: 1;
-}
-        
-        .match-card {
-    width: 100%;
-    max-width: 750px; /* Hogy ne legyen túl széles PC-n */
-    background: rgba(15, 23, 42, 0.4); 
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border);
-    border-radius: 24px;
-    padding: 20px 30px; /* Több belső tér */
-    margin-bottom: 15px;
-    display: grid; /* Grid a precíz elrendezéshez */
-    grid-template-columns: 1fr auto 1fr; 
-    align-items: center;
-    gap: 20px;
-    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-       .match-card:hover {
-    border-color: var(--neon-blue);
-    background: rgba(30, 41, 59, 0.6);
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-        .team-link { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
-        .team-link img {
-    width: 65px;
-    height: 65px;
-    filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));
-}
-        .team-link:hover img { transform: rotate(15deg) scale(1.2); filter: drop-shadow(0 0 12px var(--neon-blue)); }
-       .team-link span {
-        font-size: 12px;
-        white-space: nowrap;
-    }
-
-        .score-display {
-    font-family: 'Orbitron';
-    font-size: 2.8rem; /* Kicsit nagyobb és hangsúlyosabb */
-    font-weight: 900;
-    color: var(--neon-green);
-    text-align: center;
-    min-width: 120px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-        .score-live {
-    color: var(--neon-red);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-top: 5px;
-    animation: pulse 1.5s infinite;
-    text-shadow: 0 0 15px var(--neon-red);
-}
-      @keyframes pulse {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.05); }
-    100% { opacity: 1; transform: scale(1); }
-}
-        
-    50% { 
-        box-shadow: 0 0 40px #ff3e3e, inset 0 0 20px #ff3e3e; 
-        border-color: #ff4d4d;
-        transform: scale(1.02); /* Kicsit megugrik a kártya */
-    }
-    100% { 
-        box-shadow: 0 0 5px #ff3e3e, inset 0 0 5px #ff3e3e; 
-        border-color: #ff3e3e;
-        transform: scale(1);
-    }
-}
-.mobile-quick-nav {
-    z-index: 9000 !important;
-    position: fixed !important;
-    bottom: 20px; /* Biztosítsd, hogy ne lógjon ki alul */
-}
-.match-card.goal-highlight {
-    animation: goal-pulse 0.8s ease-in-out infinite !important;
-    border: 2px solid #ff3e3e !important;
-    background: rgba(255, 62, 62, 0.15) !important; /* Kap egy enyhe pirosas hátteret is */
-    z-index: 100; /* Hogy a többi kártya fölé emelkedjen */
-    position: relative;
-}
-
-        .standings-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
-        .standings-table td { padding: 14px 8px; background: rgba(255,255,255,0.03); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 12px; }
-        .pos-col { border-left-width: 5px !important; border-left-style: solid !important; }
-
-        .pos-num-box { 
-            width: 34px; height: 34px; line-height: 34px; margin: 0 auto; 
-            border-radius: 8px; font-weight: 900; font-family: 'Orbitron'; font-size: 12px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        .zone-tag { font-size: 8px; font-family: 'Orbitron'; display: block; margin-bottom: 4px; font-weight: 900; }
-        .highlight td { background: rgba(0, 255, 136, 0.15) !important; border-color: var(--neon-green) !important; }
-
-        .league-item {
-    display: flex;
-    align-items: center;
-    width: 240px; /* Fix szélesség, hogy a kijelölés ne csak a szövegig tartson */
-    margin: 8px 10px;
-    padding: 8px;
+    width: calc(var(--sidebar-expand) - 20px);
+    margin: 5px 10px;
+    padding: 10px;
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background 0.2s;
 }
 
-       .date-strip {
+.league-item.active { background: rgba(0, 255, 136, 0.08); }
+
+.league-icon-wrapper {
+    width: 48px; height: 48px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px;
+    transition: 0.3s;
+}
+
+.league-item.active .league-icon-wrapper {
+    border-color: var(--neon-green);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+}
+
+.league-name-text {
+    margin-left: 15px; font-size: 13px; font-weight: 500;
+    opacity: 0; transition: opacity 0.2s; white-space: nowrap;
+}
+.sidebar:hover .league-name-text { opacity: 1; }
+
+/* Content Area */
+.content-area {
     width: 100%;
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 100px 20px 100px 20px;
     display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 25px;
+    flex-direction: column;
+    align-items: center;
 }
-        .date-strip, .match-card {
-        width: 100%;
-        max-width: 800px; /* Ez a "szép" szélesség 1920-on */
-    }
 
-        .date-strip::-webkit-scrollbar {
-    display: none;
+.date-strip {
+    width: 100%; display: flex; justify-content: center; gap: 10px; margin-bottom: 30px;
 }
-        
-        .date-pill {
-        flex: 0 1 auto; 
-        min-width: 100px;
-        text-align: center;
-    }
-        .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0,255,136,0.05); }
-        .date-pill.is-today { border-color: var(--neon-blue); color: var(--neon-blue); border-width: 2px; }
+
+.date-pill {
+    padding: 10px 20px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--glass); cursor: pointer; font-family: 'Orbitron'; font-size: 12px; transition: 0.3s;
+}
+.date-pill.active { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0,255,136,0.1); }
+
+/* Match Cards */
+.match-card {
+    width: 100%;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 25px;
+    margin-bottom: 15px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 20px;
+    transition: 0.3s;
+}
+.match-card:hover { transform: translateY(-5px); border-color: var(--neon-blue); }
+
+.score-display { font-family: 'Orbitron'; font-size: 2.2rem; font-weight: 900; color: var(--neon-green); text-align: center; }
 
         .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
         @media (max-width: 1100px) {
@@ -509,18 +342,19 @@
 </head>
 <body>
 
-    <div id="goal-banner">
-    <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
-        <img id="goal-logo" src="" alt="" style="width: 40px; height: 40px; object-fit: contain; display: none;">
-        <div style="display: flex; flex-direction: column; align-items: flex-start;">
-            <div id="goal-team-name" style="font-size: 0.9rem; font-weight: 700; color: #000; font-family: 'Orbitron';"></div>
-            <div id="goal-text" style="font-size: 1.2rem; font-weight: 900; color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">GOOOAAAL!!!</div>
+   <div id="goal-banner">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img id="goal-logo" src="" alt="" style="width: 40px; height: 40px; object-fit: contain; display: none;">
+            <div style="display: flex; flex-direction: column;">
+                <div id="goal-team-name" style="font-size: 0.9rem; font-weight: 700; color: #000; font-family: 'Orbitron';"></div>
+                <div id="goal-text">GOOOAAAL!!!</div>
+            </div>
         </div>
     </div>
-</div>
+    
     <audio id="goal-sound" preload="auto">
-    <source src="driken5482-applause-cheer-236786.mp3" type="audio/mpeg">
-</audio>
+        <source src="driken5482-applause-cheer-236786.mp3" type="audio/mpeg">
+    </audio>
 
     <div class="bg-animation">
         <div class="blob blob-1"></div>
@@ -530,52 +364,48 @@
 
     <nav>
         <div class="logo">LUCKYPITCH</div>
-    <div class="nav-tools" style="display: flex; align-items: center; gap: 15px;">
-        <div id="balance-wrap" style="display: none; align-items: center; font-family: 'Orbitron'; color: #00ff88; font-weight: bold;">
-            <span id="user-balance">0</span>&nbsp;LP
+        <div class="nav-tools">
+            <div id="balance-wrap" style="display: none; font-family: 'Orbitron'; color: var(--neon-green); font-weight: bold;">
+                <span id="user-balance">0</span> LP
+            </div>
+            <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
+            <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
+            <a href="/home" class="tool-btn" style="text-decoration:none;">VISSZA</a>
+            <div id="auth-container">
+                <div id="user-button"></div>
+            </div>
         </div>
-        <div id="user-button"></div>
-
-        <button class="tool-btn" onclick="toggleLang()" id="lang-btn">HU</button>
-        <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">☀️</button>
-        <a href="/home" class="tool-btn" id="back-link" style="text-decoration:none;">VISSZA</a>
-        <div id="auth-container">
-    <div id="user-button"></div>
-    <button id="login-btn" class="tool-btn" style="display:none;" 
-    onclick="Clerk.openSignIn({ afterSignInUrl: window.location.href })">
-    BEJELENTKEZÉS
-</button>
-</div>
-    </div>
     </nav>
 
     <div class="main-wrapper">
-    <aside class="sidebar" id="sidebar-leagues">
-        <div class="sidebar-header">
-            <span class="header-emoji">🏆</span>
-            <span class="header-text">BAJNOKSÁGOK</span>
-        </div>
-        <div id="league-list"></div>
-    </aside>
+        <aside class="sidebar" id="sidebar-leagues">
+            <div class="sidebar-header">
+                <span class="header-emoji">🏆</span>
+                <span class="header-text">BAJNOKSÁGOK</span>
+            </div>
+            <div id="league-list">
+                </div>
+        </aside>
 
-    <main class="content-area">
-        <div id="date-strip" class="date-strip"></div>
-        <div id="match-container"></div>
-    </main>
-</div>
+        <main class="content-area">
+            <div id="date-strip" class="date-strip">
+                </div>
+            <div id="match-container">
+                </div>
         </main>
+
         <aside class="standings-sidebar" id="sidebar-standings">
-            <div class="sidebar-header" id="h-table">📊 Élő Tabella</div>
+            <div class="sidebar-header">📊 Élő Tabella</div>
             <div id="standings-target">
-                <p id="standings-placeholder" style="text-align:center; opacity:0.3; margin-top:100px; font-family:'Orbitron'; font-size:10px;">VÁLASSZ EGY CSAPATOT</p>
+                <p style="text-align:center; opacity:0.3; margin-top:100px; font-family:'Orbitron'; font-size:10px;">VÁLASSZ EGY CSAPATOT</p>
             </div>
         </aside>
     </div>
 
-    <div class="mobile-nav">
-        <button class="tool-btn" id="m-leagues" onclick="toggleM('sidebar-leagues')">LIGÁK</button>
-        <button class="tool-btn" id="m-matches" onclick="closeM()">MECCSEK</button>
-        <button class="tool-btn" id="m-table" onclick="toggleM('sidebar-standings')">TABELLA</button>
+    <div class="mobile-nav" style="display: none;">
+        <button class="tool-btn" onclick="toggleM('sidebar-leagues')">LIGÁK</button>
+        <button class="tool-btn" onclick="closeM()">MECCSEK</button>
+        <button class="tool-btn" onclick="toggleM('sidebar-standings')">TABELLA</button>
     </div>
 
     <script>
@@ -1613,6 +1443,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
