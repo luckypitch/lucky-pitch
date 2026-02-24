@@ -65,24 +65,24 @@
         .tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.2); }
 
       .main-wrapper {
-        display: flex;
-        width: 100%;
-        max-width: 1920px;
-        min-height: 100vh;
-        margin: 0 auto;
-    }
+    display: flex;
+    justify-content: center; /* Ez teszi középre a tartalom oszlopot */
+    width: 100%;
+    min-height: 100vh;
+    position: relative;
+}
         .sidebar, .standings-sidebar { background: var(--glass); backdrop-filter: blur(25px); overflow-y: auto; border: 1px solid var(--border); }
        .sidebar {
     position: fixed;
     left: 0;
     top: 0;
-    width: var(--sidebar-w);
+    width: 70px; /* Csak az ikonok alapból */
     height: 100vh;
     background: #060b18;
-    border-right: 1px solid rgba(255,255,255,0.05);
     z-index: 1000;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 .sidebar span, 
 .sidebar .sidebar-header {
@@ -134,34 +134,31 @@
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .sidebar:hover {
-    width: 260px; /* Kinyílik ha rásiklik az egér */
+    width: 260px; /* Kinyílva */
 }
         
         .standings-sidebar.open ~ .content-area {
     margin-right: 420px;
 }
         
-        .sidebar-header {
-        height: 60px;
-        display: flex;
-        align-items: center;
-        padding: 0 20px;
-        font-family: 'Orbitron', sans-serif;
-        font-size: 14px;
-        color: var(--neon-blue);
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-        white-space: nowrap;
-        overflow: hidden;
-    }
+       .sidebar-header {
+    display: flex;
+    align-items: center;
+    padding: 20px 12px;
+    gap: 15px;
+    height: 70px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    white-space: nowrap;
+}
         
-     .content-area {
-    flex: 1;
-    margin-left: var(--sidebar-w); /* Helyet hagyunk a fix sidebarnak */
+    .content-area {
+    width: 100%;
+    max-width: 850px; /* Ideális szélesség 1920-on */
+    margin: 0 auto;
+    padding: 80px 20px 20px 20px; /* 80px hely a felső LuckyPitch sávnak */
     display: flex;
     flex-direction: column;
-    align-items: center; /* KÖZÉPRE TESZ MINDENT */
-    padding: 20px;
-    width: 100%;
+    align-items: center;
 }
 
 #league-list {
@@ -171,38 +168,17 @@
     padding: 10px 0;
 }
 
-.league-item {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    margin: 8px auto;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 12px; /* Finomabb sarok */
-    position: relative;
-    width: fit-content;
-}
-
-.league-item:hover {
-    background: rgba(14, 165, 233, 0.1);
-}
-
-.league-item.active {
-    background: rgba(0, 255, 136, 0.1);
-    border-left-color: var(--neon-green);
-}
-
 /* Az ikon tárolója - ez a titka a fix elrendezésnek */
 .league-icon-wrapper {
     width: 48px;
     height: 48px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 5px auto;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
 }
         
 .league-icon-wrapper img {
@@ -211,14 +187,18 @@
     object-fit: contain;
     filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
 }        
-.league-item.active .league-icon-wrapper {
+ .league-icon-wrapper {
     border-color: var(--neon-green);
     background: rgba(0, 255, 136, 0.08);
     box-shadow: 0 0 15px rgba(0, 255, 136, 0.3); /* Erősebb neon fény */
 }
-.league-item.active .league-icon-wrapper img {
+ .league-icon-wrapper img {
     filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.5));
 }     
+.league-item.active .league-icon-wrapper {
+    border-color: #00ff88;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.4); /* Neon izzás */
+}
         
 /* A szöveg kezelése */
 .league-name-text {
@@ -331,19 +311,24 @@
         .zone-tag { font-size: 8px; font-family: 'Orbitron'; display: block; margin-bottom: 4px; font-weight: 900; }
         .highlight td { background: rgba(0, 255, 136, 0.15) !important; border-color: var(--neon-green) !important; }
 
-        .league-item { margin: 8px 15px; padding: 12px 15px; border-radius: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.3s; border: 1px solid transparent; }
-        .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); }
+        .league-item {
+    display: flex;
+    align-items: center;
+    width: 240px; /* Fix szélesség, hogy a kijelölés ne csak a szövegig tartson */
+    margin: 8px 10px;
+    padding: 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
 
        .date-strip {
-        width: 100%; /* Kitölti a 800px-et */
-        max-width: 850px;
-        display: flex;
-        justify-content: center; /* Középre teszi a gombokat az oszlopon belül */
-        gap: 10px;
-        margin-bottom: 30px;
-        overflow: visible; /* PC-n ne legyen görgethető sáv */
-        padding: 0;
-    }
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 25px;
+}
         .date-strip, .match-card {
         width: 100%;
         max-width: 800px; /* Ez a "szép" szélesség 1920-on */
@@ -1628,6 +1613,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
