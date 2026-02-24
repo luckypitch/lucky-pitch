@@ -398,28 +398,35 @@ function translateStatus(status) {
 
 async function updateData() {
     try {
-        // 1. Meccsek letöltése
-        const res = await fetch("/live-matches");
-        const data = await res.json();
-
-        allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
-        
-        // 2. Oddsok letöltése (párhuzamosan is futhatna, de maradjunk a biztosnál)
+        // 1. Oddsok letöltése ELŐSZÖR (hogy a renderelésnél már meglegyenek)
         try {
             const oddsRes = await fetch("/api/odds-data");
             if (oddsRes.ok) {
                 const oddsData = await oddsRes.json();
                 globalOdds = Array.isArray(oddsData) ? oddsData : [];
+                console.log("Oddsok betöltve:", globalOdds.length);
             }
-        } catch (e) { console.warn("Odds API hiba"); }
+        } catch (e) { 
+            console.warn("Odds API hiba, generált oddsok lesznek használva."); 
+        }
 
-        // 3. Renderelés és logika futtatása
-       if (allMatches.length > 0) {
+        // 2. Meccsek letöltése
+        const res = await fetch("/live-matches");
+        const data = await res.json();
+        allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
+
+        // 3. Renderelés (Ekkor már biztosan van globalOdds, ha az API adott választ)
+        if (allMatches.length > 0) {
+            // Dátumválasztó frissítése (hogy eltűnjön a duplikált MA gomb)
+            if (typeof renderDateSelector === 'function') renderDateSelector();
+            
             if (typeof renderLeagues === 'function') renderLeagues();
             if (typeof renderMatches === 'function') renderMatches();
+            
             checkGoals();
             checkBetResults();
         }
+        
         console.log("Adatok frissítve. Meccsek:", allMatches.length);
 
     } catch (e) {
@@ -581,6 +588,19 @@ async function updateSupabaseBalance(newAmount, betData = null) {
     }
 }
 
+Ez a függvény most már sokkal robusztusabb a névkeresés szempontjából, de van benne egy logikai veszélyforrás: a túl engedékeny egyezés.
+
+Mivel az .includes()-t használod mindkét irányba, előfordulhat, hogy például egy "Arsenal" és egy "Arsenal Sarandi" (argentin csapat) véletlenül egymásra talál, ha az egyik épp nincs benne az adatbázisban, de a másik igen.
+
+Íme pár apró, de fontos finomítás, hogy az oddsok tényleg a helyükre kerüljenek:
+1. A "Draw" (Döntetlen) probléma
+
+Néhány API nem "Draw"-nak, hanem a csapatok nevei alapján (pl. "Home/Away") vagy egyszerűen az egyik csapat nevével jelöli a kimeneteket. A biztonság kedvéért érdemesebb a döntetlent úgy keresni, hogy mi nem a hazai és mi nem a vendég.
+2. Finomított getSmartOdds
+
+Módosítottam a logikát, hogy elkerüljük a téves párosításokat és biztosabb legyen a döntetlen keresése:
+JavaScript
+
 function getSmartOdds(match) {
     const seed = match.id || 0;
     const rng = (s) => Math.abs(Math.sin(seed + s));
@@ -592,23 +612,42 @@ function getSmartOdds(match) {
     };
 
     if (globalOdds && globalOdds.length > 0) {
-        const found = globalOdds.find(o => 
-            o.home_team === match.homeTeam.name || o.away_team === match.awayTeam.name
-        );
+        const mHome = match.homeTeam.name.toLowerCase();
+        const mAway = match.awayTeam.name.toLowerCase();
+
+        // Keresés: Megpróbáljuk megtalálni azt az odds objektumot, ahol MINDKÉT csapat stimmel
+        const found = globalOdds.find(o => {
+            const oHome = o.home_team.toLowerCase();
+            const oAway = o.away_team.toLowerCase();
+            
+            // Szigorúbb feltétel: a hazai és a vendég is hasonlítson
+            const homeMatch = oHome.includes(mHome) || mHome.includes(oHome);
+            const awayMatch = oAway.includes(mAway) || mAway.includes(oAway);
+            
+            return homeMatch && awayMatch; 
+        });
+
         if (found && found.bookmakers && found.bookmakers[0]) {
             const market = found.bookmakers[0].markets.find(m => m.key === 'h2h');
             if (market) {
-                const h = market.outcomes.find(out => out.name === found.home_team)?.price;
-                const a = market.outcomes.find(out => out.name === found.away_team)?.price;
-                const d = market.outcomes.find(out => out.name === 'Draw')?.price;
-                if (h && a && d) {
-                    result = { h: h.toFixed(2), d: d.toFixed(2), a: a.toFixed(2) };
+                // Hazai és Vendég odds kikeresése név alapján
+                const hPrice = market.outcomes.find(out => out.name.toLowerCase().includes(mHome) || mHome.includes(out.name.toLowerCase()))?.price;
+                const aPrice = market.outcomes.find(out => out.name.toLowerCase().includes(mAway) || mAway.includes(out.name.toLowerCase()))?.price;
+                
+                // Döntetlen: ami nem hazai és nem vendég, VAGY fixen 'draw'
+                const dPrice = market.outcomes.find(out => {
+                    const n = out.name.toLowerCase();
+                    return n === 'draw' || n === 'döntetlen' || n === 'x' || (!n.includes(mHome) && !n.includes(mAway));
+                })?.price;
+
+                if (hPrice && aPrice && dPrice) {
+                    result = { h: hPrice.toFixed(2), d: dPrice.toFixed(2), a: aPrice.toFixed(2) };
                 }
             }
         }
     }
     return result;
-} 
+}
 
 // --- 5. MEGJELENÍTÉS ---
 async function renderMatches() {
@@ -1398,6 +1437,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
