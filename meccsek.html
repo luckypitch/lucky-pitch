@@ -86,6 +86,30 @@
     transition: opacity 0.2s ease;
     pointer-events: none; /* Ne lehessen rákattintani a láthatatlan szövegre */
 }
+.sidebar-header-info {
+    display: flex;
+    align-items: center;
+    padding: 20px 15px;
+    gap: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 15px;
+}
+
+.header-emoji {
+    font-size: 24px;
+    width: 50px; /* Hogy pontosan a négyzetek fölé essen */
+    text-align: center;
+    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.3));
+}
+
+.header-label {
+    font-family: 'Orbitron';
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--neon-blue);
+    white-space: nowrap;
+}
+        
 .sidebar:hover span, 
 .sidebar:hover .sidebar-header {
     opacity: 1;
@@ -140,11 +164,13 @@
 .league-item {
     display: flex;
     align-items: center;
-    padding: 12px 22px; /* A 22px tartja középen az ikont, ha 80px széles a sidebar */
+    padding: 10px;
+    margin: 8px auto;
     cursor: pointer;
-    transition: all 0.3s ease;
-    border-left: 4px solid transparent;
-    white-space: nowrap;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 12px; /* Finomabb sarok */
+    position: relative;
+    width: fit-content;
 }
 
 .league-item:hover {
@@ -158,21 +184,35 @@
 
 /* Az ikon tárolója - ez a titka a fix elrendezésnek */
 .league-icon-wrapper {
-    width: 32px;
-    height: 32px;
+    width: 50px; 
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0; /* Ne nyomódjon össze */
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    /* Alap derengés (szürkéskék) */
+    box-shadow: 0 0 10px rgba(148, 163, 184, 0.08); 
 }
-
+        
 .league-icon-wrapper img {
-    max-width: 100%;
-    max-height: 100%;
+    width: 28px;
+    height: 28px;
     object-fit: contain;
-    filter: drop-shadow(0 0 5px rgba(255,255,255,0.1));
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
+}        
+.league-item.active .league-icon-wrapper {
+    border-color: var(--neon-green);
+    background: rgba(0, 255, 136, 0.08);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3); /* Erősebb neon fény */
 }
-
+.league-item.active .league-icon-wrapper img {
+    filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.5));
+}     
+        
 /* A szöveg kezelése */
 .league-name-text {
     font-family: 'Inter', sans-serif;
@@ -524,9 +564,6 @@
         </main>
         <aside class="standings-sidebar" id="sidebar-standings">
             <div class="sidebar-header" id="h-table">📊 Élő Tabella</div>
-            <button id="mobile-test-btn" onclick="runMobileTest()" style="position:fixed; top:85px; right:10px; z-index:9999; padding:10px; background:var(--neon-red); color:white; border:none; border-radius:8px; font-family:'Orbitron'; font-size:10px;">
-    🔥 GÓL TESZT
-</button>
             <div id="standings-target">
                 <p id="standings-placeholder" style="text-align:center; opacity:0.3; margin-top:100px; font-family:'Orbitron'; font-size:10px;">VÁLASSZ EGY CSAPATOT</p>
             </div>
@@ -591,9 +628,9 @@ async function updateData() {
 
         // 3. Renderelés és logika futtatása
         if (typeof renderDateStrip === 'function') renderDateStrip();
-        if (typeof renderLeagues === 'function') renderLeagues();
+        if (typeof s === 'function') s();
 
-        renderLeagues();
+        s();
         renderMatches();
 
         if (allMatches.length > 0) {
@@ -1266,7 +1303,7 @@ function toggleLang() {
     saveState(); // Elmentjük a választást
     updateStaticTexts(); // Frissítjük a feliratokat (🏆 Bajnokságok, stb.)
     renderMatches(); // Újrarajzoljuk a meccseket az új nyelven
-    renderLeagues();
+    s();
     renderDateStrip();
 
     // Frissítjük a gomb feliratát is
@@ -1326,7 +1363,7 @@ function renderLeagues() {
         .filter(m => m.utcDate.startsWith(selectedDate))
         .forEach(m => unique.set(m.competition.id, m.competition));
 
-    c.innerHTML = [...unique.values()].map(l => {
+    const leagueItems = [...unique.values()].map(l => {
         const idStr = l.id.toString();
         const isActive = selectedLeagues.has(idStr);
         
@@ -1339,6 +1376,15 @@ function renderLeagues() {
                 <span class="league-name-text">${l.name}</span>
             </div>`;
     }).join('');
+
+    // A fejléc hozzáadása a generált listához
+    c.innerHTML = `
+        <div class="sidebar-header-info">
+            <span class="header-emoji">🏆</span>
+            <span class="league-name-text header-label">BAJNOKSÁGOK</span>
+        </div>
+        ${leagueItems}
+    `;
 }
 async function loadUserBetsFromServer() {
     if (typeof Clerk === 'undefined' || !Clerk.user) return;
@@ -1566,6 +1612,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
