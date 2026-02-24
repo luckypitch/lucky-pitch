@@ -543,12 +543,11 @@ async function renderMatches() {
         return;
     }
 
+    // Fogadások lekérése (marad az eredeti logikádnál)
     let currentUserBets = [];
     if (typeof Clerk !== 'undefined' && Clerk.user) {
         try {
-            // JAVÍTÁS: Hozzáadunk egy időbélyeget (?t=...), így a böngésző KÖTELES a szerverhez fordulni a cache helyett
             const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}&t=${Date.now()}`);
-
             if (response.ok) {
                 currentUserBets = await response.json();
                 localStorage.setItem('lp_activeBets', JSON.stringify(currentUserBets));
@@ -556,42 +555,44 @@ async function renderMatches() {
                 currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
             }
         } catch (err) {
-            console.error("Nem sikerült lekérni a friss fogadásokat:", err);
             currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
         }
     }
 
+    // --- JAVÍTOTT SZŰRÉS ---
+    // Ha van kiválasztott liga, szűrünk rá, de a dátum szűrést opcionálissá tesszük
     const filtered = allMatches.filter(m => {
-        const mDate = m.utcDate ? m.utcDate.split('T')[0] : "";
-        return mDate === selectedDate && (selectedLeagues.size === 0 || selectedLeagues.has(m.competition.id.toString()));
+        const leagueId = m.competition.id.toString();
+        // Csak akkor szűrünk ligára, ha a selectedLeagues nem üres
+        return (selectedLeagues.size === 0 || selectedLeagues.has(leagueId));
     });
 
     if (filtered.length === 0) {
-        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3;">${currentLang==='HU'?'NINCS MECCS':'NO MATCHES'}</p>`;
+        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3;">${currentLang==='HU'?'NINCS MECCS A KIVÁLASZTOTT SZŰRŐKKEL':'NO MATCHES FOUND'}</p>`;
         return;
     }
 
+    // Időrendi sorrendbe rakjuk
     filtered.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
 
     cont.innerHTML = filtered.map(m => {
-    try {
-        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-        const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
+        try {
+            const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+            const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
+            
+            // Dátum és idő formázása, hogy lássuk melyik napon van
+            const mDateObj = new Date(m.utcDate);
+            const timeStr = mDateObj.toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+            const dateStr = mDateObj.toLocaleDateString('hu-HU', {month:'short', day:'numeric'});
 
-        const score = (isLive || isFinished) && m.score && m.score.fullTime
-            ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
-            : new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+            const score = (isLive || isFinished) && m.score && m.score.fullTime
+                ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
+                : timeStr;
 
-        const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
-
-        // 1. Megkeressük a fogadást
-        const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
-
-        // 2. MEGHATÁROZZUK az isFlashing-et (EZ HIÁNYZIK NÁLAD!)
-        const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
-
-        // 3. Státusz kezelése
-        const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
+            const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
+            const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
+            const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
+            const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
 
         // Most már használhatod az isFlashing-et a return-ben:
         return `
@@ -1318,6 +1319,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
