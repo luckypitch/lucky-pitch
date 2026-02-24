@@ -385,7 +385,7 @@ async function startApp() {
             if (userBtn) {
                 Clerk.mountUserButton(userBtn, {
                     // Megadjuk, hova dobjon ki a gomb megnyomása után
-                    afterSignOutUrl: window.location.origin + '/index.html' 
+                    afterSignOutUrl: window.location.origin + '/Home.html' 
                 });
             }
             document.getElementById('auth-links').style.display = 'none';
@@ -409,6 +409,7 @@ window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
