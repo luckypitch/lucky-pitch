@@ -182,12 +182,27 @@
     font-family: 'Orbitron';
     font-size: 11px;
 }
+.league-icon-wrapper {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08); /* Enyhe kiemelés */
+    border-radius: 8px; /* A szabályos lekerekített négyzet */
+    padding: 4px;
+    transition: 0.3s;
+}        
 /* SZÖVEG MEGJELENÍTÉSE NYITÁSKOR */
 .sidebar:hover .league-item span, 
 .sidebar.open .league-item span {
     opacity: 1;
 }
-
+.league-item:hover .league-icon-wrapper {
+    background: rgba(14, 165, 233, 0.2); /* Neon kék háttér hovernél */
+    border: 1px solid var(--neon-blue);
+}
 .league-item:hover {
     background: rgba(255, 255, 255, 0.05);
 }    
@@ -1329,6 +1344,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
