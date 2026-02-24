@@ -18,33 +18,27 @@
     </div>
 
     <script>
-        // Pontos URL-t adunk meg
-        const targetFile = "luckypitch.onrender.com/Home.html";
+        // A teljes URL-t használjuk a biztonság kedvéért
+        const targetURL = window.location.origin + "/Home.html";
         
         document.getElementById('openLink').onclick = function(e) {
-            if (/Android/i.test(navigator.userAgent)) {
-                // Megakadályozzuk az alapértelmezett ugrást
-                e.preventDefault();
-                // Megpróbáljuk kényszeríteni a Chrome-ot
-                const intentUrl = "intent://" + targetFile + "#Intent;scheme=https;package=com.android.chrome;end";
-                window.location.href = intentUrl;
-                
-                // Fallback: Ha az intent 2 másodpercen belül nem indul el, simán átirányítunk
-                setTimeout(() => {
-                    window.location.href = "/Home.html";
-                }, 2000);
-            }
-            // Ha nem Android, az eredeti href ("/Home.html") fog lefutni automatikusan.
+            // Androidon is csak simán navigáljunk, ne próbáljuk kényszeríteni a rendszert
+            // mert a legtöbb modern Chrome már blokkolja az automatikus intent hívást
+            window.location.href = targetURL;
         };
 
-        // Automatikus indítás mobilon
+        // Automatikus indítás mobilon - CSAK SIMA URL-lel
         if (/Android/i.test(navigator.userAgent)) {
             setTimeout(() => {
-                window.location.href = "intent://" + targetFile + "#Intent;scheme=https;package=com.android.chrome;end";
-            }, 1000);
+                // Ha még mindig a go.html-en van, küldjük tovább
+                if (window.location.pathname.includes("go")) {
+                    window.location.href = targetURL;
+                }
+            }, 1500);
         }
     </script>
 </body>
 
 </html>
+
 
