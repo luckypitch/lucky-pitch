@@ -65,21 +65,25 @@
         .tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.2); }
 
       .main-wrapper {
-        display: grid;
-        grid-template-columns: 80px 1fr; /* Fix sáv a ligáknak, a maradék a meccseké */
+        display: flex;
         width: 100%;
         max-width: 1920px;
+        min-height: 100vh;
         margin: 0 auto;
     }
         .sidebar, .standings-sidebar { background: var(--glass); backdrop-filter: blur(25px); overflow-y: auto; border: 1px solid var(--border); }
        .sidebar {
-        width: 80px;
-        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background: #0a0f1d;
-        z-index: 1000;
-        position: fixed; /* Legyen fix, hogy görgetésnél is ott legyen */
-        height: 100vh;
-    }
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: #060b18;
+    border-right: 1px solid rgba(255,255,255,0.05);
+    z-index: 1000;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
 .sidebar span, 
 .sidebar .sidebar-header {
     opacity: 0;
@@ -130,8 +134,7 @@
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .sidebar:hover {
-    width: 280px; /* Teljes szélesség */
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+    width: 260px; /* Kinyílik ha rásiklik az egér */
 }
         
         .standings-sidebar.open ~ .content-area {
@@ -151,13 +154,15 @@
         overflow: hidden;
     }
         
-      .content-area {
-        display: flex;
-        flex-direction: column;
-        align-items: center; /* Ez teszi középre a meccseket a maradék térben */
-        width: 100%;
-        padding-top: 80px;
-    }
+     .content-area {
+    flex: 1;
+    margin-left: var(--sidebar-w); /* Helyet hagyunk a fix sidebarnak */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* KÖZÉPRE TESZ MINDENT */
+    padding: 20px;
+    width: 100%;
+}
 
 #league-list {
     display: flex;
@@ -331,6 +336,7 @@
 
        .date-strip {
         width: 100%; /* Kitölti a 800px-et */
+        max-width: 850px;
         display: flex;
         justify-content: center; /* Középre teszi a gombokat az oszlopon belül */
         gap: 10px;
@@ -1626,6 +1632,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
