@@ -1045,102 +1045,93 @@ async function loadUserBetsFromServer() {
 // --- 7. INDÍTÁS ---
 let isInitialized = false;
 
+// 1. Az oldal alapfunkciói (meccsek, UI, stb.)
+async function initSiteFunctions() {
+    try {
+        if (typeof updateUI === 'function') updateUI(); 
+        if (typeof initNeural === 'function') initNeural(); 
+        if (typeof fetchMatches === 'function') fetchMatches(); 
+        if (typeof startCounters === 'function') startCounters();
+
+        if (typeof updateData === 'function') await updateData();
+        if (typeof checkBetResults === 'function') await checkBetResults(); 
+
+        if (typeof renderDateStrip === 'function') renderDateStrip();
+        if (typeof renderLeagues === 'function') renderLeagues();
+        if (typeof renderMatches === 'function') renderMatches();
+
+        setInterval(async () => {
+            if (typeof updateData === 'function') await updateData();
+            if (typeof checkBetResults === 'function') await checkBetResults();
+        }, 30000);
+    } catch (e) {
+        console.error("Betöltési hiba:", e);
+    }
+}
+
+// 2. A Clerk kezelése
 async function startApp() {
-    // Téma beállítása
     if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
 
-    // 1. Várakozás a Clerk betöltésére
+    initSiteFunctions(); // Meccsek indítása azonnal
+
     let t = 0;
     while (typeof Clerk === 'undefined' && t < 30) { 
         await new Promise(r => setTimeout(r, 100)); 
         t++; 
     }
 
+    if (typeof Clerk === 'undefined') return;
+
     try {
-        if (typeof Clerk !== 'undefined') {
-            // 2. Clerk inicializálása - FIX ÚTVONALAKKAL
-            await Clerk.load({
-                routing: 'virtual',
-                signInUrl: '/meccsek.html',
-                signUpUrl: '/meccsek.html'
-            });
+        // --- KRITIKUS JAVÍTÁS ITT ---
+        await Clerk.load({
+            routing: 'virtual', // Ez kötelező a load-nál is!
+            signInUrl: '/meccsek.html',
+            signUpUrl: '/meccsek.html'
+        });
 
-            // 3. Kijelentkezés figyelő
-            Clerk.addListener(({ user }) => {
-                if (isInitialized && user === null) {
-                    console.log("Kijelentkezés észlelve, takarítás...");
-                    localStorage.removeItem('lp_activeBets');
-                    window.userBalance = 0;
-                    window.location.href = '/meccsek.html'; 
-                }
-            });
+        Clerk.addListener(({ user }) => {
+            if (isInitialized && user === null) {
+                localStorage.removeItem('lp_activeBets');
+                window.userBalance = 0;
+                window.location.href = '/meccsek.html'; 
+            }
+        });
 
-            if (Clerk.user) {
-                // BEJELENTKEZETT FELHASZNÁLÓ
-                const userBtn = document.getElementById('user-button');
-                if(userBtn) {
-                    Clerk.mountUserButton(userBtn, {
-                        afterSignOutUrl: window.location.origin + '/meccsek.html'
+        if (Clerk.user) {
+            const userBtn = document.getElementById('user-button');
+            if(userBtn) {
+                Clerk.mountUserButton(userBtn, {
+                    afterSignOutUrl: window.location.origin + '/meccsek.html'
+                });
+            }
+            if (typeof loadInitialBalance === 'function') await loadInitialBalance(); 
+            const authLinks = document.getElementById('auth-links');
+            if (authLinks) authLinks.style.display = 'none';
+        } else {
+            const lb = document.getElementById('login-btn');
+            if (lb) { 
+                lb.style.display = 'block'; 
+                lb.onclick = (e) => {
+                    e.preventDefault(); 
+                    e.stopPropagation();
+                    
+                    // --- KRITIKUS JAVÍTÁS A MODALHOZ ---
+                    Clerk.openSignUp({ 
+                        routing: 'virtual', // Virtuális mód
+                        signInUrl: '/meccsek.html', // Hol találja a Sign In-t a modalon belül
+                        afterSignUpUrl: window.location.origin + '/meccsek.html',
+                        afterSignInUrl: window.location.origin + '/meccsek.html'
                     });
-                }
-
-                if (typeof loadInitialBalance === 'function') await loadInitialBalance(); 
-                try {
-                    if (typeof loadUserBetsFromServer === 'function') await loadUserBetsFromServer();
-                } catch (betError) {
-                    console.warn("Szerveroldali adatok nem elérhetők.");
-                }
-
-                const authLinks = document.getElementById('auth-links');
-                if (authLinks) authLinks.style.display = 'none';
-
-                isInitialized = true; 
-            } else {
-                // VENDÉG MÓD
-                const lb = document.getElementById('login-btn');
-                if (lb) { 
-                    lb.style.display = 'block'; 
-                    lb.onclick = (e) => {
-                        e.preventDefault(); 
-                        e.stopPropagation();
-
-                        Clerk.openSignUp({ 
-                            routing: 'virtual',
-                            signInUrl: '/meccsek.html',
-                            signUpUrl: '/meccsek.html',
-                            afterSignUpUrl: window.location.origin + '/meccsek.html',
-                            afterSignInUrl: window.location.origin + '/meccsek.html'
-                        });
-                    };
-                }
-                isInitialized = true; 
+                };
             }
         }
-
-        // --- EGYÉB FUNKCIÓK (Semmi sem marad ki) ---
         
-        if (typeof updateUI === 'function') updateUI(); 
-        if (typeof initNeural === 'function') initNeural(); 
-        if (typeof fetchMatches === 'function') fetchMatches(); 
-        if (typeof startCounters === 'function') startCounters();
-
-        // Adatfrissítés és meccsek
-        if (typeof updateData === 'function') await updateData();
-        if (typeof checkBetResults === 'function') await checkBetResults(); 
-
-        // Renderelés
-        if (typeof renderDateStrip === 'function') renderDateStrip();
-        if (typeof renderLeagues === 'function') renderLeagues();
-        if (typeof renderMatches === 'function') renderMatches();
-
-        // 4. Automata frissítés
-        setInterval(async () => {
-            if (typeof updateData === 'function') await updateData();
-            if (typeof checkBetResults === 'function') await checkBetResults();
-        }, 30000);
+        isInitialized = true; 
 
     } catch (error) {
-        console.error("Hiba a startApp során:", error);
+        console.error("Clerk error:", error);
     }
 }
 // --- MOBIL NAVIGÁCIÓ JAVÍTÁSA ---
@@ -1180,6 +1171,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
