@@ -628,8 +628,9 @@ async function updateData() {
 
         // 3. Renderelés és logika futtatása
         if (typeof renderDateStrip === 'function') renderDateStrip();
-        if (typeof s === 'function') s();
+        if (typeof renderLeagues === 'function') renderLeagues();
 
+        renderLeagues();
         renderMatches();
 
         if (allMatches.length > 0) {
@@ -1611,6 +1612,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
