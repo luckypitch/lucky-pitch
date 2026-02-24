@@ -183,20 +183,21 @@
     font-size: 11px;
 }
 .league-icon-wrapper {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.08); /* Enyhe kiemelés */
-    border-radius: 8px; /* A szabályos lekerekített négyzet */
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px; /* Szabályos kerekített négyzet */
     padding: 4px;
-    transition: 0.3s;
-}        
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}   
 /* SZÖVEG MEGJELENÍTÉSE NYITÁSKOR */
-.sidebar:hover .league-item span, 
-.sidebar.open .league-item span {
+.sidebar:hover .league-name-text,
+.sidebar.open .league-name-text {
+    display: block;
     opacity: 1;
 }
 .league-item:hover .league-icon-wrapper {
@@ -206,6 +207,14 @@
 .league-item:hover {
     background: rgba(255, 255, 255, 0.05);
 }    
+.league-name-text {
+    display: none;
+    opacity: 0;
+    white-space: nowrap;
+    transition: opacity 0.3s ease;
+    font-size: 12px;
+    font-weight: 600;
+}        
     .date-strip { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; scrollbar-width: none; width: 100%; }
     .date-pill { flex: 0 0 auto; padding: 10px 18px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); cursor: pointer; font-family: 'Orbitron'; font-size: 10px; }
     .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0,255,136,0.05); }
@@ -558,7 +567,7 @@ async function renderMatches() {
         return;
     }
 
-    // Fogadások lekérése (marad az eredeti logikádnál)
+    // 1. Fogadások lekérése a Clerk-től/LocalStorage-ból
     let currentUserBets = [];
     if (typeof Clerk !== 'undefined' && Clerk.user) {
         try {
@@ -574,11 +583,9 @@ async function renderMatches() {
         }
     }
 
-    // --- JAVÍTOTT SZŰRÉS ---
-    // Ha van kiválasztott liga, szűrünk rá, de a dátum szűrést opcionálissá tesszük
+    // 2. Szűrés ligák alapján (Dátumra már NEM szűrünk itt, hogy mindent lássunk)
     const filtered = allMatches.filter(m => {
         const leagueId = m.competition.id.toString();
-        // Csak akkor szűrünk ligára, ha a selectedLeagues nem üres
         return (selectedLeagues.size === 0 || selectedLeagues.has(leagueId));
     });
 
@@ -587,95 +594,112 @@ async function renderMatches() {
         return;
     }
 
-    // Időrendi sorrendbe rakjuk
-    filtered.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+    // 3. Csoportosítás dátumok szerint
+    const groups = {};
+    filtered.forEach(m => {
+        const d = new Date(m.utcDate);
+        const dateKey = d.toLocaleDateString('en-CA'); // "YYYY-MM-DD" formátum a rendezéshez
+        if (!groups[dateKey]) groups[dateKey] = [];
+        groups[dateKey].push(m);
+    });
 
-    cont.innerHTML = filtered.map(m => {
-        try {
-            const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-            const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
-            
-            // Dátum és idő formázása, hogy lássuk melyik napon van
-            const mDateObj = new Date(m.utcDate);
-            const timeStr = mDateObj.toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
-            const dateStr = mDateObj.toLocaleDateString('hu-HU', {month:'short', day:'numeric'});
+    // 4. Dátumok sorbarendezése és HTML építése
+    const sortedDates = Object.keys(groups).sort();
+    let finalHtml = "";
 
-            const score = (isLive || isFinished) && m.score && m.score.fullTime
-                ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
-                : timeStr;
+    sortedDates.forEach(dateKey => {
+        const dateObj = new Date(dateKey);
+        const formattedDate = dateObj.toLocaleDateString('hu-HU', { month: 'long', day: 'numeric', weekday: 'long' }).toUpperCase();
 
-            const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
-            const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
-            const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
-            const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
+        // Dátum elválasztó fejléc
+        finalHtml += `
+            <div class="date-group-header" style="width: 100%; padding: 25px 10px 10px; color: #00f3ff; font-family: 'Orbitron'; font-size: 11px; letter-spacing: 2px; opacity: 0.8; display: flex; align-items: center; gap: 15px;">
+                <span>${formattedDate}</span>
+                <div style="flex: 1; height: 1px; background: linear-gradient(90deg, rgba(0,243,255,0.3), transparent);"></div>
+            </div>
+        `;
 
-        // Most már használhatod az isFlashing-et a return-ben:
-        return `
-            <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; transition: all 0.3s ease;">
-                
-                ${myBet ? `
-                    <div style="position: absolute; top: 0; left: 0; background: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">
-                        ${bStatus === 'WON' ? 'WINNER' : bStatus === 'LOST' ? 'LOST' : 'LIVE BET'}
-                    </div>
-                ` : ''}
+        // Meccsek az adott napon belül
+        finalHtml += groups[dateKey].map(m => {
+            try {
+                const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+                const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
+                const mDateObj = new Date(m.utcDate);
+                const timeStr = mDateObj.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
 
-                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px;">
-                    <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
-                        <img src="${m.homeTeam.crest || ''}" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
-                        <span style="font-size: 12px; font-weight: 500;">${m.homeTeam.name}</span>
-                    </div>
+                const score = (isLive || isFinished) && m.score && m.score.fullTime
+                    ? `${m.score.fullTime.home}:${m.score.fullTime.away}`
+                    : timeStr;
+
+                const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : { h: 1.50, d: 3.20, a: 2.40 };
+                const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
+                const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
+                const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
+
+                return `
+                <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.05);">
                     
-                    <div style="flex: 0 0 80px; text-align: center;">
-                        <div class="score-display ${isLive ? 'score-live' : ''}" style="font-size: 20px; font-weight: 800;">${score}</div>
-                        <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size: 8px; margin-top: 5px; display: inline-block;">ELEMZÉS</a>
+                    ${myBet ? `
+                        <div style="position: absolute; top: 0; left: 0; background: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">
+                            ${bStatus === 'WON' ? 'WINNER' : bStatus === 'LOST' ? 'LOST' : 'LIVE BET'}
+                        </div>
+                    ` : ''}
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px;">
+                        <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
+                            <img src="${m.homeTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
+                            <span style="font-size: 11px; font-weight: 500;">${m.homeTeam.name}</span>
+                        </div>
+                        
+                        <div style="flex: 0 0 80px; text-align: center;">
+                            <div class="score-display ${isLive ? 'score-live' : ''}" style="font-size: 18px; font-weight: 800; font-family: 'Orbitron';">${score}</div>
+                            ${isLive ? '<div class="pulse-red" style="font-size: 8px; color: #ff3e3e; margin-top: 2px;">LIVE</div>' : ''}
+                            <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size: 7px; margin-top: 8px; display: inline-block; padding: 2px 6px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; text-decoration: none; color: inherit;">ELEMZÉS</a>
+                        </div>
+
+                        <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
+                            <img src="${m.awayTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
+                            <span style="font-size: 11px; font-weight: 500;">${m.awayTeam.name}</span>
+                        </div>
                     </div>
 
-                    <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                        <img src="${m.awayTeam.crest || ''}" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
-                        <span style="font-size: 12px; font-weight: 500;">${m.awayTeam.name}</span>
+                    <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
+                        ${myBet ? `
+                            <div style="background: ${bStatus === 'WON' ? 'rgba(0, 255, 136, 0.1)' : bStatus === 'LOST' ? 'rgba(255, 62, 62, 0.1)' : 'rgba(255, 170, 0, 0.1)'}; 
+                                        border: 1px dashed ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; 
+                                        border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span style="font-size: 9px; color: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; display: block; font-family: 'Orbitron';">
+                                        ${bStatus === 'WON' ? 'NYERTES' : bStatus === 'LOST' ? 'VESZTETT' : (myBet.type || 'LIVE') + ' TIPP'}
+                                    </span>
+                                    <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="font-size: 9px; opacity: 0.6; display: block;">${bStatus === 'WON' ? 'NYEREMÉNY:' : 'VÁRHATÓ:'}</span>
+                                    <span style="font-size: 13px; font-weight: bold; color: ${bStatus === 'LOST' ? '#ff3e3e' : '#00ff88'};">
+                                        ${bStatus === 'LOST' ? '0' : Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP
+                                    </span>
+                                </div>
+                            </div>
+                        ` : (m.status === 'TIMED' || m.status === 'SCHEDULED') ? `
+                            <div style="display: flex; gap: 8px; width: 100%;">
+                                <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">H ${odds.h}</button>
+                                <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">D ${odds.d}</button>
+                                <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">V ${odds.a}</button>
+                            </div>
+                        ` : `
+                            <div style="text-align:center; font-size: 10px; opacity: 0.5; font-family: 'Orbitron';">${isLive ? 'ÉLŐ MECCS - LEZÁRVA' : 'FOGADÁS LEZÁRVA'}</div>
+                        `}
                     </div>
-                </div>
+                </div>`;
+            } catch (err) {
+                console.error("Hiba egy meccs renderelésekor:", err);
+                return '';
+            }
+        }).join('');
+    });
 
-                <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
-    ${myBet ? `
-        <div style="background: ${bStatus === 'WON' ? 'rgba(0, 255, 136, 0.1)' : bStatus === 'LOST' ? 'rgba(255, 62, 62, 0.1)' : 'rgba(255, 170, 0, 0.1)'}; 
-                    border: 1px dashed ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; 
-                    border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <span style="font-size: 9px; color: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; display: block; font-family: 'Orbitron';">
-                    ${bStatus === 'WON' ? 'NYERTES' : bStatus === 'LOST' ? 'VESZTETT' : (myBet.type || 'LIVE') + ' TIPP'}
-                </span>
-                <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
-            </div>
-            <div style="text-align: right;">
-                <span style="font-size: 9px; opacity: 0.6; display: block;">
-                    ${bStatus === 'WON' ? 'NYEREMÉNY:' : bStatus === 'LOST' ? 'NYEREMÉNY:' : 'VÁRHATÓ:'}
-                </span>
-                <span style="font-size: 13px; font-weight: bold; color: ${bStatus === 'LOST' ? '#ff3e3e' : '#00ff88'};">
-                    ${bStatus === 'LOST' ? '0' : Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP
-                </span>
-            </div>
-        </div>
-    ` : (m.status === 'TIMED' || m.status === 'SCHEDULED') ? `
-                        <div style="display: flex; gap: 8px; width: 100%;">
-                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">H ${odds.h}</button>
-                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">D ${odds.d}</button>
-                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">V ${odds.a}</button>
-                        </div>
-                    ` : isLive ? `
-                        <div style="text-align:center; font-size: 10px; color: #ff3e3e; font-weight: bold; font-family: 'Orbitron'; letter-spacing: 1px;">
-                            <span class="pulse-red">●</span> ÉLŐ MECCS - FOGADÁS LEZÁRVA
-                        </div>
-                    ` : `
-                        <div style="text-align:center; font-size: 10px; opacity: 0.4;">FOGADÁS LEZÁRVA</div>
-                    `}
-                </div>
-            </div>`;
-        } catch (err) {
-            console.error("Hiba a kártya renderelésekor:", err);
-            return '';
-        }
-    }).join('');
+    cont.innerHTML = finalHtml;
 }
 
 async function placeBet(matchId, teamName, odds, type) {
@@ -1344,6 +1368,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
