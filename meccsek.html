@@ -613,21 +613,6 @@ function getSmartOdds(match) {
 } 
 
 // --- 5. MEGJELENÍTÉS ---
-Így van, teljesen igazad van! Ez a rész felel azért, hogy a felhasználó saját fogadásai (Clerk API-n keresztül) megjelenjenek a meccskártyákon. Ha ezt kivennénk, nem látnák, mire fogadtak korábban.
-
-Összegyúrtam neked a teljes, végleges kódot, ami egyszerre kezeli a:
-
-    Dinamikus dátumgombokat (csak ott van gomb, ahol van meccs).
-
-    Középre igazított választót.
-
-    Clerk fogadások lekérését.
-
-    Gyors szűrést.
-
-Itt a komplett, kijavított függvényed:
-JavaScript
-
 async function renderMatches() {
     const cont = document.getElementById("match-container");
     if (!cont) return;
@@ -1563,6 +1548,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
