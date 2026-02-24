@@ -79,11 +79,19 @@
     /* --- Elrendezés --- */
     .main-wrapper { display: flex; margin-top: 75px; min-height: calc(100vh - 75px); }
 
-    .sidebar { 
-        width: 280px; background: var(--glass); backdrop-filter: blur(25px); 
-        border-right: 1px solid var(--border); overflow-y: auto; flex-shrink: 0; 
-    }
-
+   .sidebar { 
+    width: 70px; /* Csak az ikonok látszanak */
+    background: var(--glass); 
+    backdrop-filter: blur(25px); 
+    border-right: 1px solid var(--border); 
+    overflow-x: hidden; /* Ne lógjon ki a szöveg */
+    flex-shrink: 0;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Sima nyitás */
+    z-index: 1500;
+}
+.sidebar:hover, .sidebar.open { 
+    width: 280px; 
+}
     .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
 
     .standings-sidebar { 
@@ -145,9 +153,44 @@
     .pos-num-box { width: 34px; height: 34px; line-height: 34px; margin: 0 auto; border-radius: 8px; font-weight: 900; font-family: 'Orbitron'; font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
     /* --- Liga Választó & Dátum --- */
-    .league-item { margin: 8px 15px; padding: 12px 15px; border-radius: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.3s; border: 1px solid transparent; }
+    .league-item { 
+    margin: 8px 10px; 
+    padding: 10px; 
+    border-radius: 12px; /* Szabályos lekerekített négyzet alap */
+    display: flex; 
+    align-items: center; 
+    gap: 20px; /* Távolság az ikon és a szöveg között */
+    cursor: pointer; 
+    transition: 0.3s; 
+    border: 1px solid transparent;
+    white-space: nowrap; /* A szöveg ne törjön több sorba */
+}
     .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); }
+    .league-item img { 
+    width: 32px; 
+    height: 32px; 
+    min-width: 32px; /* Ne nyomódjon össze */
+    object-fit: contain; 
+    border-radius: 8px; /* Kicsit kerekített négyzet */
+    background: rgba(255,255,255,0.05); /* Enyhe háttér az ikonnak, hogy kitűnjön */
+    padding: 4px;
+}
+.league-item span {
+    opacity: 0;
+    transition: opacity 0.2s;
+    font-weight: 600;
+    font-family: 'Orbitron';
+    font-size: 11px;
+}
+/* SZÖVEG MEGJELENÍTÉSE NYITÁSKOR */
+.sidebar:hover .league-item span, 
+.sidebar.open .league-item span {
+    opacity: 1;
+}
 
+.league-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}    
     .date-strip { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; scrollbar-width: none; width: 100%; }
     .date-pill { flex: 0 0 auto; padding: 10px 18px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); cursor: pointer; font-family: 'Orbitron'; font-size: 10px; }
     .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0,255,136,0.05); }
@@ -156,11 +199,19 @@
     .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
     
     @media (max-width: 1100px) {
-        .sidebar { position: fixed; left: 0; top: 75px; transform: translateX(-100%); z-index: 2100; height: calc(100% - 145px); width: 280px; }
-        .sidebar.open { transform: translateX(0); }
+        .sidebar { 
+        position: fixed; 
+        left: 0; 
+        top: 75px; 
+        width: 0px; /* Mobilon teljesen elrejthetjük */
+        height: calc(100% - 145px); 
+    }
         .main-wrapper { padding-bottom: 70px; }
         .mobile-nav { display: flex; }
         .standings-sidebar { width: 85%; }
+    }
+        .sidebar.open { 
+        width: 280px; 
     }
     </style>
 </head>
@@ -1267,6 +1318,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
