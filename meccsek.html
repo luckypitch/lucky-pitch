@@ -64,56 +64,116 @@
         }
         .tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.2); }
 
-        .main-wrapper {
-        display: flex;
-        width: 100vw;
-        overflow: hidden; /* Megakadályozza a vízszintes csúszkát */
-    }
+       .main-wrapper {
+    display: flex;
+    width: 100vw;
+    height: calc(100vh - 75px); /* Navigáció magassága levonva */
+    overflow: hidden;
+    margin-top: 75px;
+}
         .sidebar, .standings-sidebar { background: var(--glass); backdrop-filter: blur(25px); overflow-y: auto; border: 1px solid var(--border); }
-        .sidebar { width: 300px; }
-        .standings-sidebar {
-        position: fixed; /* Vagy sticky, ha a layout engedi */
-        top: 75px;
-        right: 0;
-        bottom: 0;
-        width: 400px; /* Fix szélesség PC-n */
-        transform: translateX(100%); /* Alapból rejtve jobbra */
-        z-index: 1001;
-        background: var(--glass);
-        backdrop-filter: blur(20px);
-        border-left: 1px solid var(--border);
-        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
+       .sidebar {
+    width: 300px;
+    min-width: 300px;
+    border-right: 1px solid var(--border);
+    z-index: 10;
+}
+       .standings-sidebar {
+    position: fixed;
+    top: 75px;
+    right: 0;
+    bottom: 0;
+    width: 420px;
+    background: var(--glass);
+    backdrop-filter: blur(30px);
+    border-left: 1px solid var(--border);
+    transform: translateX(100%);
+    z-index: 1001;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
 
+        .standings-sidebar.open ~ .content-area {
+    margin-right: 420px;
+}
+        
         .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
     .standings-sidebar.open {
-        transform: translateX(0); /* Beúszik */
-    }
+    transform: translateX(0);
+    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
+}
         
        .content-area {
-        flex: 1; /* Ez kitölti a maradék helyet */
-        transition: margin-right 0.4s ease; /* Sima átmenet, ha a tabella nyílik */
-    }
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Kártyák középre rendezése */
+    transition: margin-right 0.4s ease, width 0.4s ease;
+}
 
         .match-card {
-            background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 24px;
-            padding: 20px; margin-bottom: 15px; display: flex; align-items: center; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .match-card:hover { border-color: var(--neon-blue); background: rgba(30, 41, 59, 0.6); transform: translateY(-4px); }
+    width: 100%;
+    max-width: 850px; /* Hogy ne legyen túl széles PC-n */
+    background: rgba(15, 23, 42, 0.4); 
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 25px 40px; /* Több belső tér */
+    margin-bottom: 20px;
+    display: grid; /* Grid a precíz elrendezéshez */
+    grid-template-columns: 1fr auto 1fr; 
+    align-items: center;
+    gap: 30px;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+       .match-card:hover {
+    border-color: var(--neon-blue);
+    background: rgba(30, 41, 59, 0.6);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
 
         .team-link { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
-        .team-link img { width: 55px; height: 55px; object-fit: contain; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .team-link img {
+    width: 65px;
+    height: 65px;
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));
+}
         .team-link:hover img { transform: rotate(15deg) scale(1.2); filter: drop-shadow(0 0 12px var(--neon-blue)); }
-        .team-link span { font-weight: 800; font-family: 'Orbitron'; font-size: 11px; text-align: center; }
+        .team-link span {
+    font-size: 13px;
+    margin-top: 10px;
+    color: var(--text);
+    opacity: 0.9;
+}
 
-        .score-display { font-family: 'Orbitron'; font-size: 2.2rem; font-weight: 900; color: var(--neon-green); }
-        .score-live { color: var(--neon-red); animation: pulse 1s infinite; text-shadow: 0 0 15px var(--neon-red); }
-      @keyframes goal-pulse {
-    0% { 
-        box-shadow: 0 0 5px #ff3e3e, inset 0 0 5px #ff3e3e; 
-        border-color: #ff3e3e;
-        transform: scale(1);
-    }
+        .score-display {
+    font-family: 'Orbitron';
+    font-size: 2.8rem; /* Kicsit nagyobb és hangsúlyosabb */
+    font-weight: 900;
+    color: var(--neon-green);
+    text-align: center;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+        .score-live {
+    color: var(--neon-red);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 5px;
+    animation: pulse 1.5s infinite;
+    text-shadow: 0 0 15px var(--neon-red);
+}
+      @keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+}
+        
     50% { 
         box-shadow: 0 0 40px #ff3e3e, inset 0 0 20px #ff3e3e; 
         border-color: #ff4d4d;
@@ -1307,6 +1367,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
