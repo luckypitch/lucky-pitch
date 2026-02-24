@@ -28,7 +28,6 @@ HTML
 
     <style>
        :root {
-            /* ALAPÉRTELMEZETT DARK MODE SZÍNEK */
             --bg: #020617; 
             --glass: rgba(15, 23, 42, 0.75); 
             --neon-blue: #0ea5e9;
@@ -39,8 +38,8 @@ HTML
             --card-bg: rgba(15, 23, 42, 0.85);
         }
 
+        /* LIGHT MODE OSZTÁLY */
         body.light {
-            /* LIGHT MODE SZÍNEK */
             --bg: #f8fafc; 
             --glass: rgba(255, 255, 255, 0.8); 
             --text: #0f172a;
@@ -52,7 +51,9 @@ HTML
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         
+        /* BODY FIXÁLÁSA HOGY NE LEGYEN FEHÉR */
         body { 
+            background-color: #020617; /* Hardcoded sötét szín a villanás ellen */
             background: var(--bg); 
             color: var(--text); 
             min-height: 100vh; 
@@ -60,6 +61,7 @@ HTML
             flex-direction: column; 
             transition: background 0.4s, color 0.4s; 
             overflow-x: hidden; 
+            margin: 0;
         }
 
         #neuralCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.4; pointer-events: none; }
@@ -96,6 +98,7 @@ HTML
             background: var(--card-bg); border: 1px solid var(--neon-blue); border-radius: 30px; padding: 35px;
             width: 100%; max-width: 440px; backdrop-filter: blur(40px); position: relative;
             animation: float 6s ease-in-out infinite; box-shadow: 0 30px 70px rgba(0,0,0,0.6);
+            color: var(--text);
         }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
         
@@ -122,7 +125,7 @@ HTML
         }
         .fb-link:hover { color: #1877F2; border-color: #1877F2; box-shadow: 0 0 25px rgba(24, 119, 242, 0.6); }
 
-        /* --- MOBIL OPTIMALIZÁCIÓ --- */
+        /* MOBIL OPTIMALIZÁCIÓ */
         @media (max-width: 1100px) {
             nav { padding: 0 3%; height: 70px; }
             .logo { font-size: 1.2rem; }
@@ -385,6 +388,7 @@ window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
