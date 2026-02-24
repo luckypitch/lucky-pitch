@@ -592,22 +592,26 @@ async function renderMatches() {
                 </div>
 
                 <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
-                    ${myBet ? `
-                        <div style="background: ${bStatus === 'WON' ? 'rgba(0, 255, 136, 0.1)' : bStatus === 'LOST' ? 'rgba(255, 62, 62, 0.1)' : 'rgba(255, 170, 0, 0.1)'}; 
-                                    border: 1px dashed ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; 
-                                    border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <span style="font-size: 9px; color: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; display: block; font-family: 'Orbitron';">
-                                    ${bStatus === 'WON' ? 'NYERTES' : bStatus === 'LOST' ? 'VESZTETT' : (myBet.type || 'LIVE') + ' TIPP'}
-                                </span>
-                                <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
-                            </div>
-                            <div style="text-align: right;">
-                                <span style="font-size: 9px; opacity: 0.6; display: block;">${bStatus === 'WON' ? 'NYEREMÉNY:' : 'VÁRHATÓ:'}</span>
-                                <span style="font-size: 13px; font-weight: bold; color: #00ff88;">${Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP</span>
-                            </div>
-                        </div>
-                    ` : (m.status === 'TIMED' || m.status === 'SCHEDULED') ? `
+    ${myBet ? `
+        <div style="background: ${bStatus === 'WON' ? 'rgba(0, 255, 136, 0.1)' : bStatus === 'LOST' ? 'rgba(255, 62, 62, 0.1)' : 'rgba(255, 170, 0, 0.1)'}; 
+                    border: 1px dashed ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; 
+                    border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span style="font-size: 9px; color: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; display: block; font-family: 'Orbitron';">
+                    ${bStatus === 'WON' ? 'NYERTES' : bStatus === 'LOST' ? 'VESZTETT' : (myBet.type || 'LIVE') + ' TIPP'}
+                </span>
+                <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 9px; opacity: 0.6; display: block;">
+                    ${bStatus === 'WON' ? 'NYEREMÉNY:' : bStatus === 'LOST' ? 'NYEREMÉNY:' : 'VÁRHATÓ:'}
+                </span>
+                <span style="font-size: 13px; font-weight: bold; color: ${bStatus === 'LOST' ? '#ff3e3e' : '#00ff88'};">
+                    ${bStatus === 'LOST' ? '0' : Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP
+                </span>
+            </div>
+        </div>
+    ` : (m.status === 'TIMED' || m.status === 'SCHEDULED') ? `
                         <div style="display: flex; gap: 8px; width: 100%;">
                             <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">H ${odds.h}</button>
                             <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">D ${odds.d}</button>
@@ -1171,6 +1175,7 @@ function saveState() {
     </script>
 </body>
 </html>
+
 
 
 
