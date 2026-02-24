@@ -1658,27 +1658,38 @@ async function updateTooltipData() {
             return;
         }
 
-        // --- DINAMIKUS MAI DÁTUM (Helyi idő szerint) ---
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth() + 1).padStart(2, '0');
-        const d = String(now.getDate()).padStart(2, '0');
-        const localToday = `${y}-${m}-${d}`; // Eredmény: "2026-02-24"
+        // 1. MAI NAP REGGEL 00:00:00 (Helyi idő szerint)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayTime = today.getTime();
 
-        // --- SZŰRÉS ---
+        // 2. HOLNAP REGGEL 00:00:00
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowTime = tomorrow.getTime();
+
+        // 3. SZŰRÉS: Minden beérkező értéket kényszerítünk dátumra
         const dailyBets = bets.filter(bet => {
             if (!bet.created_at) return false;
-            // Kivágjuk a "2026-02-24" részt a string elejéről
-            const betDateOnly = bet.created_at.substring(0, 10);
-            return betDateOnly === localToday;
+            
+            // Bármi is jön (string vagy date), dátumot csinálunk belőle
+            const bDate = new Date(bet.created_at).getTime();
+            
+            // Megnézzük, hogy a mai nap tartományába esik-e
+            return bDate >= todayTime && bDate < tomorrowTime;
         });
+
+        // --- DEBUG: Ha még mindig nem jó, nézd meg a konzolt (F12) ---
+        console.log("Összes fogadás:", bets.length);
+        console.log("Mai fogadások:", dailyBets.length);
+        console.log("Mai nap eleje:", today);
 
         if (dailyBets.length === 0) {
             body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:#888;">Mára még nem tippeltél.</td></tr>';
             return;
         }
 
-        // --- MEGJELENÍTÉS ---
+        // 4. MEGJELENÍTÉS
         body.innerHTML = dailyBets.slice(0, 6).map(bet => {
             const statusColor = bet.status === 'WON' ? '#00ff99' : (bet.status === 'LOST' ? '#ff4d4d' : '#ccc');
             return `
@@ -1697,7 +1708,7 @@ async function updateTooltipData() {
         }).join('');
 
     } catch (err) {
-        console.error("Végzetes dátum hiba:", err);
+        console.error("Végleges szűrési hiba:", err);
         body.innerHTML = '<tr><td colspan="3" style="text-align:center; color: red;">Hiba történt...</td></tr>';
     }
 }
@@ -1706,6 +1717,7 @@ initSexyTooltip();
     </script>
 </body>
 </html>
+
 
 
 
