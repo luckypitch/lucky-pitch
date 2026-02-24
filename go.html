@@ -13,27 +13,24 @@
 <body>
     <div class="box">
         <h2>LUCKYPITCH</h2>
-        <p>Kattints a gombra a megnyitáshoz!</p>
-        <a href="https://luckypitch.render.com/Home.html" id="openLink" class="btn">BELÉPÉS</a>
+        <p>Kattints a gombra a folytatáshoz!</p>
+        <a href="https://luckypitch.onrender.com/Home.html" id="openLink" class="btn">BELÉPÉS</a>
     </div>
 
     <script>
-        const target = "luckypitch.render.com/Home.html";
+        const target = "luckypitch.onrender.com/Home.html";
         
-        // Automatikus ugrás Androidon
         if (/Android/i.test(navigator.userAgent)) {
             setTimeout(() => {
                 window.location.href = "intent://" + target + "#Intent;scheme=https;package=com.android.chrome;end";
             }, 500);
         }
 
-        // Ha a gombra kattint (minden eszközön)
         document.getElementById('openLink').onclick = function(e) {
             if (/Android/i.test(navigator.userAgent)) {
                 e.preventDefault();
                 window.location.href = "intent://" + target + "#Intent;scheme=https;package=com.android.chrome;end";
             }
-            // iPhone-on hagyjuk, hogy a sima href="Home.html" fusson le
         };
     </script>
 </body>
