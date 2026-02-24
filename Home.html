@@ -358,19 +358,58 @@ function toggleTheme() {
     document.getElementById('theme-btn').innerText = isLight ? '☀️' : '🌙';
 }
 
+let isInitialized = false;
+
 async function startApp() {
+    // 1. Alapbeállítások (Theme)
     if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
-    await Clerk.load();
-    if (Clerk.user) {
-        Clerk.mountUserButton(document.getElementById('user-button'));
-        document.getElementById('auth-links').style.display = 'none';
+
+    try {
+        // 2. Clerk betöltése
+        await Clerk.load();
+
+        // 3. KIJELENTKEZÉS FIGYELŐ (Ez a kulcs!)
+        Clerk.addListener(({ user }) => {
+            // Ha már be volt töltve (isInitialized) és a user eltűnt, takarítunk
+            if (isInitialized && !user) {
+                console.log("Kijelentkezés észlelve, adatok törlése...");
+                localStorage.removeItem('lp_activeBets'); // Töröljük a fogadásokat
+                window.userBalance = 0; // Egyenleg nullázása
+                window.location.reload(); // Oldal frissítése, hogy tiszta lappal induljunk
+            }
+        });
+
+        // 4. Felhasználói állapot kezelése
+        if (Clerk.user) {
+            const userBtn = document.getElementById('user-button');
+            if (userBtn) {
+                Clerk.mountUserButton(userBtn, {
+                    // Megadjuk, hova dobjon ki a gomb megnyomása után
+                    afterSignOutUrl: window.location.origin + '/index.html' 
+                });
+            }
+            document.getElementById('auth-links').style.display = 'none';
+        }
+
+        // 5. Alkalmazás funkcióinak indítása
+        updateUI(); 
+        initNeural(); 
+        fetchMatches(); 
+        startCounters();
+
+        // Jelezzük, hogy a kezdeti betöltés kész
+        isInitialized = true;
+
+    } catch (error) {
+        console.error("Hiba az indítás során:", error);
     }
-    updateUI(); initNeural(); fetchMatches(); startCounters();
 }
+    
 window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
