@@ -1357,11 +1357,23 @@ function renderDateStrip() {
 function renderLeagues() {
     const c = document.getElementById("league-list");
     if (!c) return;
+
+    // JAVÍTÁS: Ellenőrizzük, hogy az allMatches valóban egy tömb-e
+    if (!allMatches || !Array.isArray(allMatches)) {
+        console.warn("allMatches nem tömb, a ligák renderelése megszakítva.");
+        return;
+    }
+
     const unique = new Map();
     
+    // Most már biztonságosan futhat a filter
     allMatches
-        .filter(m => m.utcDate.startsWith(selectedDate))
-        .forEach(m => unique.set(m.competition.id, m.competition));
+        .filter(m => m && m.utcDate && m.utcDate.startsWith(selectedDate))
+        .forEach(m => {
+            if (m.competition) {
+                unique.set(m.competition.id, m.competition);
+            }
+        });
 
     const leagueItems = [...unique.values()].map(l => {
         const idStr = l.id.toString();
@@ -1612,6 +1624,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
