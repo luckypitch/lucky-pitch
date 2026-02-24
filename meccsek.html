@@ -1043,11 +1043,6 @@ async function loadUserBetsFromServer() {
 }
 
 // --- 7. INDÍTÁS ---
-Igazad van, a dinamikus window.location.pathname néha megkavarja a dolgokat, ha a böngésző nem kezeli le jól az útvonalat. Ha neked a fix /meccsek.html vált be, akkor ne kísérletezzünk, maradjunk annál, ami neked stabil.
-
-Itt a teljes kód, ahol mindenhol visszaírtam a fix /meccsek.html útvonalat, és benne hagytam az összes egyéb funkciódat is.
-JavaScript
-
 let isInitialized = false;
 
 async function startApp() {
@@ -1185,6 +1180,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
