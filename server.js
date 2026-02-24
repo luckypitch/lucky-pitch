@@ -324,10 +324,10 @@ autoCheckResults();
 // server.js - Fogadások kiértékelése
 
 // --- OLDALAK KISZOLGÁLÁSA ---
+app.get("/go", (req, res) => res.sendFile(path.join(__dirname, "go.html")));
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
 app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
-app.get("/go", (req, res) => res.sendFile(path.join(__dirname, "go.html")));
 
 // Fallback minden másra (irányítás a főoldalra)
 app.get("*", (req, res) => res.redirect("/"));
@@ -342,4 +342,5 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
