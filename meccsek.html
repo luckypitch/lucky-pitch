@@ -1071,36 +1071,56 @@ async function loadInitialBalance() {
 }
 
 async function showStandings(leagueId, teamId, code, isAutoCall = false) {
-    // 1. Sidebar kezelése mobilon
-    if(!isAutoCall && window.innerWidth <= 1100 && typeof toggleM === 'function') {
-        toggleM('sidebar-standings');
+    // 1. Sidebar kezelése - PC-n és Mobilon is aktiváljuk a láthatóságot
+    const sidebar = document.querySelector('.standings-sidebar');
+    if (sidebar && !isAutoCall) {
+        sidebar.classList.add('open'); // PC-n beúsztatja a sávot
     }
 
-    // 2. A cél-elem definiálása (EZT PÓTOLNI KELL!)
+    // 2. A cél-elem (Győződj meg róla, hogy a HTML-ben van id="standings-target")
     const target = document.getElementById("standings-target");
     if (!target) return;
 
-    // Loading állapot kijelzése
-    target.innerHTML = `<p style="text-align:center; padding:50px; font-size:10px; font-family:'Orbitron';">LOADING...</p>`;
+    target.innerHTML = `<div class="loading-spinner">LOADING...</div>`;
 
     try {
-        const res = await fetch(`/api/standings/${code || leagueId}`);
+        // JAVÍTÁS: Ha nincs code, próbáljuk meg a leagueId-t, 
+        // de adjunk egy fallback-et, ha mindkettő hiányzik
+        const queryParam = code || leagueId;
+        if (!queryParam) throw new Error("Nincs azonosító");
+
+        const res = await fetch(`/api/standings/${queryParam}`);
+        
+        // Ellenőrizzük, hogy a szerver nem dobott-e hibát (pl. 404 vagy 500)
+        if (!res.ok) throw new Error(`Szerver hiba: ${res.status}`);
+        
         const data = await res.json();
 
-        // Ellenőrizzük, hogy van-e érvényes adat
-        if (!data || !data.standings) throw new Error("Hibás adat");
+        // 3. Adatellenőrzés finomítása
+        if (!data || !data.standings || data.standings.length === 0) {
+            throw new Error("Hibás adat");
+        }
 
-        const standings = data.standings.find(s => s.type === 'TOTAL');
-        if (!standings) throw new Error("Nincs TOTAL táblázat");
-
+        // Megkeressük a TOTAL táblázatot (gyakran az első elem az)
+        const standings = data.standings.find(s => s.type === 'TOTAL') || data.standings[0];
         const tableData = standings.table;
-        const total = tableData.length;
+        
+        if (!tableData) throw new Error("Nincs táblázat tartalom");
 
-        let html = `<table class="standings-table"><thead><tr><th>#</th><th style="text-align:left">${currentLang==='HU'?'CSAPAT':'TEAM'}</th><th>P</th></tr></thead><tbody>`;
+        const total = tableData.length;
+        let html = `<table class="standings-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th style="text-align:left">${typeof currentLang !== 'undefined' && currentLang === 'HU' ? 'CSAPAT' : 'TEAM'}</th>
+                            <th>P</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
 
         tableData.forEach(r => {
             let status = r.description || "";
-            const pos = r.position; // Definíció hozzáadva!
+            const pos = r.position;
             const isTarget = r.team.id == teamId;
 
             // Zóna logika beépítése
@@ -1145,7 +1165,7 @@ async function showStandings(leagueId, teamId, code, isAutoCall = false) {
                 }
             }
 
-            const color = getStatusColor(status);
+            const color = typeof getStatusColor === 'function' ? getStatusColor(status) : 'transparent';
             const boxBg = color !== 'transparent' ? color : 'rgba(255,255,255,0.05)';
             const boxText = color !== 'transparent' ? '#000' : 'var(--neon-blue)';
 
@@ -1154,18 +1174,24 @@ async function showStandings(leagueId, teamId, code, isAutoCall = false) {
                     <div class="pos-num-box" style="background:${boxBg}; color:${boxText}; font-weight:900;">${pos}</div>
                 </td>
                 <td style="text-align:left; font-weight:600;">
-                    <img src="${r.team.crest}" width="20" style="vertical-align:middle; margin-right:8px;"> 
+                    <img src="${r.team.crest}" width="20" loading="lazy" style="vertical-align:middle; margin-right:8px;"> 
                     ${r.team.shortName || r.team.name}
                 </td>
                 <td style="font-family:'Orbitron'; color:var(--neon-green); font-weight:bold;">${r.points}</td>
             </tr>`;
         });
+
         target.innerHTML = html + "</tbody></table>";
+
     } catch (e) { 
-        console.error(e);
-        target.innerHTML = "<p style='text-align:center; padding:20px;'>Error loading standings.</p>"; 
+        console.error("Standings Error:", e);
+        target.innerHTML = `<div class="error-msg">
+            <p>Hiba történt a tabella betöltésekor.</p>
+            <small>${e.message}</small>
+        </div>`; 
     }
 }
+        
 function updateStaticTexts() {
     const isHU = currentLang === 'HU';
     const langBtn = document.getElementById('lang-btn');
@@ -1495,6 +1521,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
