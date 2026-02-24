@@ -121,7 +121,53 @@
 
     .score-display { font-family: 'Orbitron'; font-size: 2.2rem; font-weight: 900; color: var(--neon-green); }
     .score-live { color: var(--neon-red); animation: pulse 1s infinite; text-shadow: 0 0 15px var(--neon-red); }
+#date-selector {
+    display: flex;
+    justify-content: center; /* Középre igazítja a gombokat a kártyák tengelyében */
+    align-items: center;
+    gap: 12px;
+    margin: 10px auto 25px auto;
+    padding: 10px;
+    max-width: 600px; /* Hogy ne legyen szélesebb, mint a meccskártyák */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox-hoz */
+}
+#date-selector::-webkit-scrollbar {
+    display: none;
+}    
+.date-btn {
+    background: rgba(255, 255, 255, 0.03); /* Ugyanaz a háttér, mint a card-nál */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+    padding: 12px 20px;
+    border-radius: 12px; /* Meccskártya lekerekítéséhez igazítva */
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 90px;
+    text-align: center;
+    flex-shrink: 0;
+}
 
+/* Hover állapot - finom neon kék */
+.date-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 243, 255, 0.4);
+    color: #fff;
+}
+
+/* Aktív/Kijelölt állapot - Erős neon kék és árnyék */
+.date-btn.active {
+    background: rgba(0, 243, 255, 0.15);
+    border-color: #00f3ff;
+    color: #00f3ff;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+    font-weight: 800;
+    transform: translateY(-2px); /* Kicsit kiemelkedik */
+}
     /* --- Odds Gombok (Javított) --- */
     .match-odds-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
 
@@ -236,6 +282,14 @@
     }
         .sidebar.open { 
         width: 280px; 
+    }
+        #date-selector {
+        justify-content: flex-start; /* Mobilon jobb, ha szélről indul a görgetés miatt */
+        padding-left: 20px;
+    }
+    .date-btn {
+        padding: 10px 15px;
+        min-width: 80px;
     }
     </style>
 </head>
@@ -1509,6 +1563,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
