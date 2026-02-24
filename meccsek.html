@@ -1654,11 +1654,26 @@ async function updateTooltipData() {
         const bets = await response.json();
 
         if (!bets || bets.length === 0) {
-            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Nincsenek aktív tippjeid.</td></tr>';
+            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Nincsenek mai tippjeid.</td></tr>';
             return;
         }
 
-        body.innerHTML = bets.slice(0, 5).map(bet => {
+        // --- MAI DÁTUM SZŰRÉS ---
+        const today = new Date().toISOString().split('T')[0]; // Formátum: YYYY-MM-DD
+        
+        const dailyBets = bets.filter(bet => {
+            // A Supabase created_at dátumát összevetjük a maival
+            const betDate = bet.created_at.split('T')[0];
+            return betDate === today;
+        });
+
+        if (dailyBets.length === 0) {
+            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Mára még nem tippeltél.</td></tr>';
+            return;
+        }
+
+        // Megjelenítés (csak a maiak)
+        body.innerHTML = dailyBets.slice(0, 5).map(bet => {
             const statusColor = bet.status === 'WON' ? '#00ff99' : (bet.status === 'LOST' ? '#ff4d4d' : '#ccc');
             return `
                 <tr>
@@ -1685,6 +1700,7 @@ initSexyTooltip();
     </script>
 </body>
 </html>
+
 
 
 
