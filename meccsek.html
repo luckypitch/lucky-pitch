@@ -1045,7 +1045,7 @@ async function loadUserBetsFromServer() {
 // --- 7. INDÍTÁS ---
 let isInitialized = false;
 
-// 1. Oldal funkciók (Meccsek, UI) - TELJESEN KÜLÖN, hogy ne álljon le semmi
+// 1. Oldal funkciók (Meccsek, UI) - Független indítás
 async function initSiteFunctions() {
     try {
         if (typeof updateUI === 'function') updateUI(); 
@@ -1073,8 +1073,7 @@ async function initSiteFunctions() {
 async function startApp() {
     if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
 
-    // A meccseket és UI-t azonnal indítjuk
-    initSiteFunctions();
+    initSiteFunctions(); // Meccsek azonnal
 
     let t = 0;
     while (typeof Clerk === 'undefined' && t < 30) { 
@@ -1085,11 +1084,9 @@ async function startApp() {
     if (typeof Clerk === 'undefined') return;
 
     try {
-        // KÖTELEZŐ: routing: 'virtual' a betöltéskor is!
+        // --- FONTOS: A LOAD-NÁL IS VIRTUAL KELL ---
         await Clerk.load({
-            routing: 'virtual',
-            signInUrl: '/meccsek.html',
-            signUpUrl: '/meccsek.html'
+            routing: 'virtual'
         });
 
         Clerk.addListener(({ user }) => {
@@ -1118,11 +1115,10 @@ async function startApp() {
                     e.preventDefault(); 
                     e.stopPropagation();
                     
-                    // JAVÍTÁS: openSignIn-t nyitunk meg, mert ebben a stabilabb a váltás
+                    // MEGNYITJUK A SIGN-IN-T, de a modalon belül 
+                    // a virtual routing kezeli a váltást reload nélkül
                     Clerk.openSignIn({ 
                         routing: 'virtual',
-                        signInUrl: '/meccsek.html',
-                        signUpUrl: '/meccsek.html',
                         afterSignUpUrl: window.location.origin + '/meccsek.html',
                         afterSignInUrl: window.location.origin + '/meccsek.html'
                     });
@@ -1173,6 +1169,7 @@ function saveState() {
     </script>
 </body>
 </html>
+
 
 
 
