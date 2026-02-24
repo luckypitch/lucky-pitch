@@ -1646,7 +1646,7 @@ async function updateTooltipData() {
     try {
         const userId = window.Clerk?.user?.id;
         if (!userId) {
-            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Jelentkezz be!</td></tr>';
+            body.innerHTML = '<tr><td colspan="3" style="text-align:center;">Jelentkezz be!</td></tr>';
             return;
         }
 
@@ -1654,17 +1654,23 @@ async function updateTooltipData() {
         const bets = await response.json();
 
         if (!bets || bets.length === 0) {
-            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Nincsenek mai tippjeid.</td></tr>';
+            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Nincsenek tippjeid.</td></tr>';
             return;
         }
 
-        // --- MAI DÁTUM SZŰRÉS ---
-        const today = new Date().toISOString().split('T')[0]; // Formátum: YYYY-MM-DD
+        // 1. MAI DÁTUM MEGHATÁROZÁSA (Helyi idő szerint, YYYY-MM-DD)
+        const now = new Date();
+        const todayStr = now.getFullYear() + '-' + 
+                         String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                         String(now.getDate()).padStart(2, '0');
         
+        // 2. SZŰRÉS
         const dailyBets = bets.filter(bet => {
-            // A Supabase created_at dátumát összevetjük a maival
-            const betDate = bet.created_at.split('T')[0];
-            return betDate === today;
+            if (!bet.created_at) return false;
+            // Mivel a képen látom, hogy SZÓKÖZ van a dátum után: "2026-02-24 14:09..."
+            // Ezért az első 10 karaktert vágjuk le (YYYY-MM-DD)
+            const betDatePart = bet.created_at.substring(0, 10);
+            return betDatePart === todayStr;
         });
 
         if (dailyBets.length === 0) {
@@ -1672,7 +1678,7 @@ async function updateTooltipData() {
             return;
         }
 
-        // Megjelenítés (csak a maiak)
+        // 3. MEGJELENÍTÉS
         body.innerHTML = dailyBets.slice(0, 5).map(bet => {
             const statusColor = bet.status === 'WON' ? '#00ff99' : (bet.status === 'LOST' ? '#ff4d4d' : '#ccc');
             return `
@@ -1690,16 +1696,16 @@ async function updateTooltipData() {
             `;
         }).join('');
     } catch (err) {
-        console.error("Hiba:", err);
+        console.error("Dátum szűrési hiba:", err);
         body.innerHTML = '<tr><td colspan="3" style="text-align:center; color: red;">Hiba történt...</td></tr>';
     }
 }
-
 // Futtatás indítása
 initSexyTooltip();
     </script>
 </body>
 </html>
+
 
 
 
