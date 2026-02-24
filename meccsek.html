@@ -1043,7 +1043,13 @@ async function loadUserBetsFromServer() {
 }
 
 // --- 7. INDÍTÁS ---
-let isInitialized = false; // <--- Új változó a függvényen kívül vagy az elején
+Igen, a szerkezet már majdnem tökéletes, de van benne egy apró szintaktikai hiba (egy rossz helyre tett kapcsos zárójel), ami miatt a vendég mód (else ág) nem futna le megfelelően.
+
+Javítottam a zárójelezést és kicsit finomítottam az isInitialized elhelyezésén, hogy véletlenül se akadjon össze a regisztrációval.
+A végleges, javított kód (Meccsek.html / Home.html)
+JavaScript
+
+let isInitialized = false;
 
 async function startApp() {
     let t = 0;
@@ -1054,62 +1060,64 @@ async function startApp() {
 
     try {
         if (typeof Clerk !== 'undefined') {
-            // 1. Clerk betöltése útvonalakkal (Segít a belső linkeknek)
             await Clerk.load({
-                signInUrl: '/meccsek.html',
-                signUpUrl: '/meccsek.html'
+                signInUrl: window.location.pathname, // Dinamikusan az aktuális oldal
+                signUpUrl: window.location.pathname
             });
 
             Clerk.addListener(({ user }) => {
-                if (isInitialized && !user && localStorage.getItem('lp_activeBets')) {
+                // Csak akkor avatkozunk be, ha a user konkrétan NULL (kijelentkezett)
+                if (isInitialized && user === null) {
                     console.log("Valódi kijelentkezés, adatok törlése...");
                     localStorage.removeItem('lp_activeBets');
                     window.userBalance = 0;
-                    window.location.href = '/meccsek.html';
+                    window.location.reload(); 
                 }
             });
 
             if (Clerk.user) {
+                // BEJELENTKEZETT USER
                 const userBtn = document.getElementById('user-button');
                 if(userBtn) {
                     Clerk.mountUserButton(userBtn, {
-                        afterSignOutUrl: window.location.origin + '/meccsek.html'
+                        afterSignOutUrl: window.location.origin + window.location.pathname
                     });
                 }
 
-                await loadInitialBalance(); 
+                if (typeof loadInitialBalance === 'function') await loadInitialBalance(); 
 
                 try {
                     if (typeof loadUserBetsFromServer === 'function') {
                         await loadUserBetsFromServer();
                     }
                 } catch (betError) {
-                    console.warn("Szerveroldali fogadások nem elérhetők.");
+                    console.warn("Szerveroldali adatok nem elérhetők.");
                 }
 
                 isInitialized = true; 
             } else {
-    const lb = document.getElementById('login-btn');
-    if (lb) { 
-        lb.style.display = 'block'; 
-        
-        lb.onclick = (e) => {
-            // 1. Megállítjuk az oldal frissülését / ugrását
-            e.preventDefault(); 
-            e.stopPropagation();
+                // VENDÉG MÓD
+                const lb = document.getElementById('login-btn');
+                if (lb) { 
+                    lb.style.display = 'block'; 
+                    lb.onclick = (e) => {
+                        e.preventDefault(); 
+                        e.stopPropagation();
 
-            // 2. Kifejezetten a SignUP-ot (regisztrációt) nyitjuk meg, ha azt szeretnéd
-            // Vagy használd a Clerk.openSignIn-t, aminek az alján ott a váltás
-            Clerk.openSignUp({ 
-                routing: 'virtual', // Ez megakadályozza, hogy az URL megváltozzon
-                afterSignUpUrl: window.location.href,
-                afterSignInUrl: window.location.href,
-                signInUrl: '/meccsek.html',
-                signUpUrl: '/meccsek.html'
-            });
-        };
+                        Clerk.openSignUp({ 
+                            routing: 'virtual',
+                            afterSignUpUrl: window.location.origin + window.location.pathname,
+                            afterSignInUrl: window.location.origin + window.location.pathname
+                        });
+                    };
+                }
+                // Itt is jelezzük, hogy az alapállapot betöltött
+                isInitialized = true; 
+            }
+        }
+    } catch (e) {
+        console.error("Hiba az indításkor:", e);
     }
-    isInitialized = true;
 }
 
         // Többi funkció hívása változatlan marad
@@ -1167,6 +1175,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
