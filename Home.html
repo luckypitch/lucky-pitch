@@ -93,9 +93,31 @@
         }
 
         /* STATS */
-        .stats-bar { display: flex; gap: 40px; margin-top: 45px; }
-        .stat-item b { display: block; font-size: 2.4rem; color: var(--neon-green); font-family: 'Orbitron'; }
-        .stat-item span { font-size: 11px; font-family: 'Orbitron'; opacity: 0.6; text-transform: uppercase; }
+        .stats-bar { 
+    display: flex; 
+    gap: 40px; 
+    margin-top: 45px; 
+    justify-content: center; /* Asztalin is legyen középen az egész blokk */
+    flex-wrap: wrap;         /* Ha nem fér el, törje meg a sort */
+}
+
+.stat-item {
+    text-align: center;      /* A szöveg és a szám is legyen középen az elemen belül */
+}
+
+.stat-item b { 
+    display: block; 
+    font-size: 2.4rem; 
+    color: var(--neon-green); 
+    font-family: 'Orbitron'; 
+}
+
+.stat-item span { 
+    font-size: 11px; 
+    font-family: 'Orbitron'; 
+    opacity: 0.6; 
+    text-transform: uppercase; 
+}
 
         footer { 
             padding: 50px 10%; background: var(--glass); border-top: 1px solid var(--border); 
@@ -135,6 +157,16 @@
             .logo { font-size: 1rem; }
             .nav-buttons button#donate-btn { display: none; }
             .stats-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+            .stats-bar {
+        flex-direction: column; /* Egymás alá kerülnek az elemek */
+        gap: 25px;              /* Kicsit kisebb távolság köztük */
+        align-items: center;    /* Vízszintesen középre teszi őket */
+        margin-top: 30px;
+    }
+    
+    .stat-item b {
+        font-size: 2rem;        /* Mobilon kicsit kisebb betűméret, hogy ne legyen bumfordi */
+    }
         }
     </style>
 </head>
@@ -409,6 +441,7 @@ window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
