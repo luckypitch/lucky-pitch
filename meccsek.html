@@ -1566,126 +1566,112 @@ document.addEventListener('touchstart', startAction, {passive: true});
 document.addEventListener('touchmove', moveAction, {passive: false}); // Fontos a false a preventDefault miatt!
 document.addEventListener('touchend', endAction, {passive: true});
 
-import { useUser } from "@clerk/nextjs";
-import { useState } from "react";
+function initSexyTooltip() {
+    // Ellenőrizzük, létezik-e már, hogy ne duplikáljuk
+    if (document.getElementById('user-tips-tooltip')) return;
 
-export default function UserStatsHover() {
-  const { user } = useUser();
-  const [showStats, setShowStats] = useState(false);
-
-  // Ez jöhetne az adatbázisodból (pl. Prisma/Supabase)
-  const userTips = [
-    { match: "Real - Barca", tip: "H", odds: "2.10" },
-    { match: "City - Arsenal", tip: "D", odds: "3.40" },
-    { match: "Luton - Liverpool", tip: "V", odds: "1.25" }
-  ];
-
-  return (
-    <div 
-      className="relative" 
-      onMouseEnter={() => setShowStats(true)}
-      onMouseLeave={() => setShowStats(false)}
-    >
-      {/* Profilkép */}
-      <img 
-        src={user?.imageUrl} 
-        className="w-10 h-10 rounded-full border-2 border-neon-blue cursor-pointer shadow-[0_0_10px_rgba(0,183,255,0.5)]"
-      />
-
-      {/* Sexy Lebegő Táblázat */}
-      {showStats && (
-        <div className="absolute top-12 right-0 w-64 bg-[#0f0f1a] border border-neon-blue rounded-xl p-4 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-[2000] animate-fade-in">
-          <h4 className="text-xs font-bold text-neon-blue uppercase mb-2 tracking-widest">Aktuális tippjeid</h4>
-          
-          <table className="w-full text-left text-[11px] border-collapse">
-            <thead>
-              <tr className="border-b border-white/10 text-gray-400">
-                <th className="pb-1">MECCS</th>
-                <th className="pb-1">TIP</th>
-                <th className="pb-1">ODDS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {userTips.map((tip, i) => (
-                <tr key={i} className="hover:bg-white/5 transition-colors">
-                  <td className="py-1.5 font-medium">{tip.match}</td>
-                  <td className="py-1.5 text-neon-green">{tip.tip}</td>
-                  <td className="py-1.5 text-gray-300">{tip.odds}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          <div className="mt-3 pt-2 border-top border-white/10 text-center">
-             <button className="text-[10px] text-neon-blue hover:underline">Összes tipp megnyitása</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-function createSexyTooltip() {
-    // 1. Létrehozzuk a táblázat konténerét
+    // 1. Létrehozzuk a HTML elemet
     const tooltip = document.createElement('div');
     tooltip.id = 'user-tips-tooltip';
-    tooltip.className = 'sexy-tooltip';
+    tooltip.className = 'sexy-tooltip'; // A CSS-ben megadott stílushoz
     tooltip.innerHTML = `
         <div class="tooltip-header">AKTUÁLIS TIPPJEID</div>
         <table class="tooltip-table">
             <thead>
-                <tr><th>Meccs</th><th>Tipp</th><th>Odds</th></tr>
+                <tr>
+                    <th>Meccs</th>
+                    <th>Tipp</th>
+                    <th>Odds</th>
+                </tr>
             </thead>
             <tbody id="tooltip-tips-body">
-                <tr><td colspan="3">Betöltés...</td></tr>
+                <tr><td colspan="3" style="text-align:center; padding:10px;">Betöltés...</td></tr>
             </tbody>
         </table>
     `;
     document.body.appendChild(tooltip);
 
-    // 2. Megkeressük a Clerk gombját (vagy a profilképet)
-    // Megjegyzés: A Clerk gomb osztálya általában .cl-userButtonTrigger
-    const userBtn = document.querySelector('.cl-userButtonTrigger') || document.querySelector('.user-profile-icon');
+    // 2. Megvárjuk a Clerk gombot (mivel dinamikusan jön létre)
+    const findClerkInterval = setInterval(() => {
+        // A Clerk gomb alapértelmezett választója
+        const userBtn = document.querySelector('.cl-userButtonTrigger');
+        
+        if (userBtn) {
+            clearInterval(findClerkInterval); // Megvan a gomb, leállítjuk a keresést
 
-    if (userBtn) {
-        userBtn.addEventListener('mouseenter', () => {
-            // Itt frissítheted az adatokat egy fetch-el, ha akarod
-            loadUserTips(); 
+            // Hover események
+            userBtn.addEventListener('mouseenter', () => {
+                updateTooltipData(); // Adatok frissítése
+                
+                const rect = userBtn.getBoundingClientRect();
+                // Pozicionálás pontosan az ikon alá
+                tooltip.style.top = (rect.bottom + window.scrollY + 10) + 'px';
+                tooltip.style.left = (rect.left + rect.width / 2 - 130) + 'px'; // Középre igazítva (260px széles a tooltip)
+                tooltip.classList.add('active');
+            });
+
+            userBtn.addEventListener('mouseleave', () => {
+                tooltip.classList.remove('active');
+            });
+        }
+    }, 1000); // Másodpercenként egyszer csekkoljuk
+}
+
+// Ez tölti fel adattal a táblázatot
+async function updateTooltipData() {
+    const body = document.getElementById('tooltip-tips-body');
+    if (!body) return;
+
+    try {
+        // 1. Clerk UserID megszerzése
+        const userId = window.Clerk?.user?.id;
+        
+        if (!userId) {
+            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Jelentkezz be!</td></tr>';
+            return;
+        }
+
+        // 2. A te backend API-d meghívása a query paraméterrel
+        const response = await fetch(`/api/user/bets?userId=${userId}`);
+        const bets = await response.json();
+
+        if (!bets || bets.length === 0) {
+            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Nincsenek aktív tippjeid.</td></tr>';
+            return;
+        }
+
+        // 3. Csak az első 5 legfrissebb tipp megjelenítése
+        // A táblád alapján: team_name, type, odds, status
+        body.innerHTML = bets.slice(0, 5).map(bet => {
+            // Színkód a státuszhoz (opcionális)
+            const statusColor = bet.status === 'WON' ? '#00ff99' : (bet.status === 'LOST' ? '#ff4d4d' : '#ccc');
             
-            const rect = userBtn.getBoundingClientRect();
-            tooltip.style.top = (rect.bottom + 10) + 'px';
-            tooltip.style.left = (rect.right - 250) + 'px'; // Kicsit balra toljuk, hogy ne lógjon ki
-            tooltip.classList.add('active');
-        });
+            return `
+                <tr>
+                    <td style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 5px 0;">
+                        ${bet.team_name}
+                    </td>
+                    <td style="color: var(--neon-blue); font-weight: bold; text-align: center;">
+                        ${bet.type}
+                    </td>
+                    <td style="text-align: right; font-family: 'Orbitron'; font-weight: bold; color: ${statusColor};">
+                        ${bet.odds}
+                    </td>
+                </tr>
+            `;
+        }).join('');
 
-        userBtn.addEventListener('mouseleave', () => {
-            tooltip.classList.remove('active');
-        });
+    } catch (err) {
+        console.error("Hiba a tippek megjelenítésekor:", err);
+        body.innerHTML = '<tr><td colspan="3" style="text-align:center; color: red;">Hiba történt...</td></tr>';
     }
 }
-
-// Példa adatfeltöltés
-function loadUserTips() {
-    const body = document.getElementById('tooltip-tips-body');
-    // Ide jöhetne a valódi adatod
-    const mockTips = [
-        {m: "Real - Barca", t: "H", o: "2.10"},
-        {m: "Man. City - Arsenal", t: "V", o: "3.20"}
-    ];
-    
-    body.innerHTML = mockTips.map(tip => `
-        <tr>
-            <td>${tip.m}</td>
-            <td class="neon-green">${tip.t}</td>
-            <td>${tip.o}</td>
-        </tr>
-    `).join('');
-}
-
-// Indítás egy kis késleltetéssel, hogy a Clerk be tudjon tölteni
-setTimeout(createSexyTooltip, 2000);        
+// Elindítjuk a folyamatot
+initSexyTooltip();
     </script>
 </body>
 </html>
+
 
 
 
