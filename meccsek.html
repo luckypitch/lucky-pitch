@@ -291,6 +291,31 @@
         padding: 10px 15px;
         min-width: 80px;
     }
+    .mobile-nav-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 60px;
+        background: rgba(20, 20, 30, 0.95);
+        backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 9999;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: env(safe-area-inset-bottom); /* iOS bar fix */
+    }
+      body {
+        padding-bottom: 70px;
+    }
+
+    /* Elcsúszás gátlása: ne engedjük az oldalsó görgetést */
+    html, body {
+        overflow-x: hidden;
+        width: 100%;
+        position: relative;
+    }  
     </style>
 </head>
 <body>
@@ -1377,13 +1402,23 @@ function saveState() {
     }
 }
 
+Értem, összefésüljük a meglévő swipe-logikádat a stabilizálással. A probléma nálad az volt, hogy a touchend-re vártál, de közben a böngésző eltolta az egész ablakot (ez látszik a fehér sávon a képeden).
+
+Ahhoz, hogy a kódod ne "szétcsúsztassa" az oldalt, hanem ténylegesen a sávokat nyissa, a touchmove eseményt kell kontroll alá vonni.
+A javított, összefésült kód
+
+Ezt a blokkot használd, ez tartalmazza a te logikádat, de kiegészítve az elcsúszás elleni védelemmel:
+JavaScript
+
 let touchstartX = 0;
 let touchstartY = 0;
+let isDragging = false; // A startAction-höz
+let startX = 0;
 
 const sbLeft = document.querySelector('.sidebar');
 const sbRight = document.querySelector('.standings-sidebar');
 
-// Overlay létrehozása dinamikusan, ha nincs benne a HTML-ben
+// 1. Overlay check (marad a tiéd)
 if(!document.querySelector('.sidebar-overlay')) {
     const ov = document.createElement('div');
     ov.className = 'sidebar-overlay';
@@ -1396,12 +1431,31 @@ function closeAllSidebars() {
     sbLeft.classList.remove('open');
     sbRight.classList.remove('open');
     overlay.classList.remove('active');
+    document.body.style.cursor = 'default';
+    isDragging = false;
 }
 
+// 2. Eseményfigyelők rögzítése
 document.addEventListener('touchstart', e => {
     touchstartX = e.changedTouches[0].screenX;
     touchstartY = e.changedTouches[0].screenY;
 }, {passive: true});
+
+// FIX: Ez akadályozza meg a fehér sávos elcsúszást, amit a képen küldtél
+document.addEventListener('touchmove', e => {
+    const touchmoveX = e.changedTouches[0].screenX;
+    const diffX = touchmoveX - touchstartX;
+
+    // Ha szélen indult a mozdulat, tiltjuk a böngésző alapértelmezett oldalra-húzását (visszalépés funkció)
+    if (touchstartX < 50 || touchstartX > window.innerWidth - 50) {
+        if (e.cancelable) e.preventDefault();
+    }
+    
+    // Ha nyitva van valamelyik menü, ne engedjük az oldal görgetését
+    if (sbLeft.classList.contains('open') || sbRight.classList.contains('open')) {
+        if (e.cancelable) e.preventDefault();
+    }
+}, {passive: false}); // Itt a false fontos a preventDefault miatt!
 
 document.addEventListener('touchend', e => {
     const touchendX = e.changedTouches[0].screenX;
@@ -1409,43 +1463,45 @@ document.addEventListener('touchend', e => {
     const diffX = touchendX - touchstartX;
     const diffY = touchendY - touchstartY;
 
-    // Csak akkor váltunk, ha vízszintes a mozdulat (nem görgetés)
     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 80) {
-        
         if (diffX > 0) { // JOBBRA PÖCCINTÉS
-            if (touchstartX < 80) { // Bal szélről indítva
+            if (touchstartX < 80) { 
                 sbLeft.classList.add('open');
                 overlay.classList.add('active');
-            } else if (sbRight.classList.contains('open')) { // Tabella bezárása
+            } else if (sbRight.classList.contains('open')) { 
                 closeAllSidebars();
             }
         } else { // BALRA PÖCCINTÉS
-            if (touchstartX > window.innerWidth - 80) { // Jobb szélről indítva
+            if (touchstartX > window.innerWidth - 80) { 
                 sbRight.classList.add('open');
                 overlay.classList.add('active');
-            } else if (sbLeft.classList.contains('open')) { // Ligák bezárása
+            } else if (sbLeft.classList.contains('open')) { 
                 closeAllSidebars();
             }
         }
     }
+    isDragging = false;
+    document.body.style.cursor = 'default';
 }, {passive: true});
 
-const edgeSize = 100; // A sáv szélessége pixelben
-
+// 3. Egér/Desktop támogatás (összedolgozva a startAction-öddel)
+const edgeSize = 100;
 const startAction = (e) => {
     const posX = e.type.includes('mouse') ? e.pageX : e.changedTouches[0].screenX;
-    
-    // Csak akkor indítjuk a figyelést, ha a széleken kattintott
     if (posX < edgeSize || posX > window.innerWidth - edgeSize) {
         startX = posX;
         isDragging = true;
         document.body.style.cursor = 'grabbing';
     }
 };
+
+document.addEventListener('mousedown', startAction);
+
         
     </script>
 </body>
 </html>
+
 
 
 
