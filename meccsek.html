@@ -64,22 +64,22 @@
         }
         .tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.2); }
 
-       .main-wrapper {
-    display: flex;
-    width: 100vw;
-    height: calc(100vh - 75px); /* Navigáció magassága levonva */
-    overflow: hidden;
-    margin-top: 75px;
-}
+      .main-wrapper {
+        display: grid;
+        grid-template-columns: 80px 1fr; /* Fix sáv a ligáknak, a maradék a meccseké */
+        width: 100%;
+        max-width: 1920px;
+        margin: 0 auto;
+    }
         .sidebar, .standings-sidebar { background: var(--glass); backdrop-filter: blur(25px); overflow-y: auto; border: 1px solid var(--border); }
        .sidebar {
-    width: 80px; /* Csak az ikonoknak elég hely */
-    min-width: 80px;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden; /* Hogy a szöveg ne lógjon ki szűk állapotban */
-    white-space: nowrap; /* Megakadályozza a szöveg törését */
-    z-index: 1100;
-}
+        width: 80px;
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #0a0f1d;
+        z-index: 1000;
+        position: fixed; /* Legyen fix, hogy görgetésnél is ott legyen */
+        height: 100vh;
+    }
 .sidebar span, 
 .sidebar .sidebar-header {
     opacity: 0;
@@ -130,7 +130,7 @@
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .sidebar:hover {
-    width: 300px; /* Teljes szélesség */
+    width: 280px; /* Teljes szélesség */
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
 }
         
@@ -138,21 +138,26 @@
     margin-right: 420px;
 }
         
-        .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
-    .standings-sidebar.open {
-    transform: translateX(0);
-    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
-}
+        .sidebar-header {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 14px;
+        color: var(--neon-blue);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        white-space: nowrap;
+        overflow: hidden;
+    }
         
-       .content-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Kártyák középre rendezése */
-    transition: margin-right 0.4s ease, width 0.4s ease;
-}
+      .content-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Ez teszi középre a meccseket a maradék térben */
+        width: 100%;
+        padding-top: 80px;
+    }
 
 #league-list {
     display: flex;
@@ -184,18 +189,15 @@
 
 /* Az ikon tárolója - ez a titka a fix elrendezésnek */
 .league-icon-wrapper {
-    width: 50px; 
-    height: 50px;
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    flex-shrink: 0;
-    transition: all 0.3s ease;
-    /* Alap derengés (szürkéskék) */
-    box-shadow: 0 0 10px rgba(148, 163, 184, 0.08); 
+    margin: 5px auto;
 }
         
 .league-icon-wrapper img {
@@ -335,6 +337,10 @@
         margin-bottom: 30px;
         overflow: visible; /* PC-n ne legyen görgethető sáv */
         padding: 0;
+    }
+        .date-strip, .match-card {
+        width: 100%;
+        max-width: 800px; /* Ez a "szép" szélesség 1920-on */
     }
 
         .date-strip::-webkit-scrollbar {
@@ -554,7 +560,9 @@
 
     <div class="main-wrapper">
         <aside class="sidebar" id="sidebar-leagues">
-            <div class="sidebar-header" id="h-leagues">🏆 Bajnokságok</div>
+            <div class="sidebar-header" id="h-leagues">
+            <span class="header-emoji">🏆</span>
+            <span class="header-text">BAJNOKSÁGOK</span>
             <div id="league-list"></div>
         </aside>
         <main class="content-area">
@@ -589,6 +597,8 @@ let flashingMatches = new Set();
 let globalOdds = []; // Itt tároljuk az API-ból jött oddsokat
 let activeBets = JSON.parse(localStorage.getItem('lp_activeBets')) || [];
 
+
+        
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
     if (!status) return 'transparent';
@@ -1355,49 +1365,38 @@ function renderDateStrip() {
 }
 
 function renderLeagues() {
-    const c = document.getElementById("league-list");
-    if (!c) return;
+    const listContainer = document.getElementById("league-list");
+    if (!listContainer) return;
 
-    // JAVÍTÁS: Ellenőrizzük, hogy az allMatches valóban egy tömb-e
-    if (!allMatches || !Array.isArray(allMatches)) {
-        console.warn("allMatches nem tömb, a ligák renderelése megszakítva.");
-        return;
-    }
+    // Biztonsági ellenőrzés
+    if (!allMatches || !Array.isArray(allMatches)) return;
 
     const unique = new Map();
-    
-    // Most már biztonságosan futhat a filter
     allMatches
         .filter(m => m && m.utcDate && m.utcDate.startsWith(selectedDate))
         .forEach(m => {
-            if (m.competition) {
-                unique.set(m.competition.id, m.competition);
-            }
+            if (m.competition) unique.set(m.competition.id, m.competition);
         });
 
-    const leagueItems = [...unique.values()].map(l => {
+    // Itt generáljuk le a HTML-t
+    const leagueItemsHtml = [...unique.values()].map(l => {
         const idStr = l.id.toString();
         const isActive = selectedLeagues.has(idStr);
         
         return `
             <div class="league-item ${isActive ? 'active' : ''}" 
-                 onclick="const id='${idStr}'; selectedLeagues.has(id) ? selectedLeagues.delete(id) : selectedLeagues.add(id); renderLeagues(); renderMatches();">
+                 onclick="event.stopPropagation(); const id='${idStr}'; selectedLeagues.has(id) ? selectedLeagues.delete(id) : selectedLeagues.add(id); renderLeagues(); renderMatches();">
                 <div class="league-icon-wrapper">
-                    <img src="${l.emblem}" alt="${l.name}">
+                    <img src="${l.emblem}" alt="${l.name}" onerror="this.src='https://via.placeholder.com/30'">
                 </div>
                 <span class="league-name-text">${l.name}</span>
             </div>`;
     }).join('');
 
-    // A fejléc hozzáadása a generált listához
-    c.innerHTML = `
-        <div class="sidebar-header-info">
-            <span class="header-emoji">🏆</span>
-            <span class="league-name-text header-label">BAJNOKSÁGOK</span>
-        </div>
-        ${leagueItems}
-    `;
+    // CSAK a lista tartalmát cseréljük le, a felette lévő "sidebar-header" érintetlen marad
+    listContainer.innerHTML = leagueItemsHtml;
 }
+        
 async function loadUserBetsFromServer() {
     if (typeof Clerk === 'undefined' || !Clerk.user) return;
 
@@ -1624,6 +1623,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
