@@ -1565,14 +1565,14 @@ document.addEventListener('touchstart', startAction, {passive: true});
 document.addEventListener('touchmove', moveAction, {passive: false}); // Fontos a false a preventDefault miatt!
 document.addEventListener('touchend', endAction, {passive: true});
 
+// --- PROFIL HOVER TIPP TÁBLÁZAT JAVÍTOTT VERZIÓ ---
+
 function initSexyTooltip() {
-    // Ellenőrizzük, létezik-e már, hogy ne duplikáljuk
     if (document.getElementById('user-tips-tooltip')) return;
 
-    // 1. Létrehozzuk a HTML elemet
     const tooltip = document.createElement('div');
     tooltip.id = 'user-tips-tooltip';
-    tooltip.className = 'sexy-tooltip'; // A CSS-ben megadott stílushoz
+    tooltip.className = 'sexy-tooltip';
     tooltip.innerHTML = `
         <div class="tooltip-header">AKTUÁLIS TIPPJEID</div>
         <table class="tooltip-table">
@@ -1590,67 +1590,66 @@ function initSexyTooltip() {
     `;
     document.body.appendChild(tooltip);
 
-    // 2. Megvárjuk a Clerk gombot (mivel dinamikusan jön létre)
+    let hideTimeout;
+
     const findClerkInterval = setInterval(() => {
-        // A Clerk gomb alapértelmezett választója
         const userBtn = document.querySelector('.cl-userButtonTrigger');
         
         if (userBtn) {
-            clearInterval(findClerkInterval); // Megvan a gomb, leállítjuk a keresést
+            clearInterval(findClerkInterval);
 
-            // Hover események
-            let hideTimeout;
-           userBtn.addEventListener('mouseenter', () => {
-    clearTimeout(hideTimeout); // Megállítjuk a bezárást, ha visszatér az egér
-    updateTooltipData(); 
-    
-    const rect = userBtn.getBoundingClientRect();
-    const tooltipWidth = 280;
-    
-    let top = rect.bottom + window.scrollY + 5; // Kicsit közelebb hozzuk (10 helyett 5)
-    let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+            // Megnyitás az ikonra vitelkor
+            userBtn.addEventListener('mouseenter', () => {
+                clearTimeout(hideTimeout);
+                updateTooltipData(); 
+                
+                const rect = userBtn.getBoundingClientRect();
+                const tooltipWidth = 280;
+                
+                let top = rect.bottom + window.scrollY + 5;
+                let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
 
-    if (left < 10) left = 10;
-    if (left + tooltipWidth > window.innerWidth - 10) {
-        left = window.innerWidth - tooltipWidth - 10;
-    }
+                if (left < 10) left = 10;
+                if (left + tooltipWidth > window.innerWidth - 10) {
+                    left = window.innerWidth - tooltipWidth - 10;
+                }
 
-    tooltip.style.top = top + 'px';
-    tooltip.style.left = left + 'px';
-    tooltip.classList.add('active');
-});
+                tooltip.style.top = top + 'px';
+                tooltip.style.left = left + 'px';
+                tooltip.classList.add('active');
+            });
 
-userBtn.addEventListener('mouseleave', () => {
-    // 300ms késleltetés, hogy legyen idő átvinni az egeret a táblázatra
-    hideTimeout = setTimeout(() => {
-        tooltip.classList.remove('active');
-    }, 300);
-});
+            // Bezárás késleltetve, ha elhagyjuk az ikont
+            userBtn.addEventListener('mouseleave', () => {
+                hideTimeout = setTimeout(() => {
+                    tooltip.classList.remove('active');
+                }, 300);
+            });
 
-// Ha az egér a táblázat felett van, ne tűnjön el
-tooltip.addEventListener('mouseenter', () => {
-    clearTimeout(hideTimeout);
-});
+            // Ha a táblázatra visszük az egeret, maradjon kint
+            tooltip.addEventListener('mouseenter', () => {
+                clearTimeout(hideTimeout);
+            });
 
-tooltip.addEventListener('mouseleave', () => {
-    tooltip.classList.remove('active');
-});
-            
-// Ez tölti fel adattal a táblázatot
+            tooltip.addEventListener('mouseleave', () => {
+                tooltip.classList.remove('active');
+            });
+        }
+    }, 1000); 
+} // <--- Itt zárul le az initSexyTooltip függvény!
+
+// Adatok betöltése
 async function updateTooltipData() {
     const body = document.getElementById('tooltip-tips-body');
     if (!body) return;
 
     try {
-        // 1. Clerk UserID megszerzése
         const userId = window.Clerk?.user?.id;
-        
         if (!userId) {
             body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Jelentkezz be!</td></tr>';
             return;
         }
 
-        // 2. A te backend API-d meghívása a query paraméterrel
         const response = await fetch(`/api/user/bets?userId=${userId}`);
         const bets = await response.json();
 
@@ -1659,12 +1658,8 @@ async function updateTooltipData() {
             return;
         }
 
-        // 3. Csak az első 5 legfrissebb tipp megjelenítése
-        // A táblád alapján: team_name, type, odds, status
         body.innerHTML = bets.slice(0, 5).map(bet => {
-            // Színkód a státuszhoz (opcionális)
             const statusColor = bet.status === 'WON' ? '#00ff99' : (bet.status === 'LOST' ? '#ff4d4d' : '#ccc');
-            
             return `
                 <tr>
                     <td style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 5px 0;">
@@ -1679,17 +1674,18 @@ async function updateTooltipData() {
                 </tr>
             `;
         }).join('');
-
     } catch (err) {
-        console.error("Hiba a tippek megjelenítésekor:", err);
+        console.error("Hiba:", err);
         body.innerHTML = '<tr><td colspan="3" style="text-align:center; color: red;">Hiba történt...</td></tr>';
     }
 }
-// Elindítjuk a folyamatot
+
+// Futtatás indítása
 initSexyTooltip();
     </script>
 </body>
 </html>
+
 
 
 
