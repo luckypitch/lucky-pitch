@@ -1430,6 +1430,9 @@ function closeAllSidebars() {
     overlay.classList.remove('active');
     document.body.style.cursor = 'default';
     isDragging = false;
+
+    // FIX: Visszaadjuk a görgetést a főoldalnak
+    document.body.style.overflow = ''; 
 }
 
 // 2. KÖZÖS LOGIKA: Ez dönti el a diffX alapján, mi történjen
@@ -1508,6 +1511,7 @@ document.addEventListener('touchend', endAction, {passive: true});
     </script>
 </body>
 </html>
+
 
 
 
