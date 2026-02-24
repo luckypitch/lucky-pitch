@@ -1045,36 +1045,31 @@ async function loadUserBetsFromServer() {
 // --- 7. INDÍTÁS ---
 let isInitialized = false;
 
-// 1. MECCSEK ÉS UI - Ez azonnal elindul, nem vár semmire
+// 1. MECCSEK ÉS UI - Ez azonnal elindul
 function initSiteFunctions() {
-    console.log("Meccsek és UI betöltése...");
     if (typeof updateUI === 'function') updateUI(); 
     if (typeof initNeural === 'function') initNeural(); 
     if (typeof fetchMatches === 'function') fetchMatches(); 
     if (typeof startCounters === 'function') startCounters();
     
-    // Adatfrissítők
     if (typeof updateData === 'function') updateData();
     if (typeof checkBetResults === 'function') checkBetResults(); 
 
-    // Renderelők
     if (typeof renderDateStrip === 'function') renderDateStrip();
     if (typeof renderLeagues === 'function') renderLeagues();
     if (typeof renderMatches === 'function') renderMatches();
 
-    // Időzített frissítés
     setInterval(() => {
         if (typeof updateData === 'function') updateData();
         if (typeof checkBetResults === 'function') checkBetResults();
     }, 30000);
 }
 
-// 2. CLERK INDÍTÁSA - Teljesen izolálva
+// 2. A Clerk indítása
 async function startApp() {
     if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
 
-    // Azonnal indítjuk a meccseket, ne várjunk a Clerk-re!
-    initSiteFunctions();
+    initSiteFunctions(); // Meccsek indítása
 
     let t = 0;
     while (typeof Clerk === 'undefined' && t < 50) { 
@@ -1084,20 +1079,11 @@ async function startApp() {
 
     if (typeof Clerk !== 'undefined') {
         try {
-            // A load-nál SEMMILYEN útvonalat nem adunk meg, hogy ne akarjon navigálni
-            await Clerk.load({
-                routing: 'virtual'
-            });
-
-            Clerk.addListener(({ user }) => {
-                if (isInitialized && user === null) {
-                    localStorage.removeItem('lp_activeBets');
-                    window.userBalance = 0;
-                    window.location.href = '/meccsek.html'; 
-                }
-            });
+            // CSAK a virtuális routing, semmi egyéb fix URL
+            await Clerk.load({ routing: 'virtual' });
 
             if (Clerk.user) {
+                // BEJELENTKEZETT FELHASZNÁLÓ
                 const userBtn = document.getElementById('user-button');
                 if(userBtn) {
                     Clerk.mountUserButton(userBtn, {
@@ -1108,16 +1094,18 @@ async function startApp() {
                 
                 const authLinks = document.getElementById('auth-links');
                 if (authLinks) authLinks.style.display = 'none';
+
+                // Csak sikeres belépés UTÁN aktiváljuk a kijelentkezés figyelőt
+                setTimeout(() => { isInitialized = true; }, 2000);
             } else {
+                // VENDÉG MÓD
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
                     lb.style.display = 'block'; 
                     lb.onclick = (e) => {
-                        // Megállítunk minden külső hatást
                         e.preventDefault(); 
                         e.stopImmediatePropagation();
                         
-                        // CSAK a bejelentkezést nyitjuk meg, ez a legstabilabb
                         Clerk.openSignIn({ 
                             routing: 'virtual',
                             afterSignInUrl: window.location.origin + '/meccsek.html',
@@ -1125,12 +1113,22 @@ async function startApp() {
                         });
                     };
                 }
+                // Ha vendég, akkor is kell az inicializáltság a későbbi belépéshez
+                setTimeout(() => { isInitialized = true; }, 2000);
             }
-            
-            isInitialized = true; 
+
+            // Kijelentkezés figyelő - Szigorúbb feltétellel
+            Clerk.addListener(({ user }) => {
+                // Csak akkor reloadolunk, ha voltunk már inicializálva ÉS a user kifejezetten null lett
+                if (isInitialized && user === null) {
+                    console.log("Valódi kijelentkezés történt.");
+                    localStorage.removeItem('lp_activeBets');
+                    window.location.href = '/meccsek.html';
+                }
+            });
 
         } catch (error) {
-            console.error("Clerk hiba:", error);
+            console.error("Clerk error:", error);
         }
     }
 }
@@ -1172,6 +1170,7 @@ function saveState() {
     </script>
 </body>
 </html>
+
 
 
 
