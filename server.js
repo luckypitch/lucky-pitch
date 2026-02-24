@@ -5,13 +5,13 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const { createClient } = require('@supabase/supabase-js');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = require("node-fetch");
 
 // 2. INICIALIZÁLÁS
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname)));
 
 // 3. SUPABASE KLÍENS LÉTREHOZÁSA (A process.env-ből, amit a Render-en megadtál)
 const supabase = createClient(
@@ -324,14 +324,15 @@ autoCheckResults();
 // server.js - Fogadások kiértékelése
 
 // --- OLDALAK KISZOLGÁLÁSA ---
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/go", (req, res) => res.sendFile(path.join(__dirname, "go.html")));
 app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
 app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 
-// Fallback (Minden másra a főoldal, de csak ha nem fájlt keresünk)
+// BIZTONSÁGOS FALLBACK
+// Csak akkor irányítunk át, ha nem konkrét fájlt (.css, .js, .png) keres a böngésző
 app.get("*", (req, res) => {
-    if (req.path.includes('.')) return res.status(404).send("File not found");
+    if (req.path.includes('.')) return res.status(404).send("Fájl nem található");
     res.redirect("/");
 });
 
@@ -345,9 +346,3 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
-
-
-
-
-
-
