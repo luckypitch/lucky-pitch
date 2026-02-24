@@ -456,25 +456,37 @@ function checkGoals() {
 
     allMatches.forEach(match => {
         const matchId = match.id;
-        // Pontszám formázása (pl. "2-1")
         const currentScore = (match.score && match.score.fullTime) ? 
             `${match.score.fullTime.home}-${match.score.fullTime.away}` : "0-0";
 
-        // Ha már ismertük a meccset, és változott az eredmény
         if (prevScores.has(matchId) && prevScores.get(matchId) !== currentScore) {
             const oldScore = prevScores.get(matchId);
             const [oldH, oldA] = oldScore.split('-').map(Number);
             const [newH, newA] = currentScore.split('-').map(Number);
 
-            // Megnézzük, ki lőtte a gólt, és aktiváljuk a vizuális effektet
-            if (newH > oldH && typeof triggerGoalEffect === 'function') {
-                triggerGoalEffect(matchId, match.homeTeam.name, match.homeTeam.crest);
-            }
-            if (newA > oldA && typeof triggerGoalEffect === 'function') {
-                triggerGoalEffect(matchId, match.awayTeam.name, match.awayTeam.crest);
+            // GÓL ÉSZLELÉSE
+            let scoringTeam = null;
+            if (newH > oldH) scoringTeam = match.homeTeam.name;
+            if (newA > oldA) scoringTeam = match.awayTeam.name;
+
+            if (scoringTeam) {
+                // 1. Vizuális effekt (eredeti kódod)
+                if (typeof triggerGoalEffect === 'function') {
+                    triggerGoalEffect(matchId, scoringTeam, newH > oldH ? match.homeTeam.crest : match.awayTeam.crest);
+                }
+
+                // 2. CÍMSOR (TITLE) FRISSÍTÉSE
+                const originalTitle = document.title;
+                const goalTitle = `⚽ GÓL: ${scoringTeam} (${newH}:${newA}) ⚽`;
+                
+                document.title = goalTitle;
+
+                // 10 másodperc után visszaállítjuk az eredeti címet
+                setTimeout(() => {
+                    document.title = "LUCKYPITCH | Ultimate Live Tracker";
+                }, 10000);
             }
         }
-        // Frissítjük a tárolt eredményt
         prevScores.set(matchId, currentScore);
     });
 }
@@ -1434,6 +1446,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
