@@ -325,7 +325,7 @@ autoCheckResults();
 // server.js - Fogadások kiértékelése
 
 // --- OLDALAK KISZOLGÁLÁSA ---
-pp.get("/go", (req, res) => {
+app.get("/go", (req, res) => {
     res.sendFile(path.join(__dirname, "go.html"));
 });
 
