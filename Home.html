@@ -105,6 +105,10 @@
 <nav>
     <div class="logo">LuckyPitch</div>
     <div class="nav-buttons">
+        <div id="messenger-fix" style="display:none; padding: 20px; background: #ff3e3e; color: white; text-align: center; font-weight: bold;">
+    ⚠️ A Google belépés nem működik Messengerben!<br><br>
+    <a href="#" onclick="copyLink()" style="color: yellow;">Kattints ide a link másolásához</a>, majd illeszd be a Chrome/Safari böngészőbe!
+</div>
         <button onclick="toggleTheme()" id="theme-btn">🌙</button>
         <button onclick="toggleLang()" id="lang-btn">HU 🇭🇺</button>
         <button onclick="handleSmartAction()" id="donate-btn" style="background:#635bff; color:white; border:none;">Donate</button>
@@ -161,6 +165,16 @@
 </footer>
 
 <script>
+function copyLink() {
+    navigator.clipboard.writeText(window.location.href);
+    alert("Link másolva! Most nyisd meg a rendes böngészőt és illeszd be!");
+}
+
+// Ha észleljük a Messengert, mutatjuk a segélykérő panelt
+if (navigator.userAgent.indexOf("Messenger") > -1 || navigator.userAgent.indexOf("FB") > -1) {
+    document.getElementById('messenger-fix').style.display = 'block';
+}
+    
 (function() {
     var ua = navigator.userAgent || navigator.vendor || window.opera;
     var isMessenger = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Messenger") > -1);
@@ -316,4 +330,5 @@ window.onload = startApp;
 </script>
 </body>
 </html>
+
 
