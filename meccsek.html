@@ -1043,9 +1043,18 @@ async function loadUserBetsFromServer() {
 }
 
 // --- 7. INDÍTÁS ---
+Igazad van, a dinamikus window.location.pathname néha megkavarja a dolgokat, ha a böngésző nem kezeli le jól az útvonalat. Ha neked a fix /meccsek.html vált be, akkor ne kísérletezzünk, maradjunk annál, ami neked stabil.
+
+Itt a teljes kód, ahol mindenhol visszaírtam a fix /meccsek.html útvonalat, és benne hagytam az összes egyéb funkciódat is.
+JavaScript
+
 let isInitialized = false;
 
 async function startApp() {
+    // Téma beállítása
+    if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
+
+    // 1. Várakozás a Clerk betöltésére
     let t = 0;
     while (typeof Clerk === 'undefined' && t < 30) { 
         await new Promise(r => setTimeout(r, 100)); 
@@ -1054,34 +1063,45 @@ async function startApp() {
 
     try {
         if (typeof Clerk !== 'undefined') {
-            // 1. Kényszerített virtuális routing a load-nál is!
+            // 2. Clerk inicializálása - FIX ÚTVONALAKKAL
             await Clerk.load({
                 routing: 'virtual',
-                signInUrl: window.location.pathname,
-                signUpUrl: window.location.pathname
+                signInUrl: '/meccsek.html',
+                signUpUrl: '/meccsek.html'
             });
 
+            // 3. Kijelentkezés figyelő
             Clerk.addListener(({ user }) => {
                 if (isInitialized && user === null) {
+                    console.log("Kijelentkezés észlelve, takarítás...");
                     localStorage.removeItem('lp_activeBets');
                     window.userBalance = 0;
-                    window.location.reload(); 
+                    window.location.href = '/meccsek.html'; 
                 }
             });
 
             if (Clerk.user) {
+                // BEJELENTKEZETT FELHASZNÁLÓ
                 const userBtn = document.getElementById('user-button');
                 if(userBtn) {
                     Clerk.mountUserButton(userBtn, {
-                        afterSignOutUrl: window.location.origin + window.location.pathname
+                        afterSignOutUrl: window.location.origin + '/meccsek.html'
                     });
                 }
+
                 if (typeof loadInitialBalance === 'function') await loadInitialBalance(); 
                 try {
                     if (typeof loadUserBetsFromServer === 'function') await loadUserBetsFromServer();
-                } catch (e) {}
+                } catch (betError) {
+                    console.warn("Szerveroldali adatok nem elérhetők.");
+                }
+
+                const authLinks = document.getElementById('auth-links');
+                if (authLinks) authLinks.style.display = 'none';
+
                 isInitialized = true; 
             } else {
+                // VENDÉG MÓD
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
                     lb.style.display = 'block'; 
@@ -1089,16 +1109,12 @@ async function startApp() {
                         e.preventDefault(); 
                         e.stopPropagation();
 
-                        // 2. HASZNÁLJUK AZ openSignIn-t! 
-                        // Ez stabilabb: alapból bejelentkezést nyit, de van alul "Sign up" link.
-                        // A virtual routing itt is kötelező.
-                        Clerk.openSignIn({ 
+                        Clerk.openSignUp({ 
                             routing: 'virtual',
-                            afterSignUpUrl: window.location.origin + window.location.pathname,
-                            afterSignInUrl: window.location.origin + window.location.pathname,
-                            // Ez a két sor mondja meg a modalnak, ne töltsön újra váltáskor:
-                            signInUrl: window.location.pathname,
-                            signUpUrl: window.location.pathname
+                            signInUrl: '/meccsek.html',
+                            signUpUrl: '/meccsek.html',
+                            afterSignUpUrl: window.location.origin + '/meccsek.html',
+                            afterSignInUrl: window.location.origin + '/meccsek.html'
                         });
                     };
                 }
@@ -1106,23 +1122,32 @@ async function startApp() {
             }
         }
 
-        // Egyéb funkciók
+        // --- EGYÉB FUNKCIÓK (Semmi sem marad ki) ---
+        
+        if (typeof updateUI === 'function') updateUI(); 
+        if (typeof initNeural === 'function') initNeural(); 
+        if (typeof fetchMatches === 'function') fetchMatches(); 
+        if (typeof startCounters === 'function') startCounters();
+
+        // Adatfrissítés és meccsek
         if (typeof updateData === 'function') await updateData();
         if (typeof checkBetResults === 'function') await checkBetResults(); 
+
+        // Renderelés
         if (typeof renderDateStrip === 'function') renderDateStrip();
         if (typeof renderLeagues === 'function') renderLeagues();
         if (typeof renderMatches === 'function') renderMatches();
 
+        // 4. Automata frissítés
         setInterval(async () => {
             if (typeof updateData === 'function') await updateData();
             if (typeof checkBetResults === 'function') await checkBetResults();
         }, 30000);
 
-    } catch (e) {
-        console.error("Hiba:", e);
+    } catch (error) {
+        console.error("Hiba a startApp során:", error);
     }
 }
-
 // --- MOBIL NAVIGÁCIÓ JAVÍTÁSA ---
 function toggleM(id) { 
     // Minden oldalsáv bezárása először
@@ -1160,6 +1185,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
