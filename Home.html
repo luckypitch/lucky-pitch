@@ -405,23 +405,31 @@ async function startApp() {
     try {
         // 1. Clerk betöltése virtuális routinggal
         await Clerk.load({
+            routing: 'virtual', // Itt is kényszerítjük a virtuális módot
             signInUrl: '/Home.html',
             signUpUrl: '/Home.html'
         });
 
-        // 2. Finomított Listener
-        Clerk.addListener(({ user }) => {
-            // Csak akkor törlünk és reloadolunk, ha volt user, de már NINCS (valódi kijelentkezés)
-            if (isInitialized && !user && localStorage.getItem('lp_activeBets')) {
-                console.log("Kijelentkezés észlelve...");
+        // 2. Okos Listener: megvédi a folyamatban lévő regisztrációt/belépést
+        Clerk.addListener(({ user, client }) => {
+            // Ellenőrizzük, hogy éppen folyamatban van-e egy verifikáció (pl. e-mail kód várása)
+            const isSigningUp = client && client.signUp && client.signUp.status === 'missing_requirements';
+            const isSigningIn = client && client.signIn && client.signIn.status === 'needs_first_factor';
+            
+            // Csak akkor reloadolunk, ha:
+            // - Már inicializálva van az oldal (isInitialized)
+            // - Nincs bejelentkezett user (user === null)
+            // - ÉS NEM éppen e-mail kódot vár a rendszer (!isSigningUp && !isSigningIn)
+            if (isInitialized && !user && !isSigningUp && !isSigningIn) {
+                console.log("Valódi kijelentkezés észlelve, takarítás...");
                 localStorage.removeItem('lp_activeBets');
                 window.userBalance = 0;
-                // Itt csak akkor reloadolunk, ha NEM épp egy regisztráció közepén vagyunk
                 window.location.href = '/Home.html';
             }
         });
 
         if (Clerk.user) {
+            // BEJELENTKEZETT FELHASZNÁLÓ
             const userBtn = document.getElementById('user-button');
             if (userBtn) {
                 Clerk.mountUserButton(userBtn, {
@@ -431,27 +439,35 @@ async function startApp() {
             const authLinks = document.getElementById('auth-links');
             if (authLinks) authLinks.style.display = 'none';
         } else {
+            // VENDÉG MÓD
             const lb = document.getElementById('login-btn');
             if (lb) {
                 lb.style.display = 'block';
                 lb.onclick = (e) => {
                     e.preventDefault();
-                    Clerk.openSignUp({ // Regisztráció megnyitása
+                    e.stopImmediatePropagation(); // Megállít minden más zavaró scriptet
+                    
+                    Clerk.openSignUp({
                         routing: 'virtual',
                         afterSignUpUrl: window.location.origin + '/Home.html',
-                        afterSignInUrl: window.location.origin + '/Home.html'
+                        afterSignInUrl: window.location.origin + '/Home.html',
+                        signInUrl: '/Home.html', // Belső váltáshoz szükségesek
+                        signUpUrl: '/Home.html'
                     });
                 };
             }
         }
 
-        // Alapprogram indítása
-        updateUI(); 
-        initNeural(); 
-        fetchMatches(); 
-        startCounters();
+        // Alapprogram funkciói (Csak ha léteznek)
+        if (typeof updateUI === 'function') updateUI(); 
+        if (typeof initNeural === 'function') initNeural(); 
+        if (typeof fetchMatches === 'function') fetchMatches(); 
+        if (typeof startCounters === 'function') startCounters();
 
-        isInitialized = true;
+        // Rövid késleltetés, hogy a Clerk stabilizálódjon betöltéskor
+        setTimeout(() => {
+            isInitialized = true;
+        }, 1000);
 
     } catch (error) {
         console.error("Hiba az indítás során:", error);
@@ -462,6 +478,7 @@ window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
