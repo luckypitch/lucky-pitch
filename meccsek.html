@@ -70,13 +70,31 @@ nav {
 
 /* Elrendezés váz */
 .main-wrapper {
+    display: grid;
+    grid-template-columns: 80px 1fr 350px; /* Fix szélességek */
+    height: calc(100vh - 75px);
+    margin-top: 75px;
+}
+/* NAVBAR GOMBOK */
+.nav-tools {
     display: flex;
-    justify-content: center; /* Ez teszi középre a meccseket PC-n */
-    width: 100%;
-    min-height: 100vh;
-    padding-top: 75px;
+    align-items: center;
+    gap: 15px;
 }
 
+ .tool-btn {
+    height: 38px;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+        
+        
 /* SIDEBAR - Bal oldali bajnokság lista */
 .sidebar {
     position: fixed;
@@ -125,20 +143,71 @@ nav {
 .league-item.active { background: rgba(0, 255, 136, 0.08); }
 
 .league-icon-wrapper {
-    width: 48px; height: 48px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
 }
 .league-item.active .league-icon-wrapper {
     border-color: var(--neon-green);
     box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
 }
+.league-icon-wrapper img {
+    max-width: 26px;
+    max-height: 26px;
+    object-fit: contain; /* Megakadályozza a torzulást */
+}
+        
 .league-name-text {
     margin-left: 15px; font-family: 'Orbitron'; font-size: 11px; font-weight: 500;
     opacity: 0; transition: opacity 0.2s; white-space: nowrap;
 }
 .sidebar:hover .league-name-text { opacity: 1; }
+/* ODDS GOMBOK */
+.match-odds-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+.odds-btn {
+    padding: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    text-align: center;
+}
+/* TABELLA RENDRAKÁS */
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+}
 
+.standings-table td {
+    padding: 8px 4px;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.team-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    max-width: 180px;
+}
+
+.team-name-cell img {
+    width: 20px;
+    height: 20px;
+}
+.pos-col { width: 30px; font-weight: bold; }
+.pts-col { width: 40px; text-align: right; color: var(--neon-green); font-weight: 900; }
+        
 /* TARTALOM TERÜLET */
 .content-area {
     width: 100%;
@@ -1330,6 +1399,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
