@@ -1646,61 +1646,41 @@ async function updateTooltipData() {
     try {
         const userId = window.Clerk?.user?.id;
         if (!userId) {
-            body.innerHTML = '<tr><td colspan="3" style="text-align:center;">Jelentkezz be!</td></tr>';
+            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Jelentkezz be!</td></tr>';
             return;
         }
 
         const response = await fetch(`/api/user/bets?userId=${userId}`);
         const bets = await response.json();
 
+        // Debug info a konzolra
+        console.log("Beérkező adatok:", bets);
+
         if (!bets || bets.length === 0) {
-            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Nincsenek tippjeid.</td></tr>';
+            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:#888;">Nincsenek tippjeid.</td></tr>';
             return;
         }
 
-        // 1. MAI NAP REGGEL 00:00:00 (Helyi idő szerint)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayTime = today.getTime();
+        // Itt NEM szűrünk dátumra, csak sorbarendezzük (ha a backend nem tenné meg) 
+        // és kivesszük a legutolsó 7-et
+        const latestBets = bets.slice(0, 7);
 
-        // 2. HOLNAP REGGEL 00:00:00
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowTime = tomorrow.getTime();
+        body.innerHTML = latestBets.map(bet => {
+            // Státusz alapú színkódok (OPEN = szürke/kék, WON = zöld, LOST = piros)
+            let statusColor = '#ccc';
+            if (bet.status === 'WON') statusColor = '#00ff99';
+            if (bet.status === 'LOST') statusColor = '#ff4d4d';
+            if (bet.status === 'OPEN') statusColor = '#00b7ff';
 
-        // 3. SZŰRÉS: Minden beérkező értéket kényszerítünk dátumra
-        const dailyBets = bets.filter(bet => {
-            if (!bet.created_at) return false;
-            
-            // Bármi is jön (string vagy date), dátumot csinálunk belőle
-            const bDate = new Date(bet.created_at).getTime();
-            
-            // Megnézzük, hogy a mai nap tartományába esik-e
-            return bDate >= todayTime && bDate < tomorrowTime;
-        });
-
-        // --- DEBUG: Ha még mindig nem jó, nézd meg a konzolt (F12) ---
-        console.log("Összes fogadás:", bets.length);
-        console.log("Mai fogadások:", dailyBets.length);
-        console.log("Mai nap eleje:", today);
-
-        if (dailyBets.length === 0) {
-            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:#888;">Mára még nem tippeltél.</td></tr>';
-            return;
-        }
-
-        // 4. MEGJELENÍTÉS
-        body.innerHTML = dailyBets.slice(0, 6).map(bet => {
-            const statusColor = bet.status === 'WON' ? '#00ff99' : (bet.status === 'LOST' ? '#ff4d4d' : '#ccc');
             return `
                 <tr>
-                    <td style="max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 6px 0;">
+                    <td style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 6px 0; font-size: 11px;">
                         ${bet.team_name}
                     </td>
-                    <td style="color: var(--neon-blue); font-weight: bold; text-align: center;">
-                        ${bet.type}
+                    <td style="color: var(--neon-blue); font-weight: bold; text-align: center; font-size: 11px;">
+                        ${bet.type || '-'}
                     </td>
-                    <td style="text-align: right; font-family: 'Orbitron'; font-weight: bold; color: ${statusColor};">
+                    <td style="text-align: right; font-family: 'Orbitron'; font-weight: bold; color: ${statusColor}; font-size: 11px;">
                         ${bet.odds}
                     </td>
                 </tr>
@@ -1708,8 +1688,8 @@ async function updateTooltipData() {
         }).join('');
 
     } catch (err) {
-        console.error("Végleges szűrési hiba:", err);
-        body.innerHTML = '<tr><td colspan="3" style="text-align:center; color: red;">Hiba történt...</td></tr>';
+        console.error("Hiba az adatok megjelenítésekor:", err);
+        body.innerHTML = '<tr><td colspan="3" style="text-align:center; color: red; padding:10px;">Hiba történt...</td></tr>';
     }
 }
 // Futtatás indítása
@@ -1717,6 +1697,7 @@ initSexyTooltip();
     </script>
 </body>
 </html>
+
 
 
 
