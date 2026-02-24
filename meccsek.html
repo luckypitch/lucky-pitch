@@ -99,7 +99,68 @@ nav {
     border-bottom: 1px solid rgba(255,255,255,0.05);
     white-space: nowrap;
 }
+.league-icon-wrapper img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
+}        
+ .league-icon-wrapper {
+    border-color: var(--neon-green);
+    background: rgba(0, 255, 136, 0.08);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3); /* Erősebb neon fény */
 
+ .score-live {
+    color: var(--neon-red);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 5px;
+    animation: pulse 1.5s infinite;
+    text-shadow: 0 0 15px var(--neon-red);
+}
+      @keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+}
+        
+    50% { 
+        box-shadow: 0 0 40px #ff3e3e, inset 0 0 20px #ff3e3e; 
+        border-color: #ff4d4d;
+        transform: scale(1.02); /* Kicsit megugrik a kártya */
+    }
+    100% { 
+        box-shadow: 0 0 5px #ff3e3e, inset 0 0 5px #ff3e3e; 
+        border-color: #ff3e3e;
+        transform: scale(1);
+    }
+}
+.mobile-quick-nav {
+    z-index: 9000 !important;
+    position: fixed !important;
+    bottom: 20px; /* Biztosítsd, hogy ne lógjon ki alul */
+}
+.match-card.goal-highlight {
+    animation: goal-pulse 0.8s ease-in-out infinite !important;
+    border: 2px solid #ff3e3e !important;
+    background: rgba(255, 62, 62, 0.15) !important; /* Kap egy enyhe pirosas hátteret is */
+    z-index: 100; /* Hogy a többi kártya fölé emelkedjen */
+    position: relative;
+	
+ .standings-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+        .standings-table td { padding: 14px 8px; background: rgba(255,255,255,0.03); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 12px; }
+        .pos-col { border-left-width: 5px !important; border-left-style: solid !important; }
+
+        .pos-num-box { 
+            width: 34px; height: 34px; line-height: 34px; margin: 0 auto; 
+            border-radius: 8px; font-weight: 900; font-family: 'Orbitron'; font-size: 12px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .zone-tag { font-size: 8px; font-family: 'Orbitron'; display: block; margin-bottom: 4px; font-weight: 900; }
+        .highlight td { background: rgba(0, 255, 136, 0.15) !important; border-color: var(--neon-green) !important; }
+
+        
 .header-emoji { font-size: 24px; min-width: 40px; text-align: center; }
 .header-text { 
     font-family: 'Orbitron'; font-size: 11px; letter-spacing: 2px; color: var(--neon-blue);
@@ -1443,6 +1504,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
