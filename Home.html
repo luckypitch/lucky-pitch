@@ -400,54 +400,50 @@ function toggleTheme() {
 let isInitialized = false;
 
 async function startApp() {
-    // 1. Alapbeállítások (Theme)
     if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
 
     try {
-        // 2. Clerk betöltése
-        await Clerk.load();
+        // 1. Clerk betöltése – Fontos: a 'path' és 'routing' paraméterek
+        // Ha nem adod meg a routingot, a 'Continue' gomb elakadhat
+        await Clerk.load({
+            signInUrl: '/Home.html',
+            signUpUrl: '/Home.html'
+        });
 
-        // 3. KIJELENTKEZÉS FIGYELŐ (Ez a kulcs!)
         Clerk.addListener(({ user }) => {
-            // Ha már be volt töltve (isInitialized) és a user eltűnt, takarítunk
             if (isInitialized && !user) {
-                console.log("Kijelentkezés észlelve, adatok törlése...");
-                localStorage.removeItem('lp_activeBets'); // Töröljük a fogadásokat
-                window.userBalance = 0; // Egyenleg nullázása
-                window.location.reload(); // Oldal frissítése, hogy tiszta lappal induljunk
+                localStorage.removeItem('lp_activeBets');
+                window.userBalance = 0;
+                window.location.reload();
             }
         });
 
-        // 4. Felhasználói állapot kezelése
         if (Clerk.user) {
             const userBtn = document.getElementById('user-button');
             if (userBtn) {
                 Clerk.mountUserButton(userBtn, {
-                    // Megadjuk, hova dobjon ki a gomb megnyomása után
                     afterSignOutUrl: window.location.origin + '/Home.html' 
                 });
             }
             document.getElementById('auth-links').style.display = 'none';
+        } else {
+            const lb = document.getElementById('login-btn');
+            if (lb) {
+                lb.style.display = 'block';
+                lb.onclick = () => Clerk.openSignIn({ 
+                    // A 'path' paraméter segít a Clerk-nek tudni, hol van a modal
+                    routing: 'virtual', 
+                    afterSignInUrl: window.location.origin + '/Home.html',
+                    afterSignUpUrl: window.location.origin + '/Home.html'
+                });
+            }
         }
-
-        // 5. Alkalmazás funkcióinak indítása
-        updateUI(); 
-        initNeural(); 
-        fetchMatches(); 
-        startCounters();
-
-        // Jelezzük, hogy a kezdeti betöltés kész
-        isInitialized = true;
-
-    } catch (error) {
-        console.error("Hiba az indítás során:", error);
-    }
-}
     
 window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
