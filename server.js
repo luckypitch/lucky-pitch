@@ -11,7 +11,8 @@ const fetch = require("node-fetch");
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use(express.static(path.join(__dirname)));
+
+app.use(express.static(__dirname));
 
 // 3. SUPABASE KLÍENS LÉTREHOZÁSA (A process.env-ből, amit a Render-en megadtál)
 const supabase = createClient(
@@ -324,10 +325,22 @@ autoCheckResults();
 // server.js - Fogadások kiértékelése
 
 // --- OLDALAK KISZOLGÁLÁSA ---
-app.get("/go", (req, res) => res.sendFile(path.join(__dirname, "go.html")));
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
-app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
-app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
+pp.get("/go", (req, res) => {
+    res.sendFile(path.join(__dirname, "go.html"));
+});
+
+app.get("/meccsek", (req, res) => {
+    res.sendFile(path.join(__dirname, "meccsek.html"));
+});
+
+app.get("/elemzes", (req, res) => {
+    res.sendFile(path.join(__dirname, "elemzes.html"));
+});
+
+// A főoldal (Home.html)
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "Home.html"));
+});
 
 // Fallback minden másra (irányítás a főoldalra)
 app.get("*", (req, res) => res.redirect("/"));
@@ -342,5 +355,6 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
