@@ -634,8 +634,9 @@ async function updateData() {
         // 1. Meccsek letöltése
         const res = await fetch("/live-matches");
         const data = await res.json();
-        allMatches = data.matches || data || [];
 
+        allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
+        
         // 2. Oddsok letöltése (párhuzamosan is futhatna, de maradjunk a biztosnál)
         try {
             const oddsRes = await fetch("/api/odds-data");
@@ -646,17 +647,12 @@ async function updateData() {
         } catch (e) { console.warn("Odds API hiba"); }
 
         // 3. Renderelés és logika futtatása
-        if (typeof renderDateStrip === 'function') renderDateStrip();
-        if (typeof renderLeagues === 'function') renderLeagues();
-
-        renderLeagues();
-        renderMatches();
-
-        if (allMatches.length > 0) {
-            checkGoals();      // Gól-animációk
-            checkBetResults(); // Fogadások kiértékelése
+       if (allMatches.length > 0) {
+            if (typeof renderLeagues === 'function') renderLeagues();
+            if (typeof renderMatches === 'function') renderMatches();
+            checkGoals();
+            checkBetResults();
         }
-
         console.log("Adatok frissítve. Meccsek:", allMatches.length);
 
     } catch (e) {
@@ -1632,6 +1628,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
