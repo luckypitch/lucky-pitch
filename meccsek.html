@@ -73,11 +73,25 @@
 }
         .sidebar, .standings-sidebar { background: var(--glass); backdrop-filter: blur(25px); overflow-y: auto; border: 1px solid var(--border); }
        .sidebar {
-    width: 300px;
-    min-width: 300px;
-    border-right: 1px solid var(--border);
-    z-index: 10;
+    width: 80px; /* Csak az ikonoknak elég hely */
+    min-width: 80px;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden; /* Hogy a szöveg ne lógjon ki szűk állapotban */
+    white-space: nowrap; /* Megakadályozza a szöveg törését */
+    z-index: 1100;
 }
+.sidebar span, 
+.sidebar .sidebar-header {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none; /* Ne lehessen rákattintani a láthatatlan szövegre */
+}
+.sidebar:hover span, 
+.sidebar:hover .sidebar-header {
+    opacity: 1;
+    pointer-events: auto;
+}
+        
        .standings-sidebar {
     position: fixed;
     top: 75px;
@@ -91,7 +105,11 @@
     z-index: 1001;
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-
+.sidebar:hover {
+    width: 300px; /* Teljes szélesség */
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+}
+        
         .standings-sidebar.open ~ .content-area {
     margin-right: 420px;
 }
@@ -112,6 +130,64 @@
     transition: margin-right 0.4s ease, width 0.4s ease;
 }
 
+#league-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px 0;
+}
+
+.league-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 22px; /* A 22px tartja középen az ikont, ha 80px széles a sidebar */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+    white-space: nowrap;
+}
+
+.league-item:hover {
+    background: rgba(14, 165, 233, 0.1);
+}
+
+.league-item.active {
+    background: rgba(0, 255, 136, 0.1);
+    border-left-color: var(--neon-green);
+}
+
+/* Az ikon tárolója - ez a titka a fix elrendezésnek */
+.league-icon-wrapper {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; /* Ne nyomódjon össze */
+}
+
+.league-icon-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.1));
+}
+
+/* A szöveg kezelése */
+.league-name-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: 15px;
+    opacity: 0; /* PC-n alapból rejtve */
+    transition: opacity 0.2s ease;
+}
+
+/* Ha a sidebar fölé viszed az egeret, megjelenik a szöveg */
+#sidebar-leagues:hover .league-name-text {
+    opacity: 1;
+}
+        
         .match-card {
     width: 100%;
     max-width: 850px; /* Hogy ne legyen túl széles PC-n */
@@ -232,8 +308,43 @@
         will-change: transform;
         box-shadow: 0 0 50px rgba(0,0,0,0.5);
     }
-            .standings-sidebar { right: 0; transform: translateX(105%); }
-            .sidebar.open, .standings-sidebar.open { transform: translateX(0); }
+            #sidebar-leagues {
+        width: 80px;
+        min-width: 80px;
+        position: fixed;
+        left: 0;
+        top: 75px;
+        bottom: 0;
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1100;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+            #sidebar-leagues:hover {
+        width: 300px;
+        box-shadow: 10px 0 40px rgba(0,0,0,0.5);
+    }
+            #h-leagues {
+        padding: 20px;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+            .standings-sidebar {
+        position: fixed;
+        right: 0;
+        top: 75px;
+        bottom: 0;
+        width: 400px;
+        transform: translateX(100%); /* Alapból kint van */
+        z-index: 1200;
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+            .standings-sidebar.open {
+        transform: translateX(0);
+        box-shadow: -20px 0 50px rgba(0,0,0,0.5);
+    }
             .mobile-nav { display: flex; }
             .sidebar-overlay {
         position: fixed;
@@ -248,6 +359,11 @@
     .sidebar-overlay.active {
         opacity: 1;
         pointer-events: auto;
+    }
+        .content-area {
+        margin-left: 80px; /* Helyet hagyunk a csukott bal sávnak */
+        width: calc(100% - 80px);
+        transition: margin-right 0.4s ease;
     }
         }
 @keyframes goal-flash {
@@ -1134,12 +1250,24 @@ function renderLeagues() {
     const c = document.getElementById("league-list");
     if (!c) return;
     const unique = new Map();
-    allMatches.filter(m => m.utcDate.startsWith(selectedDate)).forEach(m => unique.set(m.competition.id, m.competition));
-    c.innerHTML = [...unique.values()].map(l => `
-        <div class="league-item ${selectedLeagues.has(l.id.toString()) ? 'active' : ''}" 
-             onclick="const id='${l.id}'; selectedLeagues.has(id)?selectedLeagues.delete(id):selectedLeagues.add(id); renderLeagues(); renderMatches();">
-            <img src="${l.emblem}" width="18"> <span>${l.name}</span>
-        </div>`).join('');
+    
+    allMatches
+        .filter(m => m.utcDate.startsWith(selectedDate))
+        .forEach(m => unique.set(m.competition.id, m.competition));
+
+    c.innerHTML = [...unique.values()].map(l => {
+        const idStr = l.id.toString();
+        const isActive = selectedLeagues.has(idStr);
+        
+        return `
+            <div class="league-item ${isActive ? 'active' : ''}" 
+                 onclick="const id='${idStr}'; selectedLeagues.has(id) ? selectedLeagues.delete(id) : selectedLeagues.add(id); renderLeagues(); renderMatches();">
+                <div class="league-icon-wrapper">
+                    <img src="${l.emblem}" alt="${l.name}">
+                </div>
+                <span class="league-name-text">${l.name}</span>
+            </div>`;
+    }).join('');
 }
 async function loadUserBetsFromServer() {
     if (typeof Clerk === 'undefined' || !Clerk.user) return;
@@ -1367,6 +1495,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
