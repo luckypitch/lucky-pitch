@@ -341,8 +341,6 @@
         </aside>
 
         <main class="content-area">
-            <div id="date-strip" class="date-strip">
-                </div>
             <div id="date-selector" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; padding: 10px; overflow-x: auto;">
     </div>
 <div id="match-container"></div>
@@ -732,7 +730,7 @@ async function renderMatches() {
         }
     }).join('');
 }
-
+// --- 6. UI LOGIKA ---
 function renderDateSelector() {
     const selector = document.getElementById("date-selector");
     if (!selector || !allMatches || allMatches.length === 0) return;
@@ -1131,30 +1129,6 @@ if (localStorage.getItem('lp_theme') === 'light') {
     });
 }
 
-// --- 6. UI LOGIKA ---
-function renderDateStrip() {
-    const strip = document.getElementById("date-strip");
-    if (!strip) return;
-
-    // Ha nincs meccs, ne is próbáljuk meg a map-et, tegyünk ki egy üres állapotot
-    if (!Array.isArray(allMatches) || allMatches.length === 0) {
-        strip.innerHTML = `<div class="date-pill active">${todayStr === selectedDate ? 'MA' : selectedDate}</div>`;
-        return;
-    }
-
-    try {
-        const dates = [...new Set(allMatches.map(m => m.utcDate ? m.utcDate.split('T')[0] : ""))].filter(d => d !== "").sort();
-
-        strip.innerHTML = dates.map(d => `
-            <div class="date-pill ${d === selectedDate ? 'active' : ''}" 
-                 onclick="selectedDate='${d}'; renderMatches(); renderDateStrip();">
-                ${d === todayStr ? 'MA' : d.split('-')[1]+'.'+d.split('-')[2]}
-            </div>`).join('');
-    } catch (err) {
-        console.error("Hiba a dátumsáv renderelésekor:", err);
-    }
-}
-
 function renderLeagues() {
     const listContainer = document.getElementById("league-list");
     if (!listContainer) return;
@@ -1424,6 +1398,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
