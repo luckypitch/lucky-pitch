@@ -161,6 +161,17 @@
 </footer>
 
 <script>
+(function() {
+    var ua = navigator.userAgent || navigator.vendor || window.opera;
+    var isMessenger = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Messenger") > -1);
+    
+    // Ha Androidon vagyunk és Messengerben
+    if (isMessenger && /Android/i.test(ua)) {
+      // Ez a sor megpróbálja kényszeríteni a Chrome-ot
+      window.location.href = "intent://" + window.location.host + window.location.pathname + "#Intent;scheme=http;package=com.android.chrome;end";
+    }
+  })();
+    
 const stripe = Stripe('pk_test_51T2qaQQkKVs47hkTqXwOVadi0o1GiBortnh6rNLqLxHMS7E6CKCQwp4lcwtnk7jIojzDjERp8wuMHNgx5FKqHEUo00uXcI3IS5');
 
 // INTELLIGENS DONATE/AUTH LOGIKA
@@ -305,3 +316,4 @@ window.onload = startApp;
 </script>
 </body>
 </html>
+
