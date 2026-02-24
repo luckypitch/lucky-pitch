@@ -682,7 +682,16 @@ async function renderMatches() {
         return;
     }
 
-    filtered.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+    filtered.sort((a, b) => {
+    const dateA = new Date(a.utcDate).getTime();
+    const dateB = new Date(b.utcDate).getTime();
+
+    // Időpont szerint rendezünk
+    if (dateA !== dateB) {
+        return dateA - dateB;
+    }
+    // Ha az idő azonos, a fix ID alapján rögzítjük a sorrendet (nem fog ugrálni)
+    return String(a.id).localeCompare(String(b.id));});
 
     // --- 3. RENDERELÉS ---
     cont.innerHTML = filtered.map(m => {
@@ -1425,6 +1434,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
