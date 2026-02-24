@@ -266,25 +266,24 @@
     .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0,255,136,0.05); }
 
 .sexy-tooltip {
-    position: fixed;
-    width: 260px;
-    background: rgba(15, 15, 26, 0.95);
-    border: 1px solid var(--neon-blue);
+    position: absolute; /* Fixed helyett jobb az absolute, ha a szülőhöz igazítjuk */
+    width: 280px;
+    max-width: calc(100vw - 20px); /* Ne legyen szélesebb a képernyőnél */
+    background: rgba(15, 15, 26, 0.98);
+    border: 1px solid #00b7ff;
     border-radius: 12px;
-    padding: 12px;
-    box-shadow: 0 0 20px rgba(0, 183, 255, 0.4), inset 0 0 10px rgba(0, 0, 0, 0.5);
-    z-index: 9999;
+    padding: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 183, 255, 0.3);
+    z-index: 10000; /* Legyen minden felett */
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    backdrop-filter: blur(8px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none; /* Ne zavarja az egérmozgást */
 }
 
 .sexy-tooltip.active {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
 }
 
 .tooltip-header {
@@ -1600,23 +1599,43 @@ function initSexyTooltip() {
             clearInterval(findClerkInterval); // Megvan a gomb, leállítjuk a keresést
 
             // Hover események
-            userBtn.addEventListener('mouseenter', () => {
-                updateTooltipData(); // Adatok frissítése
-                
-                const rect = userBtn.getBoundingClientRect();
-                // Pozicionálás pontosan az ikon alá
-                tooltip.style.top = (rect.bottom + window.scrollY + 10) + 'px';
-                tooltip.style.left = (rect.left + rect.width / 2 - 130) + 'px'; // Középre igazítva (260px széles a tooltip)
-                tooltip.classList.add('active');
-            });
+            let hideTimeout;
+           userBtn.addEventListener('mouseenter', () => {
+    clearTimeout(hideTimeout); // Megállítjuk a bezárást, ha visszatér az egér
+    updateTooltipData(); 
+    
+    const rect = userBtn.getBoundingClientRect();
+    const tooltipWidth = 280;
+    
+    let top = rect.bottom + window.scrollY + 5; // Kicsit közelebb hozzuk (10 helyett 5)
+    let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
 
-            userBtn.addEventListener('mouseleave', () => {
-                tooltip.classList.remove('active');
-            });
-        }
-    }, 1000); // Másodpercenként egyszer csekkoljuk
-}
+    if (left < 10) left = 10;
+    if (left + tooltipWidth > window.innerWidth - 10) {
+        left = window.innerWidth - tooltipWidth - 10;
+    }
 
+    tooltip.style.top = top + 'px';
+    tooltip.style.left = left + 'px';
+    tooltip.classList.add('active');
+});
+
+userBtn.addEventListener('mouseleave', () => {
+    // 300ms késleltetés, hogy legyen idő átvinni az egeret a táblázatra
+    hideTimeout = setTimeout(() => {
+        tooltip.classList.remove('active');
+    }, 300);
+});
+
+// Ha az egér a táblázat felett van, ne tűnjön el
+tooltip.addEventListener('mouseenter', () => {
+    clearTimeout(hideTimeout);
+});
+
+tooltip.addEventListener('mouseleave', () => {
+    tooltip.classList.remove('active');
+});
+            
 // Ez tölti fel adattal a táblázatot
 async function updateTooltipData() {
     const body = document.getElementById('tooltip-tips-body');
@@ -1671,6 +1690,7 @@ initSexyTooltip();
     </script>
 </body>
 </html>
+
 
 
 
