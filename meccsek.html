@@ -1658,35 +1658,37 @@ async function updateTooltipData() {
             return;
         }
 
-        // 1. MAI DÁTUM MEGHATÁROZÁSA (Helyi idő szerint, YYYY-MM-DD)
+        // 1. MAI NAP (Helyi idő szerint)
         const now = new Date();
-        const todayStr = now.getFullYear() + '-' + 
-                         String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                         String(now.getDate()).padStart(2, '0');
-        
-        // 2. SZŰRÉS
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const endOfToday = startOfToday + 24 * 60 * 60 * 1000;
+
+        // 2. SZŰRÉS (Időbélyeg alapú összehasonlítás)
         const dailyBets = bets.filter(bet => {
             if (!bet.created_at) return false;
-            // Mivel a képen látom, hogy SZÓKÖZ van a dátum után: "2026-02-24 14:09..."
-            // Ezért az első 10 karaktert vágjuk le (YYYY-MM-DD)
-            const betDatePart = bet.created_at.substring(0, 10);
-            return betDatePart === todayStr;
+            
+            // A Supabase stringet (szóközöst is) dátummá alakítjuk
+            // Kicseréljük a szóközt 'T'-re, hogy a JS dátumkezelője biztosan szeresse
+            const isoString = bet.created_at.replace(' ', 'T');
+            const betDate = new Date(isoString).getTime();
+            
+            return betDate >= startOfToday && betDate < endOfToday;
         });
 
         if (dailyBets.length === 0) {
-            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Mára még nem tippeltél.</td></tr>';
+            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px; color:#aaa;">Mára még nem tippeltél.</td></tr>';
             return;
         }
 
         // 3. MEGJELENÍTÉS
-        body.innerHTML = dailyBets.slice(0, 5).map(bet => {
+        body.innerHTML = dailyBets.slice(0, 6).map(bet => {
             const statusColor = bet.status === 'WON' ? '#00ff99' : (bet.status === 'LOST' ? '#ff4d4d' : '#ccc');
             return `
                 <tr>
-                    <td style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 5px 0;">
+                    <td style="max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 6px 0;">
                         ${bet.team_name}
                     </td>
-                    <td style="color: var(--neon-blue); font-weight: bold; text-align: center;">
+                    <td style="color: var(--neon-blue); font-weight: bold; text-align: center; padding: 0 5px;">
                         ${bet.type}
                     </td>
                     <td style="text-align: right; font-family: 'Orbitron'; font-weight: bold; color: ${statusColor};">
@@ -1695,8 +1697,9 @@ async function updateTooltipData() {
                 </tr>
             `;
         }).join('');
+
     } catch (err) {
-        console.error("Dátum szűrési hiba:", err);
+        console.error("Dátum hiba:", err);
         body.innerHTML = '<tr><td colspan="3" style="text-align:center; color: red;">Hiba történt...</td></tr>';
     }
 }
@@ -1705,6 +1708,7 @@ initSexyTooltip();
     </script>
 </body>
 </html>
+
 
 
 
