@@ -1046,7 +1046,6 @@ async function loadUserBetsFromServer() {
 let isInitialized = false;
 
 async function startApp() {
-    // 1. Várakozás a Clerk betöltésére
     let t = 0;
     while (typeof Clerk === 'undefined' && t < 30) { 
         await new Promise(r => setTimeout(r, 100)); 
@@ -1055,18 +1054,15 @@ async function startApp() {
 
     try {
         if (typeof Clerk !== 'undefined') {
-            // 2. Clerk inicializálása - Megadjuk az útvonalakat a belső linkeknek
+            // 1. Kényszerített virtuális routing a load-nál is!
             await Clerk.load({
+                routing: 'virtual',
                 signInUrl: window.location.pathname,
                 signUpUrl: window.location.pathname
             });
 
-            // 3. Kijelentkezés figyelő (Listener)
             Clerk.addListener(({ user }) => {
-                // Csak akkor avatkozunk be, ha valódi kijelentkezés történt (user === null)
-                // Az isInitialized biztosítja, hogy ne reloadoljon bejelentkezés közben
                 if (isInitialized && user === null) {
-                    console.log("Kijelentkezés észlelve, takarítás...");
                     localStorage.removeItem('lp_activeBets');
                     window.userBalance = 0;
                     window.location.reload(); 
@@ -1074,44 +1070,35 @@ async function startApp() {
             });
 
             if (Clerk.user) {
-                // --- BEJELENTKEZETT FELHASZNÁLÓ ---
                 const userBtn = document.getElementById('user-button');
                 if(userBtn) {
                     Clerk.mountUserButton(userBtn, {
                         afterSignOutUrl: window.location.origin + window.location.pathname
                     });
                 }
-
-                // Egyenleg és fogadások betöltése
                 if (typeof loadInitialBalance === 'function') await loadInitialBalance(); 
-
                 try {
-                    if (typeof loadUserBetsFromServer === 'function') {
-                        await loadUserBetsFromServer();
-                    }
-                } catch (betError) {
-                    console.warn("Szerveroldali adatok nem elérhetők.");
-                }
-
+                    if (typeof loadUserBetsFromServer === 'function') await loadUserBetsFromServer();
+                } catch (e) {}
                 isInitialized = true; 
             } else {
-                // --- VENDÉG MÓD (Bejelentkezés gomb kezelése) ---
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
                     lb.style.display = 'block'; 
                     lb.onclick = (e) => {
-                        // Megállítjuk az oldal frissülését
                         e.preventDefault(); 
                         e.stopPropagation();
 
-                        // A 'virtual' routing és a konkrét URL-ek megadása 
-                        // javítja ki a 'Continue' és a 'Sign in' link hibáját
-                        Clerk.openSignUp({ 
+                        // 2. HASZNÁLJUK AZ openSignIn-t! 
+                        // Ez stabilabb: alapból bejelentkezést nyit, de van alul "Sign up" link.
+                        // A virtual routing itt is kötelező.
+                        Clerk.openSignIn({ 
                             routing: 'virtual',
-                            signInUrl: window.location.pathname,
-                            signUpUrl: window.location.pathname,
                             afterSignUpUrl: window.location.origin + window.location.pathname,
-                            afterSignInUrl: window.location.origin + window.location.pathname
+                            afterSignInUrl: window.location.origin + window.location.pathname,
+                            // Ez a két sor mondja meg a modalnak, ne töltsön újra váltáskor:
+                            signInUrl: window.location.pathname,
+                            signUpUrl: window.location.pathname
                         });
                     };
                 }
@@ -1119,23 +1106,20 @@ async function startApp() {
             }
         }
 
-        // 4. Oldal-specifikus adatok frissítése és renderelése
+        // Egyéb funkciók
         if (typeof updateData === 'function') await updateData();
         if (typeof checkBetResults === 'function') await checkBetResults(); 
-
-        // UI elemek kirajzolása (ha léteznek a függvények)
         if (typeof renderDateStrip === 'function') renderDateStrip();
         if (typeof renderLeagues === 'function') renderLeagues();
         if (typeof renderMatches === 'function') renderMatches();
 
-        // 5. Automata frissítés 30 másodpercenként
         setInterval(async () => {
             if (typeof updateData === 'function') await updateData();
             if (typeof checkBetResults === 'function') await checkBetResults();
         }, 30000);
 
     } catch (e) {
-        console.error("Hiba a startApp futása során:", e);
+        console.error("Hiba:", e);
     }
 }
 
@@ -1176,6 +1160,7 @@ window.addEventListener('load', startApp);
     </script>
 </body>
 </html>
+
 
 
 
