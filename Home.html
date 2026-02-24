@@ -403,18 +403,21 @@ async function startApp() {
     if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
 
     try {
-        // 1. Clerk betöltése – Fontos: a 'path' és 'routing' paraméterek
-        // Ha nem adod meg a routingot, a 'Continue' gomb elakadhat
+        // 1. Clerk betöltése virtuális routinggal
         await Clerk.load({
             signInUrl: '/Home.html',
             signUpUrl: '/Home.html'
         });
 
+        // 2. Finomított Listener
         Clerk.addListener(({ user }) => {
-            if (isInitialized && !user) {
+            // Csak akkor törlünk és reloadolunk, ha volt user, de már NINCS (valódi kijelentkezés)
+            if (isInitialized && !user && localStorage.getItem('lp_activeBets')) {
+                console.log("Kijelentkezés észlelve...");
                 localStorage.removeItem('lp_activeBets');
                 window.userBalance = 0;
-                window.location.reload();
+                // Itt csak akkor reloadolunk, ha NEM épp egy regisztráció közepén vagyunk
+                window.location.href = '/Home.html';
             }
         });
 
@@ -425,20 +428,24 @@ async function startApp() {
                     afterSignOutUrl: window.location.origin + '/Home.html' 
                 });
             }
-            document.getElementById('auth-links').style.display = 'none';
+            const authLinks = document.getElementById('auth-links');
+            if (authLinks) authLinks.style.display = 'none';
         } else {
             const lb = document.getElementById('login-btn');
             if (lb) {
                 lb.style.display = 'block';
-                lb.onclick = () => Clerk.openSignIn({ 
-                    // A 'path' paraméter segít a Clerk-nek tudni, hol van a modal
-                    routing: 'virtual', 
-                    afterSignInUrl: window.location.origin + '/Home.html',
-                    afterSignUpUrl: window.location.origin + '/Home.html'
-                });
+                lb.onclick = (e) => {
+                    e.preventDefault();
+                    Clerk.openSignUp({ // Regisztráció megnyitása
+                        routing: 'virtual',
+                        afterSignUpUrl: window.location.origin + '/Home.html',
+                        afterSignInUrl: window.location.origin + '/Home.html'
+                    });
+                };
             }
         }
 
+        // Alapprogram indítása
         updateUI(); 
         initNeural(); 
         fetchMatches(); 
@@ -455,6 +462,7 @@ window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
