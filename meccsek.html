@@ -592,43 +592,41 @@ function getSmartOdds(match) {
     const seed = match.id || 0;
     const rng = (s) => Math.abs(Math.sin(seed + s));
 
+    // Alapértelmezett generált oddsok (FALLBACK)
     let result = {
         h: (1.4 + rng(1) * 2).toFixed(2),
         d: (2.8 + rng(2) * 1.5).toFixed(2),
         a: (1.6 + rng(3) * 3).toFixed(2)
     };
 
-    if (globalOdds && globalOdds.length > 0) {
-        const mHome = match.homeTeam.name.toLowerCase();
-        const mAway = match.awayTeam.name.toLowerCase();
+    // Névtisztító segédfüggvény a pontosabb párosításhoz
+    const clean = (name) => name.toLowerCase()
+        .replace(/\bfc\b|\bafc\b|\bcf\b|\bclub\b|\batlético\b|\batl.\b/g, '')
+        .trim();
 
-        // Keresés: Megpróbáljuk megtalálni azt az odds objektumot, ahol MINDKÉT csapat stimmel
+    if (globalOdds && globalOdds.length > 0) {
+        const mHome = clean(match.homeTeam.name);
+        const mAway = clean(match.awayTeam.name);
+
         const found = globalOdds.find(o => {
-            const oHome = o.home_team.toLowerCase();
-            const oAway = o.away_team.toLowerCase();
-            
-            // Szigorúbb feltétel: a hazai és a vendég is hasonlítson
-            const homeMatch = oHome.includes(mHome) || mHome.includes(oHome);
-            const awayMatch = oAway.includes(mAway) || mAway.includes(oAway);
-            
-            return homeMatch && awayMatch; 
+            const oHome = clean(o.home_team);
+            const oAway = clean(o.away_team);
+            // Ha a tisztított név benne van a másikban
+            return oHome.includes(mHome) || mHome.includes(oHome) || 
+                   oAway.includes(mAway) || mAway.includes(oAway);
         });
 
-        if (found && found.bookmakers && found.bookmakers[0]) {
+        if (found && found.bookmakers?.[0]) {
             const market = found.bookmakers[0].markets.find(m => m.key === 'h2h');
             if (market) {
-                // Hazai és Vendég odds kikeresése név alapján
-                const hPrice = market.outcomes.find(out => out.name.toLowerCase().includes(mHome) || mHome.includes(out.name.toLowerCase()))?.price;
-                const aPrice = market.outcomes.find(out => out.name.toLowerCase().includes(mAway) || mAway.includes(out.name.toLowerCase()))?.price;
-                
-                // Döntetlen: ami nem hazai és nem vendég, VAGY fixen 'draw'
-                const dPrice = market.outcomes.find(out => {
-                    const n = out.name.toLowerCase();
-                    return n === 'draw' || n === 'döntetlen' || n === 'x' || (!n.includes(mHome) && !n.includes(mAway));
-                })?.price;
+                // Megkeressük a konkrét árakat
+                const hPrice = market.outcomes.find(out => clean(out.name).includes(mHome) || mHome.includes(clean(out.name)))?.price;
+                const aPrice = market.outcomes.find(out => clean(out.name).includes(mAway) || mAway.includes(clean(out.name)))?.price;
+                const dPrice = market.outcomes.find(out => out.name.toLowerCase().includes('draw') || out.name.toLowerCase() === 'x')?.price;
 
                 if (hPrice && aPrice && dPrice) {
                     result = { h: hPrice.toFixed(2), d: dPrice.toFixed(2), a: aPrice.toFixed(2) };
+                    // DEBUG: console.log("SIKERES ODDS PÁROSÍTÁS:", match.homeTeam.name);
                 }
             }
         }
@@ -1424,6 +1422,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
