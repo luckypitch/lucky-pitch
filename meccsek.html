@@ -1064,33 +1064,43 @@ function renderLeagues() {
     const listContainer = document.getElementById("league-list");
     if (!listContainer) return;
 
-    // Biztonsági ellenőrzés
     if (!allMatches || !Array.isArray(allMatches)) return;
 
     const unique = new Map();
-    allMatches
-        .filter(m => m && m.utcDate && m.utcDate.startsWith(selectedDate))
-        .forEach(m => {
-            if (m.competition) unique.set(m.competition.id, m.competition);
-        });
+    
+    // JAVÍTÁS: Kivettük a .filter-t, hogy minden ligát lássunk, amiről jött adat
+    allMatches.forEach(m => {
+        if (m && m.competition) {
+            unique.set(m.competition.id, m.competition);
+        }
+    });
 
-    // Itt generáljuk le a HTML-t
     const leagueItemsHtml = [...unique.values()].map(l => {
         const idStr = l.id.toString();
         const isActive = selectedLeagues.has(idStr);
         
         return `
             <div class="league-item ${isActive ? 'active' : ''}" 
-                 onclick="event.stopPropagation(); const id='${idStr}'; selectedLeagues.has(id) ? selectedLeagues.delete(id) : selectedLeagues.add(id); renderLeagues(); renderMatches();">
+                 onclick="event.stopPropagation(); toggleLeagueSelection('${idStr}')">
                 <div class="league-icon-wrapper">
-                    <img src="${l.emblem}" alt="${l.name}" onerror="this.src='https://via.placeholder.com/30'">
+                    <img src="${l.emblem}" alt="${l.name}" onerror="this.src='https://via.placeholder.com/32?text=?'">
                 </div>
                 <span class="league-name-text">${l.name}</span>
             </div>`;
     }).join('');
 
-    // CSAK a lista tartalmát cseréljük le, a felette lévő "sidebar-header" érintetlen marad
     listContainer.innerHTML = leagueItemsHtml;
+}
+
+// Segédfüggvény, hogy ne legyen túl hosszú az onclick
+function toggleLeagueSelection(id) {
+    if (selectedLeagues.has(id)) {
+        selectedLeagues.delete(id);
+    } else {
+        selectedLeagues.add(id);
+    }
+    renderLeagues();
+    renderMatches(); // Frissítjük a középső részt is!
 }
         
 async function loadUserBetsFromServer() {
@@ -1319,6 +1329,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
