@@ -27,20 +27,38 @@ HTML
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
 
     <style>
-        :root {
-            --bg: #020617; --glass: rgba(15, 23, 42, 0.75); --neon-blue: #0ea5e9;
-            --neon-green: #00ff88; --neon-purple: #8b5cf6; --text: #f1f5f9;
-            --border: rgba(255, 255, 255, 0.1); --card-bg: rgba(15, 23, 42, 0.85);
+       :root {
+            /* ALAPÉRTELMEZETT DARK MODE SZÍNEK */
+            --bg: #020617; 
+            --glass: rgba(15, 23, 42, 0.75); 
+            --neon-blue: #0ea5e9;
+            --neon-green: #00ff88; 
+            --neon-purple: #8b5cf6; 
+            --text: #f1f5f9;
+            --border: rgba(255, 255, 255, 0.1); 
+            --card-bg: rgba(15, 23, 42, 0.85);
         }
+
         body.light {
-            --bg: #f8fafc; --glass: rgba(255, 255, 255, 0.8); --text: #0f172a;
-            --border: rgba(0, 0, 0, 0.1); --neon-blue: #0284c7; --card-bg: rgba(255, 255, 255, 0.95);
+            /* LIGHT MODE SZÍNEK */
+            --bg: #f8fafc; 
+            --glass: rgba(255, 255, 255, 0.8); 
+            --text: #0f172a;
+            --border: rgba(0, 0, 0, 0.1); 
+            --neon-blue: #0284c7; 
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --neon-green: #16a34a;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
         body { 
-            background: var(--bg); color: var(--text); min-height: 100vh; 
-            display: flex; flex-direction: column; transition: background 0.4s; 
+            background: var(--bg); 
+            color: var(--text); 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            transition: background 0.4s, color 0.4s; 
             overflow-x: hidden; 
         }
 
@@ -102,8 +120,9 @@ HTML
             text-decoration: none; font-family: 'Orbitron'; font-size: 12px; transition: 0.4s; 
             padding: 12px 35px; border-radius: 50px; border: 1px solid var(--border);
         }
+        .fb-link:hover { color: #1877F2; border-color: #1877F2; box-shadow: 0 0 25px rgba(24, 119, 242, 0.6); }
 
-        /* --- MOBIL OPTIMALIZÁCIÓ (STYLE MEGTARTÁSÁVAL) --- */
+        /* --- MOBIL OPTIMALIZÁCIÓ --- */
         @media (max-width: 1100px) {
             nav { padding: 0 3%; height: 70px; }
             .logo { font-size: 1.2rem; }
@@ -128,7 +147,7 @@ HTML
 
         @media (max-width: 480px) {
             .logo { font-size: 1rem; }
-            .nav-buttons button#donate-btn { display: none; } /* Kicsi mobilnál a Donate gombot elrejtjük vagy ikonra cseréljük */
+            .nav-buttons button#donate-btn { display: none; }
             .stats-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         }
     </style>
@@ -366,6 +385,7 @@ window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
