@@ -1402,14 +1402,6 @@ function saveState() {
     }
 }
 
-Értem, összefésüljük a meglévő swipe-logikádat a stabilizálással. A probléma nálad az volt, hogy a touchend-re vártál, de közben a böngésző eltolta az egész ablakot (ez látszik a fehér sávon a képeden).
-
-Ahhoz, hogy a kódod ne "szétcsúsztassa" az oldalt, hanem ténylegesen a sávokat nyissa, a touchmove eseményt kell kontroll alá vonni.
-A javított, összefésült kód
-
-Ezt a blokkot használd, ez tartalmazza a te logikádat, de kiegészítve az elcsúszás elleni védelemmel:
-JavaScript
-
 let touchstartX = 0;
 let touchstartY = 0;
 let isDragging = false; // A startAction-höz
@@ -1501,6 +1493,7 @@ document.addEventListener('mousedown', startAction);
     </script>
 </body>
 </html>
+
 
 
 
