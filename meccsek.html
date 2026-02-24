@@ -10,149 +10,137 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-    --bg: #0b090f;
-    --glass: rgba(255, 255, 255, 0.03);
-    --glass-heavy: rgba(255, 255, 255, 0.08);
-    --neon-purple: #c32aff;
-    --neon-pink: #ff2a8a;
-    --neon-blue: #0ea5e9;
-    --neon-green: #00ff88;
-    --text: #ffffff;
-    --text-dim: #a0a0a0;
-    --border: rgba(255, 255, 255, 0.08);
-    --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-}
+       :root {
+        /* Az eredeti változóid, de "mélyebb" tónusokkal */
+        --bg: #05070a;
+        --glass: rgba(15, 23, 42, 0.65);
+        --neon-green: #00ff88;
+        --neon-blue: #0ea5e9;
+        --neon-red: #ff3e3e;
+        --text: #f1f5f9;
+        --border: rgba(255, 255, 255, 0.08);
+        --cl-gs: #0044ff; --el-gs: #cc7a00; --ecl-q: #00cc6a; --po: #d35400; --rel: #ff3e3e;
+        
+        /* Új extra változók a prémium hatáshoz */
+        --neon-purple: #c32aff;
+        --card-bg: rgba(30, 41, 59, 0.3);
+    }
 
-/* 1. EXTRA ANIMÁLT HÁTTÉR */
-.bg-animation { 
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; 
-    filter: blur(120px); opacity: 0.5; 
-}
-.blob { 
-    position: absolute; width: 600px; height: 600px; border-radius: 50%; 
-    mix-blend-mode: screen; 
-    animation: floating 20s infinite alternate ease-in-out;
-}
-.blob-1 { background: var(--neon-purple); top: -10%; left: -5%; animation-delay: 0s; }
-.blob-2 { background: var(--neon-pink); bottom: -10%; right: -5%; animation-delay: -5s; }
-.blob-3 { background: var(--neon-blue); top: 40%; left: 30%; width: 400px; height: 400px; opacity: 0.3; }
+    body.light {
+        --bg: #f8fafc;
+        --glass: rgba(255, 255, 255, 0.85);
+        --text: #0f172a;
+        --border: rgba(0, 0, 0, 0.1);
+        --neon-blue: #0284c7;
+    }
 
-@keyframes floating {
-    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-    33% { transform: translate(5vw, 10vh) scale(1.1) rotate(10deg); }
-    66% { transform: translate(-5vw, 15vh) scale(0.9) rotate(-10deg); }
-    100% { transform: translate(0, 0) scale(1) rotate(0deg); }
-}
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-/* 2. PRÉMIUM NAVIGÁCIÓ */
-nav { 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    background: rgba(11, 9, 15, 0.7);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
+    body { 
+        background: var(--bg); 
+        color: var(--text); 
+        font-family: 'Inter', sans-serif; 
+        height: 100vh; 
+        overflow: hidden; 
+        position: relative; 
+        transition: background 0.5s; 
+    }
 
-/* 3. MECCSKÁRTYA REFORM */
-.match-card {
-    border-radius: 28px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: var(--card-shadow);
-    overflow: hidden;
-    position: relative;
-}
+    /* Háttér animáció megtartva, de finomítva */
+    .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; filter: blur(120px); opacity: 0.4; }
+    .blob { position: absolute; width: 600px; height: 600px; border-radius: 50%; mix-blend-mode: screen; animation: move 20s infinite alternate ease-in-out; }
+    .blob-1 { background: var(--cl-gs); top: -10%; left: -10%; }
+    .blob-2 { background: var(--neon-purple); bottom: -10%; right: -10%; animation-delay: -5s; }
+    .blob-3 { background: var(--el-gs); top: 30%; left: 30%; animation-delay: -10s; }
+    
+    @keyframes move { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(15vw, 10vh) scale(1.3); } }
 
-/* Üvegszálas csillogás effekt a kártyán */
-.match-card::before {
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%; width: 200%; height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
-    opacity: 0; transition: opacity 0.5s; pointer-events: none;
-}
-.match-card:hover::before { opacity: 1; }
+    /* Navigáció - Üveghatás és neon vonal */
+    nav { 
+        position: fixed; top: 0; left: 0; right: 0; height: 75px; 
+        display: flex; justify-content: space-between; align-items: center; 
+        padding: 0 30px; background: rgba(5, 7, 10, 0.8); backdrop-filter: blur(25px); 
+        border-bottom: 1px solid var(--border); z-index: 1000; 
+    }
+    nav::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--neon-blue), transparent); opacity: 0.5; }
 
-/* 4. DINAMIKUS ODDS GOMBOK */
-.odds-btn {
-    position: relative;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 12px;
-    color: var(--text-dim);
-    font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+    .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: #fff; letter-spacing: 3px; text-shadow: 0 0 10px var(--neon-blue); }
 
-.odds-btn:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--neon-purple);
-    box-shadow: 0 0 20px rgba(195, 42, 255, 0.3);
-    transform: translateY(-2px);
-}
+    .tool-btn { 
+        background: var(--glass); border: 1px solid var(--border);
+        color: var(--text); padding: 8px 16px; border-radius: 12px;
+        cursor: pointer; font-family: 'Orbitron'; font-size: 10px; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-transform: uppercase; letter-spacing: 1px;
+    }
+    .tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.15); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(14, 165, 233, 0.2); }
 
-.odds-btn::after {
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%; width: 200%; height: 200%;
-    background: conic-gradient(from 0deg, transparent, var(--neon-purple), transparent);
-    animation: rotate-border 4s linear infinite;
-    opacity: 0;
-}
-.odds-btn:hover::after { opacity: 0.2; }
+    .main-wrapper { display: flex; height: 100vh; padding-top: 75px; }
+    
+    /* Sidebars - Kifinomult üveghatás */
+    .sidebar, .standings-sidebar { background: var(--glass); backdrop-filter: blur(30px); overflow-y: auto; border: 1px solid var(--border); }
+    .sidebar { width: 300px; border-right: 1px solid var(--border); }
+    .standings-sidebar { width: 430px; padding: 20px; border-left: 1px solid var(--border); }
 
-@keyframes rotate-border {
-    100% { transform: rotate(360deg); }
-}
+    .sidebar-header { padding: 25px 20px; font-family: 'Orbitron'; font-size: 12px; color: var(--neon-blue); border-bottom: 1px solid var(--border); letter-spacing: 2px; font-weight: 800; }
 
-/* 5. GÓL-ANIMÁCIÓ (Neon Pulse) */
-.match-card.goal-highlight {
-    animation: goal-glow 0.8s ease-in-out infinite alternate !important;
-    border: 2px solid var(--neon-pink) !important;
-    background: rgba(255, 42, 138, 0.1) !important;
-}
+    /* Meccskártyák - Extra kerekítés és gradiens */
+    .match-card {
+        background: var(--card-bg); border: 1px solid var(--border); border-radius: 28px;
+        padding: 24px; margin-bottom: 15px; display: flex; flex-direction: column; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative; overflow: hidden;
+    }
+    .match-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%); pointer-events: none; }
+    .match-card:hover { border-color: var(--neon-blue); background: rgba(30, 41, 59, 0.6); transform: translateY(-5px) scale(1.01); box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
 
-@keyframes goal-glow {
-    0% { box-shadow: 0 0 5px var(--neon-pink), inset 0 0 5px var(--neon-pink); }
-    100% { box-shadow: 0 0 30px var(--neon-pink), inset 0 0 15px var(--neon-pink); }
-}
+    .team-link img { width: 60px; height: 60px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); }
+    .team-link span { font-weight: 800; font-family: 'Orbitron'; font-size: 11px; margin-top: 10px; }
 
-/* 6. TABELLA (Standings) EXTRA */
-.standings-table tr {
-    transition: transform 0.2s;
-}
-.standings-table tr:hover {
-    transform: scale(1.02);
-    z-index: 10;
-}
-.standings-table td {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-    backdrop-filter: blur(5px);
-}
+    .score-display { font-family: 'Orbitron'; font-size: 2.4rem; font-weight: 900; color: #fff; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
+    .score-live { color: var(--neon-red); animation: score-pulse 1.5s infinite; text-shadow: 0 0 15px var(--neon-red); }
+    @keyframes score-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } }
 
-/* 7. DÁTUM VÁLASZTÓ (Pill design) */
-.date-pill {
-    transition: all 0.4s ease;
-    border-radius: 18px;
-    border: 1px solid transparent;
-}
-.date-pill.active {
-    background: linear-gradient(45deg, var(--neon-purple), var(--neon-pink));
-    color: #fff;
-    box-shadow: 0 10px 20px rgba(255, 42, 138, 0.3);
-    font-weight: 800;
-}
+    /* Gól-animációk megtartva és turbózva */
+    @keyframes goal-flash-new {
+        0%, 100% { background-color: rgba(255, 62, 62, 0.2); border-color: var(--neon-red); }
+        50% { background-color: rgba(255, 62, 62, 0.8); border-color: #fff; box-shadow: 0 0 40px var(--neon-red); }
+    }
+    .match-card.goal-highlight {
+        animation: goal-flash-new 0.5s ease-in-out infinite !important;
+        z-index: 100;
+    }
 
-/* 8. SCROLLBAR DESIGN */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { 
-    background: rgba(255, 255, 255, 0.1); 
-    border-radius: 10px; 
-}
-::-webkit-scrollbar-thumb:hover { background: var(--neon-purple); }
+    /* Odds gombok - Kapszula design */
+    .odds-btn {
+        background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
+        border-radius: 14px; color: #fff; padding: 12px; transition: 0.3s;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .odds-btn:hover { background: var(--neon-blue); color: #000; border-color: #fff; transform: translateY(-3px); }
+
+    /* Tabella - Modern sorok */
+    .standings-table td { padding: 16px 8px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); }
+    .pos-num-box { width: 32px; height: 32px; line-height: 32px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); }
+
+    /* Dátum csík */
+    .date-pill { 
+        padding: 12px 20px; border-radius: 16px; background: var(--glass); 
+        border: 1px solid var(--border); transition: 0.3s; font-family: 'Orbitron';
+    }
+    .date-pill.active { background: #fff; color: #000; font-weight: 900; border-color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+
+    /* Gól Banner - A képernyő tetején */
+    #goal-banner {
+        border-radius: 0 0 30px 30px;
+        backdrop-filter: blur(20px);
+        background: linear-gradient(90deg, var(--neon-green), #00cc6a);
+        color: #000;
+        box-shadow: 0 10px 50px rgba(0, 255, 136, 0.4);
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--neon-blue); }
 
     </style>
 </head>
@@ -1148,6 +1136,7 @@ function saveState() {
     </script>
 </body>
 </html>
+
 
 
 
