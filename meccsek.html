@@ -588,19 +588,6 @@ async function updateSupabaseBalance(newAmount, betData = null) {
     }
 }
 
-Ez a függvény most már sokkal robusztusabb a névkeresés szempontjából, de van benne egy logikai veszélyforrás: a túl engedékeny egyezés.
-
-Mivel az .includes()-t használod mindkét irányba, előfordulhat, hogy például egy "Arsenal" és egy "Arsenal Sarandi" (argentin csapat) véletlenül egymásra talál, ha az egyik épp nincs benne az adatbázisban, de a másik igen.
-
-Íme pár apró, de fontos finomítás, hogy az oddsok tényleg a helyükre kerüljenek:
-1. A "Draw" (Döntetlen) probléma
-
-Néhány API nem "Draw"-nak, hanem a csapatok nevei alapján (pl. "Home/Away") vagy egyszerűen az egyik csapat nevével jelöli a kimeneteket. A biztonság kedvéért érdemesebb a döntetlent úgy keresni, hogy mi nem a hazai és mi nem a vendég.
-2. Finomított getSmartOdds
-
-Módosítottam a logikát, hogy elkerüljük a téves párosításokat és biztosabb legyen a döntetlen keresése:
-JavaScript
-
 function getSmartOdds(match) {
     const seed = match.id || 0;
     const rng = (s) => Math.abs(Math.sin(seed + s));
@@ -1437,6 +1424,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
