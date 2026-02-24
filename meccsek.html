@@ -1402,10 +1402,9 @@ function saveState() {
     }
 }
 
-let touchstartX = 0;
-let touchstartY = 0;
-let isDragging = false; // A startAction-höz
 let startX = 0;
+let startY = 0;
+let isDragging = false;
 
 const sbLeft = document.querySelector('.sidebar');
 const sbRight = document.querySelector('.standings-sidebar');
@@ -1427,72 +1426,83 @@ function closeAllSidebars() {
     isDragging = false;
 }
 
-// 2. Eseményfigyelők rögzítése
-document.addEventListener('touchstart', e => {
-    touchstartX = e.changedTouches[0].screenX;
-    touchstartY = e.changedTouches[0].screenY;
-}, {passive: true});
+// 2. KÖZÖS LOGIKA: Ez dönti el a diffX alapján, mi történjen
+function handleAction(endX, endY, sX, sY) {
+    const diffX = endX - sX;
+    const diffY = endY - sY;
 
-// FIX: Ez akadályozza meg a fehér sávos elcsúszást, amit a képen küldtél
-document.addEventListener('touchmove', e => {
-    const touchmoveX = e.changedTouches[0].screenX;
-    const diffX = touchmoveX - touchstartX;
-
-    // Ha szélen indult a mozdulat, tiltjuk a böngésző alapértelmezett oldalra-húzását (visszalépés funkció)
-    if (touchstartX < 50 || touchstartX > window.innerWidth - 50) {
-        if (e.cancelable) e.preventDefault();
-    }
-    
-    // Ha nyitva van valamelyik menü, ne engedjük az oldal görgetését
-    if (sbLeft.classList.contains('open') || sbRight.classList.contains('open')) {
-        if (e.cancelable) e.preventDefault();
-    }
-}, {passive: false}); // Itt a false fontos a preventDefault miatt!
-
-document.addEventListener('touchend', e => {
-    const touchendX = e.changedTouches[0].screenX;
-    const touchendY = e.changedTouches[0].screenY;
-    const diffX = touchendX - touchstartX;
-    const diffY = touchendY - touchstartY;
-
+    // Csak ha vízszintes a mozgás és elég hosszú (80px)
     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 80) {
-        if (diffX > 0) { // JOBBRA PÖCCINTÉS
-            if (touchstartX < 80) { 
+        if (diffX > 0) { // JOBBRA HÚZÁS
+            if (sX < 100) { // Bal szélről indítva -> Ligák nyitása
                 sbLeft.classList.add('open');
                 overlay.classList.add('active');
-            } else if (sbRight.classList.contains('open')) { 
+            } else if (sbRight.classList.contains('open')) { // Tabella bezárása
                 closeAllSidebars();
             }
-        } else { // BALRA PÖCCINTÉS
-            if (touchstartX > window.innerWidth - 80) { 
+        } else { // BALRA HÚZÁS
+            if (sX > window.innerWidth - 100) { // Jobb szélről indítva -> Tabella nyitása
                 sbRight.classList.add('open');
                 overlay.classList.add('active');
-            } else if (sbLeft.classList.contains('open')) { 
+            } else if (sbLeft.classList.contains('open')) { // Ligák bezárása
                 closeAllSidebars();
             }
         }
     }
-    isDragging = false;
-    document.body.style.cursor = 'default';
-}, {passive: true});
+}
 
-// 3. Egér/Desktop támogatás (összedolgozva a startAction-öddel)
-const edgeSize = 100;
+// 3. EGYSÉGESÍTETT ESEMÉNYKEZELŐK
 const startAction = (e) => {
     const posX = e.type.includes('mouse') ? e.pageX : e.changedTouches[0].screenX;
-    if (posX < edgeSize || posX > window.innerWidth - edgeSize) {
+    const posY = e.type.includes('mouse') ? e.pageY : e.changedTouches[0].screenY;
+    
+    // Csak a széleken (100px) vagy ha már nyitva van valamelyik sáv
+    if (posX < 100 || posX > window.innerWidth - 100 || sbLeft.classList.contains('open') || sbRight.classList.contains('open')) {
         startX = posX;
+        startY = posY;
         isDragging = true;
-        document.body.style.cursor = 'grabbing';
+        if (e.type.includes('mouse')) document.body.style.cursor = 'grabbing';
     }
 };
 
-document.addEventListener('mousedown', startAction);
+const moveAction = (e) => {
+    if (!isDragging) return;
+    
+    // Megakadályozzuk az oldal "elúszását" (fehér sáv fix)
+    // Csak akkor vonjuk el az irányítást, ha szélről indult a swipe
+    if (startX < 100 || startX > window.innerWidth - 100 || sbLeft.classList.contains('open') || sbRight.classList.contains('open')) {
+        if (e.cancelable) e.preventDefault();
+    }
+};
 
+const endAction = (e) => {
+    if (!isDragging) return;
+    
+    const endX = e.type.includes('mouse') ? e.pageX : e.changedTouches[0].screenX;
+    const endY = e.type.includes('mouse') ? e.pageY : e.changedTouches[0].screenY;
+    
+    handleAction(endX, endY, startX, startY);
+    
+    isDragging = false;
+    document.body.style.cursor = 'default';
+};
+
+// --- FELIRATKOZÁS ---
+
+// Egér
+document.addEventListener('mousedown', startAction);
+document.addEventListener('mousemove', moveAction);
+document.addEventListener('mouseup', endAction);
+
+// Mobil (Touch)
+document.addEventListener('touchstart', startAction, {passive: true});
+document.addEventListener('touchmove', moveAction, {passive: false}); // Fontos a false a preventDefault miatt!
+document.addEventListener('touchend', endAction, {passive: true});
         
     </script>
 </body>
 </html>
+
 
 
 
