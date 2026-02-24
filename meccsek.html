@@ -138,10 +138,35 @@
 
         .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
         @media (max-width: 1100px) {
-            .sidebar, .standings-sidebar { position: fixed; top: 75px; bottom: 70px; width: 85%; z-index: 1050; transform: translateX(-105%); background: var(--bg); }
+            .sidebar, .standings-sidebar { 
+        position: fixed; 
+        top: 75px; 
+        bottom: 70px; 
+        width: 85%; 
+        z-index: 1050; 
+        background: var(--bg);
+        /* Kiegészítés: */
+        transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        will-change: transform;
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    }
             .standings-sidebar { right: 0; transform: translateX(105%); }
             .sidebar.open, .standings-sidebar.open { transform: translateX(0); }
             .mobile-nav { display: flex; }
+            .sidebar-overlay {
+        position: fixed;
+        top: 75px; left: 0; right: 0; bottom: 70px;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+        z-index: 1040;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+    }
+    .sidebar-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
         }
 @keyframes goal-flash {
     0% { background-color: rgba(255, 62, 62, 0.95); transform: scale(1.02); }
@@ -1172,9 +1197,63 @@ function saveState() {
     }
 }
 
+let touchstartX = 0;
+let touchstartY = 0;
+
+const sbLeft = document.querySelector('.sidebar');
+const sbRight = document.querySelector('.standings-sidebar');
+
+// Overlay létrehozása dinamikusan, ha nincs benne a HTML-ben
+if(!document.querySelector('.sidebar-overlay')) {
+    const ov = document.createElement('div');
+    ov.className = 'sidebar-overlay';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', closeAllSidebars);
+}
+const overlay = document.querySelector('.sidebar-overlay');
+
+function closeAllSidebars() {
+    sbLeft.classList.remove('open');
+    sbRight.classList.remove('open');
+    overlay.classList.remove('active');
+}
+
+document.addEventListener('touchstart', e => {
+    touchstartX = e.changedTouches[0].screenX;
+    touchstartY = e.changedTouches[0].screenY;
+}, {passive: true});
+
+document.addEventListener('touchend', e => {
+    const touchendX = e.changedTouches[0].screenX;
+    const touchendY = e.changedTouches[0].screenY;
+    const diffX = touchendX - touchstartX;
+    const diffY = touchendY - touchstartY;
+
+    // Csak akkor váltunk, ha vízszintes a mozdulat (nem görgetés)
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 80) {
+        
+        if (diffX > 0) { // JOBBRA PÖCCINTÉS
+            if (touchstartX < 80) { // Bal szélről indítva
+                sbLeft.classList.add('open');
+                overlay.classList.add('active');
+            } else if (sbRight.classList.contains('open')) { // Tabella bezárása
+                closeAllSidebars();
+            }
+        } else { // BALRA PÖCCINTÉS
+            if (touchstartX > window.innerWidth - 80) { // Jobb szélről indítva
+                sbRight.classList.add('open');
+                overlay.classList.add('active');
+            } else if (sbLeft.classList.contains('open')) { // Ligák bezárása
+                closeAllSidebars();
+            }
+        }
+    }
+}, {passive: true});
+        
     </script>
 </body>
 </html>
+
 
 
 
