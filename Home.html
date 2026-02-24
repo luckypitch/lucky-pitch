@@ -438,11 +438,24 @@ async function startApp() {
                 });
             }
         }
+
+        updateUI(); 
+        initNeural(); 
+        fetchMatches(); 
+        startCounters();
+
+        isInitialized = true;
+
+    } catch (error) {
+        console.error("Hiba az indítás során:", error);
+    }
+}
     
 window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
