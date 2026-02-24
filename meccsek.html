@@ -426,7 +426,10 @@ async function updateData() {
             checkGoals();
             checkBetResults();
         }
-        
+        if (allMatches.length > 0) {
+    // Kényszerítsük a renderelést, hogy már a friss globalOdds-szal fusson le
+    renderMatches(); 
+}
         console.log("Adatok frissítve. Meccsek:", allMatches.length);
 
     } catch (e) {
@@ -1422,6 +1425,7 @@ const startAction = (e) => {
     </script>
 </body>
 </html>
+
 
 
 
