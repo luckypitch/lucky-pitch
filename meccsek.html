@@ -1045,7 +1045,7 @@ async function loadUserBetsFromServer() {
 // --- 7. INDÍTÁS ---
 let isInitialized = false;
 
-// 1. MECCSEK ÉS UI - Ez azonnal elindul
+// 1. MECCSEK ÉS UI INDÍTÁSA
 function initSiteFunctions() {
     if (typeof updateUI === 'function') updateUI(); 
     if (typeof initNeural === 'function') initNeural(); 
@@ -1065,11 +1065,11 @@ function initSiteFunctions() {
     }, 30000);
 }
 
-// 2. A Clerk indítása
+// 2. A CLERK KEZELÉSE
 async function startApp() {
     if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
 
-    initSiteFunctions(); // Meccsek indítása
+    initSiteFunctions(); // Meccsek azonnal
 
     let t = 0;
     while (typeof Clerk === 'undefined' && t < 50) { 
@@ -1079,11 +1079,27 @@ async function startApp() {
 
     if (typeof Clerk !== 'undefined') {
         try {
-            // CSAK a virtuális routing, semmi egyéb fix URL
             await Clerk.load({ routing: 'virtual' });
 
+            // FIGYELŐ JAVÍTÁSA:
+            Clerk.addListener(({ user, client }) => {
+                // Csak akkor reloadolunk, ha:
+                // 1. Már be volt töltve minden (isInitialized)
+                // 2. NINCS user (user === null)
+                // 3. ÉS nincs folyamatban lévő bejelentkezési kísérlet (client.signIn.status !== 'needs_first_factor')
+                // Ez megvédi az e-mail kódos ablakot!
+                
+                const isSigningIn = client && client.signIn && client.signIn.status === 'needs_first_factor';
+                const isSigningUp = client && client.signUp && client.signUp.status === 'missing_requirements';
+
+                if (isInitialized && user === null && !isSigningIn && !isSigningUp) {
+                    console.log("Valódi kijelentkezés, mehet a reload.");
+                    localStorage.removeItem('lp_activeBets');
+                    window.location.href = '/meccsek.html';
+                }
+            });
+
             if (Clerk.user) {
-                // BEJELENTKEZETT FELHASZNÁLÓ
                 const userBtn = document.getElementById('user-button');
                 if(userBtn) {
                     Clerk.mountUserButton(userBtn, {
@@ -1091,21 +1107,15 @@ async function startApp() {
                     });
                 }
                 if (typeof loadInitialBalance === 'function') await loadInitialBalance(); 
-                
                 const authLinks = document.getElementById('auth-links');
                 if (authLinks) authLinks.style.display = 'none';
-
-                // Csak sikeres belépés UTÁN aktiváljuk a kijelentkezés figyelőt
-                setTimeout(() => { isInitialized = true; }, 2000);
             } else {
-                // VENDÉG MÓD
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
                     lb.style.display = 'block'; 
                     lb.onclick = (e) => {
                         e.preventDefault(); 
                         e.stopImmediatePropagation();
-                        
                         Clerk.openSignIn({ 
                             routing: 'virtual',
                             afterSignInUrl: window.location.origin + '/meccsek.html',
@@ -1113,19 +1123,10 @@ async function startApp() {
                         });
                     };
                 }
-                // Ha vendég, akkor is kell az inicializáltság a későbbi belépéshez
-                setTimeout(() => { isInitialized = true; }, 2000);
             }
-
-            // Kijelentkezés figyelő - Szigorúbb feltétellel
-            Clerk.addListener(({ user }) => {
-                // Csak akkor reloadolunk, ha voltunk már inicializálva ÉS a user kifejezetten null lett
-                if (isInitialized && user === null) {
-                    console.log("Valódi kijelentkezés történt.");
-                    localStorage.removeItem('lp_activeBets');
-                    window.location.href = '/meccsek.html';
-                }
-            });
+            
+            // Csak a legvégén aktiváljuk a figyelőt
+            isInitialized = true; 
 
         } catch (error) {
             console.error("Clerk error:", error);
@@ -1170,6 +1171,7 @@ function saveState() {
     </script>
 </body>
 </html>
+
 
 
 
