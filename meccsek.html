@@ -79,22 +79,24 @@
     /* --- Elrendezés --- */
     .main-wrapper { display: flex; margin-top: 75px; min-height: calc(100vh - 75px); }
 
-  .sidebar { 
-    width: 80px; /* Csak az ikonoknak elég hely */
+ .sidebar { 
+    width: 80px; /* Összehúzott állapot */
     background: var(--glass); 
     backdrop-filter: blur(25px); 
     border-right: 1px solid var(--border); 
-    overflow-y: auto; 
     overflow-x: hidden; 
+    overflow-y: auto;
     flex-shrink: 0;
-    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Sima nyitás-csukás */
+    /* Nagyon fontos a cubic-bezier a prémium érzetű mozgáshoz */
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
     display: flex;
     flex-direction: column;
-    align-items: center; /* Középre igazítja az ikonokat */
 }
-
+.sidebar.open { 
+    width: 280px; 
+}
 .sidebar::-webkit-scrollbar {
-    width: 4px;
+    width: 0;
 }
 .sidebar::-webkit-scrollbar-thumb {
     background: var(--neon-blue);
@@ -107,14 +109,14 @@
     width: 280px;
     align-items: flex-start; /* Nyitott állapotban balra igazít */
 }
-    .sidebar-header { 
-    width: 100%;
-    padding: 20px; 
+   .sidebar-header { 
+    height: 75px;
     display: flex; 
     align-items: center; 
-    justify-content: center; /* Alapból középen a kupa */
+    padding: 0 25px; /* Fix padding, hogy ne ugráljon */
     gap: 15px;
-    border-bottom: 1px solid var(--border); 
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
 }
 .sidebar.open .sidebar-header {
     justify-content: flex-start; /* Nyitva balra tolódik */
@@ -124,9 +126,10 @@
     padding: 12px 20px;
 }        
 .header-emoji {
-    font-size: 1.6rem;
-    flex-shrink: 0;
-    display: block;
+    font-size: 1.8rem;
+    min-width: 30px; /* Fix szélesség az ikonnak, hogy ne mozogjon */
+    display: flex;
+    justify-content: center;
 }
         
     .standings-sidebar { 
@@ -235,17 +238,22 @@
 
     /* --- Liga Választó & Dátum --- */
    .league-item {
-    margin: 10px 12px;
-    padding: 15px 0;
-    border-radius: 12px;
-    display: flex; align-items: center; padding: 15px 17px; cursor: pointer;
-    border-left: 4px solid transparent; transition: 0.2s;
+    margin: 8px 10px;
+    padding: 12px;
+    border-radius: 14px;
+    display: flex;
     align-items: center;
-    cursor: pointer;
-    transition: background 0.3s;
     gap: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    width: calc(100% - 20px); /* Hogy ne lógjon ki */
 }
-    .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); }
+   .league-item.active {
+    background: rgba(0, 255, 136, 0.1);
+    border-color: var(--neon-green);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+}
     .league-item img { 
     width: 32px; 
     height: 32px; 
@@ -255,15 +263,25 @@
     background: rgba(255,255,255,0.05); /* Enyhe háttér az ikonnak, hogy kitűnjön */
     padding: 4px;
 }
+  .league-item img {
+    width: 35px;
+    height: 35px;
+    flex-shrink: 0; /* Ne torzuljon a kép */
+    object-fit: contain;
+}      
+ .sidebar:not(.open) .league-item {
+    justify-content: center;
+    padding: 12px 0;
+    margin: 8px 0;
+    width: 100%;
+    border-radius: 0;
+}       
 .header-text, 
 .league-item span { 
-    display: block;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease; /* A szöveg gyorsabban tűnjön el, mint a fal mozgása */
     white-space: nowrap;
-    opacity: 0; /* Alapból láthatatlan */
-    transition: opacity 0.3s;
-    pointer-events: none;
-    width: 0; /* Ne foglaljon helyet becsukva */
-    overflow: hidden;
 }
 .league-icon-wrapper {
     width: 46px;
@@ -387,12 +405,11 @@
         .mobile-nav { display: flex; }
         .standings-sidebar { width: 85%; }
     }
-        .sidebar.open .header-text,
+       .sidebar.open .header-text,
 .sidebar.open .league-item span { 
     opacity: 1;
-    width: auto;
-    pointer-events: auto;
-    margin-left: 10px;
+    visibility: visible;
+    transition: opacity 0.4s ease 0.2s; /* Késleltetve jelenik meg, miután a sidebar már tágul */
 }
         #date-selector {
         justify-content: flex-start; /* Mobilon jobb, ha szélről indul a görgetés miatt */
@@ -1808,6 +1825,7 @@ function handleLeagueClick(id) {
     </script>
 </body>
 </html>
+
 
 
 
