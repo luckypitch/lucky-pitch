@@ -11,340 +11,196 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
     <style>
     :root {
-        --bg: #020617;
-        --glass: rgba(15, 23, 42, 0.75);
-        --neon-green: #00ff88;
-        --neon-blue: #0ea5e9;
-        --neon-red: #ff3e3e;
-        --text: #f1f5f9;
-        --border: rgba(255, 255, 255, 0.1);
-        --cl-gs: #0044ff; --el-gs: #cc7a00; --ecl-q: #00cc6a; --po: #d35400; --rel: #ff3e3e;
-    }
+    --bg: #020617;
+    --glass: rgba(15, 23, 42, 0.75);
+    --neon-green: #00ff88;
+    --neon-blue: #0ea5e9;
+    --neon-red: #ff3e3e;
+    --text: #f1f5f9;
+    --border: rgba(255, 255, 255, 0.1);
+    --cl-gs: #0044ff; --el-gs: #cc7a00; --ecl-q: #00cc6a; --po: #d35400; --rel: #ff3e3e;
+}
 
-    body.light {
-        --bg: #f8fafc;
-        --glass: rgba(255, 255, 255, 0.85);
-        --text: #0f172a;
-        --border: rgba(0, 0, 0, 0.1);
-        --neon-blue: #0284c7;
-    }
+body.light {
+    --bg: #f8fafc;
+    --glass: rgba(255, 255, 255, 0.85);
+    --text: #0f172a;
+    --border: rgba(0, 0, 0, 0.1);
+    --neon-blue: #0284c7;
+}
 
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-    body { 
-        background: var(--bg); 
-        color: var(--text); 
-        font-family: 'Inter', sans-serif; 
-        height: 100vh; 
-        overflow-x: hidden; 
-        position: relative; 
-        transition: background 0.5s; 
-    }
+body { 
+    background: var(--bg); 
+    color: var(--text); 
+    font-family: 'Inter', sans-serif; 
+    min-height: 100vh; 
+    overflow-x: hidden; 
+    position: relative; 
+    transition: background 0.5s; 
+}
 
-    /* --- Háttér Animációk (Visszahozva az eredetiből) --- */
-    .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; filter: blur(100px); opacity: 0.5; }
-    .blob { position: absolute; width: 600px; height: 600px; border-radius: 50%; mix-blend-mode: screen; animation: move 25s infinite alternate ease-in-out; }
-    .blob-1 { background: var(--cl-gs); top: -10%; left: -10%; }
-    .blob-2 { background: var(--neon-green); bottom: -10%; right: -10%; animation-delay: -5s; }
-    .blob-3 { background: var(--el-gs); top: 30%; left: 30%; animation-delay: -10s; }
-    @keyframes move { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10vw, 10vh) scale(1.2); } }
+/* --- Háttér Animációk --- */
+.bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; filter: blur(100px); opacity: 0.5; }
+.blob { position: absolute; width: 600px; height: 600px; border-radius: 50%; mix-blend-mode: screen; animation: move 25s infinite alternate ease-in-out; }
+.blob-1 { background: var(--cl-gs); top: -10%; left: -10%; }
+.blob-2 { background: var(--neon-green); bottom: -10%; right: -10%; animation-delay: -5s; }
+.blob-3 { background: var(--el-gs); top: 30%; left: 30%; animation-delay: -10s; }
+@keyframes move { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10vw, 10vh) scale(1.2); } }
 
-    /* --- Banner & Navigáció --- */
-    #goal-banner {
-        position: fixed; top: -100px; left: 0; right: 0; height: 65px; z-index: 9999 !important;
-        background: var(--neon-green); color: #000; display: flex; align-items: center; justify-content: center;
-        font-family: 'Orbitron'; font-weight: 900; font-size: 1.6rem;
-        transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 0 50px rgba(0,255,136,0.6);
-    }
-    #goal-banner.show { top: 75px; }
+/* --- Navigáció --- */
+nav { 
+    position: fixed; top: 0; left: 0; right: 0; height: 75px; 
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 0 30px; background: var(--glass); backdrop-filter: blur(20px); 
+    border-bottom: 1px solid var(--border); z-index: 2000; 
+}
+.logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 3px; }
 
-    nav { 
-        position: fixed; top: 0; left: 0; right: 0; height: 75px; 
-        display: flex; justify-content: space-between; align-items: center; 
-        padding: 0 30px; background: var(--glass); backdrop-filter: blur(20px); 
-        border-bottom: 1px solid var(--border); z-index: 2000; 
-    }
+/* --- Fő elrendezés --- */
+.main-wrapper { 
+    display: flex; 
+    margin-top: 75px; 
+    min-height: calc(100vh - 75px); 
+    width: 100%;
+}
 
-    .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 3px; }
-    .nav-tools { display: flex; align-items: center; gap: 12px; }
-
-    .tool-btn { 
-        background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-        color: var(--text); padding: 10px 16px; border-radius: 10px;
-        cursor: pointer; font-family: 'Orbitron'; font-size: 11px; transition: 0.3s;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.2); }
-
-    /* --- Elrendezés --- */
-    .main-wrapper { display: flex; margin-top: 75px; min-height: calc(100vh - 75px); }
-
-  .sidebar {
-    width: 60px; /* Csak az ikonoknak elég hely */
+/* --- SIDEBAR: Ikonos alap, hoverre nyílik --- */
+.sidebar {
+    width: 70px; /* Csak ikonok */
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-x: hidden;
     white-space: nowrap;
     flex-shrink: 0;
+    background: rgba(10, 10, 12, 0.5);
+    border-right: 1px solid var(--border);
+    z-index: 1000;
 }
-        
-.sidebar::-webkit-scrollbar {
-    width: 4px;
-}
-.sidebar::-webkit-scrollbar-thumb {
-    background: var(--neon-blue);
-    border-radius: 10px;
-}        
 .sidebar:hover {
-    width: 200px;
+    width: 280px; /* Teljes szélesség */
+}
+
+.sidebar-header { 
+    padding: 20px; 
+    font-family: 'Orbitron'; 
+    font-size: 11px; 
+    color: var(--neon-blue); 
+    border-bottom: 1px solid var(--border); 
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Szövegek elrejtése alapból */
+.header-text, .league-name-text {
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
 }
 .sidebar:hover .header-text,
 .sidebar:hover .league-name-text {
     opacity: 1;
-}
-    .sidebar:hover, .sidebar.open { 
-    width: 280px; 
-}
-    .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
-.sidebar .header-text, 
-.sidebar .league-name-text {
-    opacity: 0;
-    transition: opacity 0.2s;
-    margin-left: 10px;
-}
-    .standings-sidebar { 
-        position: fixed; right: 0; top: 75px; bottom: 0; width: 400px; 
-        z-index: 1500; background: var(--bg); border-left: 1px solid var(--border); 
-        transform: translateX(100%); transition: transform 0.3s ease; padding: 20px; overflow-y: auto;
-    }
-    .standings-sidebar.open { transform: translateX(0); }
-
-    .content-area { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 25px; overflow-y: auto; scrollbar-width: none; }
-    #match-container { width: 100%; max-width: 800px; }
-
-    /* --- Meccskártyák (Javított Struktúra) --- */
-    .match-card {
-        background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 24px;
-        padding: 25px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 20px;
-        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .match-card:hover { border-color: var(--neon-blue); background: rgba(30, 41, 59, 0.6); transform: translateY(-4px); }
-
-    .match-info-row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-
-    .team-link { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; }
-    .team-link img { width: 50px; height: 50px; object-fit: contain; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .team-link:hover img { transform: rotate(15deg) scale(1.2); filter: drop-shadow(0 0 12px var(--neon-blue)); }
-    .team-link span { font-weight: 800; font-family: 'Orbitron'; font-size: 11px; text-align: center; }
-
-    .score-display { font-family: 'Orbitron'; font-size: 2.2rem; font-weight: 900; color: var(--neon-green); }
-    .score-live { color: var(--neon-red); animation: pulse 1s infinite; text-shadow: 0 0 15px var(--neon-red); }
-#date-selector {
-    display: flex;
-    justify-content: center; /* Középre igazítja a gombokat a kártyák tengelyében */
-    align-items: center;
-    gap: 12px;
-    margin: 10px auto 25px auto;
-    padding: 10px;
-    max-width: 600px; /* Hogy ne legyen szélesebb, mint a meccskártyák */
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none; /* Firefox-hoz */
-}
-#date-selector::-webkit-scrollbar {
-    display: none;
-}    
-.date-btn {
-    background: rgba(255, 255, 255, 0.03); /* Ugyanaz a háttér, mint a card-nál */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.5);
-    padding: 12px 20px;
-    border-radius: 12px; /* Meccskártya lekerekítéséhez igazítva */
-    font-family: 'Orbitron', sans-serif;
-    font-size: 11px;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    min-width: 90px;
-    text-align: center;
-    flex-shrink: 0;
+    pointer-events: auto;
 }
 
-/* Hover állapot - finom neon kék */
-.date-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(0, 243, 255, 0.4);
-    color: #fff;
-}
-
-/* Aktív/Kijelölt állapot - Erős neon kék és árnyék */
-.date-btn.active {
-    background: rgba(0, 243, 255, 0.15);
-    border-color: #00f3ff;
-    color: #00f3ff;
-    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
-    font-weight: 800;
-    transform: translateY(-2px); /* Kicsit kiemelkedik */
-}
-    /* --- Odds Gombok (Javított) --- */
-    .match-odds-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
-
-    .odds-btn {
-        background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px;
-        padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px;
-        color: white; cursor: pointer; transition: 0.2s;
-    }
-    .odds-btn:hover { background: rgba(14, 165, 233, 0.2); border-color: var(--neon-blue); transform: translateY(-1px); }
-    .odds-label { font-size: 10px; opacity: 0.6; font-family: 'Inter'; }
-    .odds-val { font-family: 'Orbitron'; font-size: 13px; font-weight: bold; color: var(--neon-green); }
-
-    /* --- Gól Villogás --- */
-    @keyframes goal-flash {
-        0% { background-color: rgba(255, 62, 62, 0.95); transform: scale(1.02); }
-        50% { background-color: rgba(255, 62, 62, 0.3); transform: scale(1); }
-        100% { background-color: rgba(255, 62, 62, 0.95); transform: scale(1.02); }
-    }
-    .match-card.goal-highlight, .match-card.goal-highlight div, .match-card.goal-highlight span {
-        animation: goal-flash 0.5s ease-in-out infinite !important;
-        color: white !important; border-color: #ffffff !important;
-    }
-    .match-card.goal-highlight { z-index: 1000; position: relative; box-shadow: 0 0 50px rgba(255, 62, 62, 0.8); }
-
-    /* --- Tabella Stílusok --- */
-    .standings-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
-    .standings-table td { padding: 14px 8px; background: rgba(255,255,255,0.03); text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 12px; }
-    .pos-col { border-left-width: 5px !important; border-left-style: solid !important; }
-    .pos-num-box { width: 34px; height: 34px; line-height: 34px; margin: 0 auto; border-radius: 8px; font-weight: 900; font-family: 'Orbitron'; font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-
-    /* --- Liga Választó & Dátum --- */
- .league-item {
+/* Liga elemek */
+.league-item {
     display: flex;
     align-items: center;
-    padding: 10px 15px; /* Kényelmes kattintási felület */
+    padding: 12px 17px;
     cursor: pointer;
     border-left: 3px solid transparent;
-}
-  .league-item.active {
-    background: rgba(0, 255, 136, 0.1);
-    border-left-color: #00ff88;
-}
-  .league-icon-wrapper img {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0; /* Ne torzuljon az ikon */
-}
-.league-item span {
-    opacity: 0;
-    transition: opacity 0.2s;
-    font-weight: 600;
-    font-family: 'Orbitron';
-    font-size: 11px;
+    transition: 0.2s;
 }
 .league-icon-wrapper {
-    width: 40px;
-    height: 40px;
-    min-width: 40px; /* Garantálja, hogy ne nyomódjon össze */
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 36px; height: 36px; min-width: 36px;
+    display: flex; align-items: center; justify-content: center;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    flex-shrink: 0; /* Megakadályozza a torzulást */
+    border-radius: 10px; border: 1px solid var(--border);
 }
-/* SZÖVEG MEGJELENÍTÉSE NYITÁSKOR */
-.sidebar:hover .league-item span,
-.sidebar:hover .league-name-text {
-    opacity: 1;
-    width: 160px; /* Vagy amennyi kell a neveknek */
-    margin-left: 10px;
-}
-.league-item:hover .league-icon-wrapper {
-    background: rgba(14, 165, 233, 0.2); /* Neon kék háttér hovernél */
-    border: 1px solid var(--neon-blue);
-}
-.league-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-}    
-.league-item:hover, .league-item.active {
-    background: rgba(0, 183, 255, 0.1);
-    border-color: rgba(0, 183, 255, 0.5);
-    box-shadow: 0 0 10px rgba(0, 183, 255, 0.2);
-}        
-.league-name-text {
-    opacity: 0;
-    width: 0; /* Alaphelyzetben nincs szélessége */
-    overflow: hidden;
-    white-space: nowrap;
-    transition: opacity 0.3s ease, width 0.3s ease;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 13px;
-    color: #fff;
-    pointer-events: none;
-}
-.league-icon-wrapper img {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-}        
-    .date-strip { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; scrollbar-width: none; width: 100%; }
-    .date-pill { flex: 0 0 auto; padding: 10px 18px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); cursor: pointer; font-family: 'Orbitron'; font-size: 10px; }
-    .date-pill.active { border-color: var(--neon-green); color: var(--neon-green); background: rgba(0,255,136,0.05); }
+.league-icon-wrapper img { width: 24px; height: 24px; object-fit: contain; }
 
+.league-item:hover { background: rgba(255, 255, 255, 0.05); }
+.league-item.active {
+    background: rgba(0, 255, 136, 0.1);
+    border-left-color: var(--neon-green);
+}
+
+/* --- KÖZÉPSŐ TARTALOM: Kártyák középen --- */
+.content-area { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; /* KÖZÉPRE IGAZÍTÁS */
+    padding: 30px; 
+    overflow-y: auto; 
+}
+
+#match-container { 
+    width: 100%; 
+    max-width: 900px; /* Nagyobb kártyák */
+}
+
+/* Dátumválasztó */
+#date-selector {
+    display: flex; gap: 12px; margin-bottom: 30px; 
+    justify-content: center; width: 100%;
+}
+.date-btn {
+    background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
+    color: rgba(255,255,255,0.5); padding: 12px 20px; border-radius: 12px;
+    font-family: 'Orbitron'; font-size: 11px; cursor: pointer; transition: 0.3s;
+}
+.date-btn.active {
+    background: rgba(0, 243, 255, 0.15); border-color: #00f3ff; color: #00f3ff;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+}
+
+/* Meccskártya stílusa */
+.match-card {
+    background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border);
+    border-radius: 24px; padding: 30px; margin-bottom: 20px;
+    display: flex; flex-direction: column; gap: 20px;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.match-card:hover { border-color: var(--neon-blue); transform: translateY(-3px); }
+
+.match-info-row { display: flex; align-items: center; justify-content: space-between; }
+.team-link { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.team-link img { width: 60px; height: 60px; object-fit: contain; }
+.score-display { font-family: 'Orbitron'; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); }
+
+/* Odds sor */
+.match-odds-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+.odds-btn {
+    background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border);
+    border-radius: 15px; padding: 15px; cursor: pointer; transition: 0.2s;
+    display: flex; flex-direction: column; align-items: center;
+}
+.odds-val { font-family: 'Orbitron'; font-size: 14px; color: var(--neon-green); font-weight: bold; }
+
+/* Tooltip & Animációk */
 .sexy-tooltip {
-    position: fixed; /* Absolute helyett fixed */
-    width: 280px;
-    background: rgba(15, 15, 26, 0.98);
-    border: 1px solid #00b7ff;
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-    z-index: 10001; /* Extra magas, hogy minden felett legyen */
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: auto; /* Hogy rá lehessen vinni az egeret */
-    transition: opacity 0.3s ease;
+    position: fixed; width: 280px; background: rgba(15, 15, 26, 0.98);
+    border: 1px solid #00b7ff; border-radius: 12px; padding: 15px;
+    z-index: 10001; opacity: 0; visibility: hidden; transition: 0.3s;
 }
+.sexy-tooltip.active { opacity: 1; visibility: visible; }
 
-.sexy-tooltip.active {
-    opacity: 1;
-    visibility: visible;
+@keyframes goal-flash {
+    0%, 100% { background-color: rgba(255, 62, 62, 0.9); }
+    50% { background-color: rgba(30, 41, 59, 0.4); }
 }
+.match-card.goal-highlight { animation: goal-flash 0.5s infinite !important; }
 
-.tooltip-header {
-    font-size: 10px;
-    font-weight: 900;
-    color: var(--neon-blue);
-    letter-spacing: 2px;
-    margin-bottom: 8px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    padding-bottom: 5px;
+/* Banner */
+#goal-banner {
+    position: fixed; top: -100px; left: 0; right: 0; height: 65px; z-index: 9999;
+    background: var(--neon-green); color: #000; display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron'; font-weight: 900; transition: 0.6s;
 }
-
-.tooltip-table {
-    width: 100%;
-    font-size: 11px;
-    color: white;
-    border-collapse: collapse;
-}
-
-.tooltip-table th {
-    color: #888;
-    text-align: left;
-    font-size: 9px;
-    padding-bottom: 5px;
-}
-
-.tooltip-table td {
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.neon-green {
-    color: #00ff99;
-    font-weight: bold;
-    text-shadow: 0 0 5px rgba(0, 255, 153, 0.5);
-}
+#goal-banner.show { top: 0; }
         
     /* --- Mobil Nézet --- */
     .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
@@ -1778,6 +1634,7 @@ function handleLeagueClick(id) {
     </script>
 </body>
 </html>
+
 
 
 
