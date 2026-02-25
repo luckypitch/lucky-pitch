@@ -77,12 +77,15 @@
     .tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.2); }
 
     /* --- Elrendezés --- */
-    .main-wrapper { 
+   .main-wrapper { 
     display: flex;
     margin-top: 75px;
-    padding-left: 80px; /* Alapból hagyunk helyet a becsukott sidebarnak */
+    /* Alapból hagyunk helyet a becsukott sidebarnak (80px) */
+    padding-left: 80px; 
     transition: padding-left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: calc(100vh - 75px);
 }
+.main-wrapper:has(.sidebar:hover),
 .main-wrapper:has(.sidebar.open) {
     padding-left: 280px;
 }
@@ -91,19 +94,15 @@
     background: var(--glass); 
     backdrop-filter: blur(25px); 
     border-right: 1px solid var(--border); 
-    
-    /* GÖRGETÉS FIXÁLÁSA */
-    position: fixed; /* Fixen rögzítjük a képernyő bal széléhez */
-    top: 75px;      /* A NAV magassága alatt kezdődjön */
+    position: fixed;
+    top: 75px;
     left: 0;
-    bottom: 0;      /* Lehúzzuk az oldal aljáig */
+    bottom: 0;
     z-index: 1001;
-    
     overflow-x: hidden; 
-    overflow-y: auto; /* Belül továbbra is görgethető, ha sok a liga */
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    align-items: center;
     transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
 }
         
@@ -125,12 +124,10 @@
     align-items: center; 
     justify-content: center; /* Becsukva középen a kupa */
     padding: 0;
-    gap: 15px;
     border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-    transition: padding 0.5s ease;
+    transition: all 0.5s ease;
 }
-
+        
 /* Nyitott állapotban a fejléc eltolása */
 .sidebar:hover .sidebar-header,
 .sidebar.open .sidebar-header {
@@ -261,32 +258,32 @@
 
 .league-item {
     width: 100%;
-    min-height: 60px; /* Legyen fix magassága, hogy görgetésnél ne essen szét */
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: center; /* Becsukva középen az ikon */
+    padding: 12px 0;
+    cursor: pointer;
     transition: all 0.3s ease;
+    border-left: 3px solid transparent;
 }
 
 .sidebar:hover .league-item,
 .sidebar.open .league-item {
     justify-content: flex-start;
-    padding: 12px 20px;
+    padding: 12px 15px;
 }
 
 /* IKON WRAPPER - hogy ne ugráljon */
 .league-icon-wrapper {
     width: 46px;
     height: 46px;
-    min-width: 46px;
+    min-width: 46px; /* Garantálja, hogy ne nyomódjon össze */
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
-    transition: all 0.3s ease;
 }
 
 .league-icon-wrapper img {
@@ -296,18 +293,29 @@
 }
 
 /* --- SZÖVEGEK FINOM KEZELÉSE --- */
-.header-text, 
-.league-name-text { 
+.header-text {
+    font-family: 'Orbitron';
+    font-size: 13px;
+    color: var(--neon-blue);
     opacity: 0;
-    visibility: hidden;
     width: 0;
     overflow: hidden;
     white-space: nowrap;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 13px;
-    color: #fff;
     transition: opacity 0.3s ease, width 0.3s ease;
+    margin-left: 10px;
 }
+.league-name-text {
+    opacity: 0;
+    width: 0;
+    margin-left: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis; /* HA TÚL HOSSZÚ A NÉV, HÁROM PONT LESZ (...) */
+    font-family: 'Orbitron';
+    font-size: 11px;
+    color: #fff;
+    transition: opacity 0.3s ease, width 0.3s ease, margin-left 0.3s ease;
+}        
 
 /* Nyitáskor a szöveg megjelenítése */
 .sidebar:hover .header-text,
@@ -316,7 +324,7 @@
 .sidebar.open .league-name-text { 
     opacity: 1;
     visibility: visible;
-    width: 180px;
+    width: auto;
     margin-left: 5px;
 }
 
@@ -1831,6 +1839,7 @@ function handleLeagueClick(id) {
     </script>
 </body>
 </html>
+
 
 
 
