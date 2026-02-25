@@ -577,15 +577,34 @@ async function updateData() {
         const data = await res.json();
         allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
 
-        // 2. Oddsok letöltése
+       // 2. Oddsok letöltése - JAVÍTOTT RÉSZ
         try {
+            console.log("Odds lekérése folyamatban...");
             const oddsRes = await fetch("/api/odds-data");
-            if (oddsRes.ok) {
-                const oddsData = await oddsRes.json();
-                globalOdds = Array.isArray(oddsData) ? oddsData : [];
+            
+            if (!oddsRes.ok) {
+                throw new Error(`HTTP hiba! Státusz: ${oddsRes.status}`);
             }
-        } catch (e) { console.warn("Odds API hiba"); }
 
+            const oddsData = await oddsRes.json();
+            console.log("Nyers odds adat a szerverről:", oddsData); // Itt látni fogjuk, ha üres
+
+            // Ellenőrizzük, hogy az oddsData ténylegesen meccseket tartalmazó tömb-e
+            if (oddsData && Array.isArray(oddsData)) {
+                globalOdds = oddsData;
+            } else if (oddsData && oddsData.data && Array.isArray(oddsData.data)) {
+                // Néha az API-k egy "data" objektumba csomagolják a tömböt
+                globalOdds = oddsData.data;
+            } else {
+                console.warn("Az odds formátum nem megfelelő vagy üres.");
+                globalOdds = [];
+            }
+            
+            console.log("globalOdds feltöltve, hossza:", globalOdds.length);
+            } catch (e) { 
+            console.error("Odds API hiba részletei:", e); 
+            globalOdds = [];
+        }
         // 3. Automatikus kijelölés logikája (Csak az első sikeres betöltésnél)
         if (isFirstLoad && allMatches.length > 0) {
             allMatches.forEach(m => {
@@ -1856,6 +1875,7 @@ function handleLeagueClick(id) {
     </script>
 </body>
 </html>
+
 
 
 
