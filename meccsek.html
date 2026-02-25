@@ -466,7 +466,9 @@
     padding: 8px 12px;
     font-size: 12px;
 }
-
+.chat-messages {
+    scroll-behavior: smooth;
+}
 .chat-input:focus {
     border-color: var(--neon-blue);
     outline: none;
@@ -763,7 +765,13 @@ function checkGoals() {
                 if (typeof triggerGoalEffect === 'function') {
                     triggerGoalEffect(matchId, scoringTeam, newH > oldH ? match.homeTeam.crest : match.awayTeam.crest);
                 }
-
+                if (typeof socket !== 'undefined') {
+        socket.emit('admin-goal-detected', {
+            matchId: matchId,
+            teamName: scoringTeam,
+            score: `${newH}-${newA}`
+        });
+    }
                 // 2. CÍMSOR (TITLE) FRISSÍTÉSE
                 const originalTitle = document.title;
                 const goalTitle = `⚽ GÓL: ${scoringTeam} (${newH}:${newA}) ⚽`;
@@ -2082,10 +2090,11 @@ if (typeof socket !== 'undefined') {
     });
 }
         
+// Ez a függvény küldi ki a socketen keresztül az üzenetet
 function onGoalScored(matchId, teamName, newScore) {
-    console.log(`[STADION] Gól küldése: ${matchId} - ${teamName}`);
+    console.log(`[STADION LOG] Gól küldése: ${matchId}`);
     
-    // io.emit-et használunk szoba nélkül, hogy MINDENKI megkapja
+    // Mindenkinek kiküldjük (io.emit), nem csak a szobának
     io.emit('new-msg', {
         matchId: matchId, 
         user: "🏟️ STADION",
@@ -2097,6 +2106,7 @@ function onGoalScored(matchId, teamName, newScore) {
     </script>
 </body>
 </html>
+
 
 
 
