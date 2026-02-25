@@ -412,6 +412,92 @@
     font-weight: bold;
     text-shadow: 0 0 5px rgba(0, 255, 153, 0.5);
 }
+
+
+/* Chat Konténer a meccskártyán belül */
+.match-chat-section {
+    border-top: 1px solid var(--border);
+    margin-top: 15px;
+    padding-top: 15px;
+    display: none; /* Alapból rejtve */
+}
+
+.chat-messages {
+    height: 150px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 5px;
+    margin-bottom: 10px;
+}
+
+/* Üzenet buborék */
+.chat-bubble {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    max-width: 90%;
+    border-left: 3px solid var(--neon-blue);
+}
+
+.chat-user {
+    font-weight: bold;
+    font-family: 'Orbitron';
+    font-size: 10px;
+    display: block;
+    margin-bottom: 3px;
+}
+
+/* Beviteli mező */
+.chat-input-area {
+    display: flex;
+    gap: 10px;
+}
+
+.chat-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: white;
+    padding: 8px 12px;
+    font-size: 12px;
+}
+
+.chat-input:focus {
+    border-color: var(--neon-blue);
+    outline: none;
+}
+
+.chat-send-btn {
+    background: var(--neon-blue);
+    border: none;
+    border-radius: 8px;
+    width: 35px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Chat gomb a kártyán */
+.btn-chat-toggle {
+    cursor: pointer;
+    font-family: 'Orbitron';
+    font-size: 10px;
+    color: var(--text);
+    opacity: 0.6;
+    transition: 0.3s;
+}
+
+.btn-chat-toggle:hover {
+    opacity: 1;
+    color: var(--neon-blue);
+}
+
+
         
     /* --- Mobil Nézet --- */
     .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
@@ -1873,10 +1959,54 @@ function handleLeagueClick(id) {
     renderLeagues(); 
     renderMatches(); 
 }
+// Socket inicializálása
+const socket = io();
+
+function toggleChat(matchId) {
+    const section = document.getElementById(`chat-section-${matchId}`);
+    if (section.style.display === 'none' || !section.style.display) {
+        section.style.display = 'block';
+        socket.emit('join-chat', matchId);
+    } else {
+        section.style.display = 'none';
+    }
+}
+
+function sendChatMessage(matchId) {
+    const input = document.getElementById(`chat-input-${matchId}`);
+    const message = input.value.trim();
+    
+    if (message) {
+        socket.emit('send-msg', {
+            matchId: matchId,
+            user: "Te", // Ide jöhetne a júzer valódi neve
+            message: message,
+            color: '#0ea5e9'
+        });
+        input.value = '';
+    }
+}
+
+// Új üzenet érkezésekor
+socket.on('new-msg', (data) => {
+    const container = document.querySelector(`#chat-messages-${data.matchId}`);
+    if (container) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-bubble';
+        msgDiv.innerHTML = `
+            <span class="chat-user" style="color: ${data.color}">${data.user}</span>
+            <span class="chat-text">${data.message}</span>
+        `;
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight; // Görgetés az aljára
+    }
+});
+
         
     </script>
 </body>
 </html>
+
 
 
 
