@@ -1991,33 +1991,49 @@ function toggleChat(matchId) {
 
 function sendChatMessage(matchId) {
     const input = document.getElementById(`chat-input-${matchId}`);
+    if (!input) return;
+
     const message = input.value.trim();
     
-    if (message) {
+    // Ellenőrizzük, hogy van-e üzenet és él-e a kapcsolat
+    if (message && typeof socket !== 'undefined') {
+        console.log("Üzenet küldése:", message); // Ezt látnod kell az F12 konzolban!
+        
         socket.emit('send-msg', {
             matchId: matchId,
-            user: "Te", // Ide jöhetne a júzer valódi neve
+            user: (typeof Clerk !== 'undefined' && Clerk.user) ? Clerk.user.firstName : "Vendég",
             message: message,
-            color: '#0ea5e9'
+            color: '#00d4ff'
         });
-        input.value = '';
+        
+        input.value = ''; // Mező ürítése
+    } else {
+        console.error("Socket nincs inicializálva vagy üres az üzenet!");
     }
 }
 
-// Új üzenet érkezésekor
-socket.on('new-msg', (data) => {
-    const container = document.querySelector(`#chat-messages-${data.matchId}`);
-    if (container) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'chat-bubble';
-        msgDiv.innerHTML = `
-            <span class="chat-user" style="color: ${data.color}">${data.user}</span>
-            <span class="chat-text">${data.message}</span>
-        `;
-        container.appendChild(msgDiv);
-        container.scrollTop = container.scrollHeight; // Görgetés az aljára
-    }
-});
+// Az üzenetek fogadása - JAVÍTOTT NÉV: 'new-msg'
+if (typeof socket !== 'undefined') {
+    socket.on('new-msg', (data) => {
+        console.log("Üzenet érkezett:", data); // Ellenőrzéshez
+        
+        // Fontos: a szerver matchId-t küld, a kliensnek ezt kell keresnie
+        const chatContainer = document.getElementById(`chat-messages-${data.matchId}`);
+        
+        if (chatContainer) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-bubble';
+            // Stílus hozzáadása, hogy jól nézzen ki
+            msgDiv.style.cssText = "background:rgba(255,255,255,0.05); padding:5px 10px; border-radius:8px; font-size:11px; margin-bottom:5px; text-align:left;";
+            
+            msgDiv.innerHTML = `<strong style="color:${data.color}">${data.user}:</strong> ${data.message}`;
+            
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight; 
+        }
+    });
+}
+        
 function onGoalScored(matchId, teamName, newScore) {
     // Rendszerüzenet küldése a chatbe mindenkinél
     io.to(`match_${matchId}`).emit('new-msg', {
@@ -2030,6 +2046,7 @@ function onGoalScored(matchId, teamName, newScore) {
     </script>
 </body>
 </html>
+
 
 
 
