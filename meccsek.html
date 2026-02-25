@@ -1053,16 +1053,18 @@ async function renderMatches() {
                                         ${bStatus === 'LOST' ? '0' : Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP
                                     </span>
                                 </div>
-                            </div>
-                        ` : (m.status === 'TIMED' || m.status === 'SCHEDULED') ? `
-                            <div style="display: flex; gap: 8px; width: 100%;">
-                                <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">H ${odds.h}</button>
-                                <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">D ${odds.d}</button>
-                                <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">V ${odds.a}</button>
-                            </div>
+                           </div>
                         ` : `
                             <div style="text-align:center; font-size: 10px; opacity: 0.5; font-family: 'Orbitron';">${isLive ? 'ÉLŐ MECCS - LEZÁRVA' : 'FOGADÁS LEZÁRVA'}</div>
                         `}
+                    </div>
+
+                    <div id="chat-section-${m.id}" class="match-chat-section" style="display:none; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 10px; padding-top: 10px;">
+                        <div id="chat-messages-${m.id}" class="chat-messages" style="height: 120px; overflow-y: auto; margin-bottom: 10px; display:flex; flex-direction:column; gap:5px;"></div>
+                        <div class="chat-input-area" style="display:flex; gap:5px;">
+                            <input type="text" id="chat-input-${m.id}" class="chat-input" placeholder="Trash-talk..." style="flex:1; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:5px; color:white; padding:5px 10px; font-size:11px;" onkeypress="if(event.key==='Enter') sendChatMessage('${m.id}')">
+                            <button onclick="sendChatMessage('${m.id}')" style="background:var(--neon-blue); border:none; border-radius:5px; padding:0 10px; cursor:pointer;">🚀</button>
+                        </div>
                     </div>
                 </div>`;
         } catch (err) {
@@ -2014,6 +2016,7 @@ function onGoalScored(matchId, teamName, newScore) {
     </script>
 </body>
 </html>
+
 
 
 
