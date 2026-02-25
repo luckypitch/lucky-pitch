@@ -507,41 +507,44 @@ function translateStatus(status) {
 
 async function updateData() {
     try {
-        // 1. Oddsok letöltése ELŐSZÖR (hogy a renderelésnél már meglegyenek)
+        // 1. Oddsok letöltése
         try {
             const oddsRes = await fetch("/api/odds-data");
             if (oddsRes.ok) {
                 const oddsData = await oddsRes.json();
                 globalOdds = Array.isArray(oddsData) ? oddsData : [];
-                console.log("Oddsok betöltve:", globalOdds.length);
             }
         } catch (e) { 
-            console.warn("Odds API hiba, generált oddsok lesznek használva."); 
+            console.warn("Odds API hiba."); 
         }
 
         // 2. Meccsek letöltése
-       const res = await fetch("/live-matches");
+        const res = await fetch("/live-matches");
         const data = await res.json();
+        
+        // Rugalmas adatkezelés (ha a matches objektumban van, vagy ha maga a tömb)
         allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
 
         if (allMatches.length > 0) {
             // Dátumválasztó frissítése
             if (typeof renderDateSelector === 'function') renderDateSelector();
             
-            // LIGÁK RENDERELÉSE: Csak ha még nincs tartalom a sidebarban!
-            const sideBar = document.getElementById("league-sidebar-container"); // Ellenőrizd az ID-t
-            if (typeof renderLeagues === 'function' && sideBar && sideBar.innerHTML.trim() === "") {
-                renderLeagues();
-                highlightAllLeagues(); // Alapértelmezetten minden aktív
+            // LIGÁK RENDERELÉSE
+            const leagueContainer = document.getElementById("league-list"); 
+            if (typeof renderLeagues === 'function' && leagueContainer) {
+                renderLeagues(); 
             }
 
-            // Meccsek renderelése
+            // MECCSEK RENDERELÉSE
             if (typeof renderMatches === 'function') renderMatches();
             
-            checkGoals();
-            checkBetResults();
+            // Egyéb ellenőrzések (ha léteznek)
+            if (typeof checkGoals === 'function') checkGoals();
+            if (typeof checkBetResults === 'function') checkBetResults();
         }
-        console.log("Adatok frissítve. Meccsek:", allMatches.length);
+        
+        console.log("Sikeres frissítés. Meccsek száma:", allMatches.length);
+        
     } catch (e) {
         console.error("Hiba az updateData futásakor:", e);
     }
@@ -1757,6 +1760,7 @@ document.querySelectorAll('.league-item').forEach(item => {
     </script>
 </body>
 </html>
+
 
 
 
