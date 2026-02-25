@@ -335,12 +335,6 @@ app.get("*", (req, res) => {
     if (req.path.includes('.')) return res.status(404).send("Fájl nem található");
     res.redirect("/");
 });
-const axios = require('axios'); // Ne felejtsd el: npm install axios
-
-// 1. Végpont létrehozása, amit a script hívogatni fog
-app.get('/keep-alive', (req, res) => {
-    res.status(200).send('LuckyPitch szerver ébren van!');
-});
 
 // 2. Az önhívó funkció
 const axios = require('axios');
@@ -376,5 +370,6 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
