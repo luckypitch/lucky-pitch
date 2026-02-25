@@ -380,14 +380,15 @@ io.on('connection', (socket) => {
     });
 
     // Üzenet fogadása és továbbítása a szobának
-    socket.on('send-msg', (data) => {
-        // data: { matchId, user, message, color }
-        io.to(`match_${data.matchId}`).emit('new-msg', {
-            user: data.user,
-            message: data.message,
-            color: data.color || '#0ea5e9'
-        });
+   socket.on('send-msg', (data) => {
+    // A 'data' tartalmazza a matchId-t, amit a kliens küldött
+    io.to(`match_${data.matchId}`).emit('new-msg', {
+        matchId: data.matchId, // EZ HIÁNYZIK MOST!
+        user: data.user,
+        message: data.message,
+        color: data.color
     });
+});
 
     socket.on('disconnect', () => {
         console.log('Felhasználó lecsatlakozott');
@@ -404,6 +405,7 @@ server.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
