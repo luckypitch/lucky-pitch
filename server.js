@@ -6,6 +6,10 @@ const cors = require("cors");
 const path = require("path");
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require("node-fetch");
+const http = require('http');
+const { Server } = require('socket.io');
+const server = http.createServer(app);
+const io = new Server(server);
 
 // 2. INICIALIZÁLÁS
 const app = express();
@@ -357,9 +361,33 @@ const keepServerAlive = async () => {
 // 3. 14 percenkénti indítás
 setInterval(keepServerAlive, 840000);
 
+// Chat szobák kezelése
+io.on('connection', (socket) => {
+    console.log('Egy felhasználó csatlakozott a chathoz');
+
+    // Belépés egy konkrét meccs szobájába
+    socket.on('join-chat', (matchId) => {
+        socket.join(`match_${matchId}`);
+    });
+
+    // Üzenet fogadása és továbbítása a szobának
+    socket.on('send-msg', (data) => {
+        // data: { matchId, user, message, color }
+        io.to(`match_${data.matchId}`).emit('new-msg', {
+            user: data.user,
+            message: data.message,
+            color: data.color || '#0ea5e9'
+        });
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Felhasználó lecsatlakozott');
+    });
+});
+
 // SZERVER INDÍTÁSA
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`
     🚀 LuckyPitch Szerver ONLINE
     📡 Port: ${PORT}
@@ -367,6 +395,7 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
