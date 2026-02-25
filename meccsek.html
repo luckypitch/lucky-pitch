@@ -79,19 +79,21 @@
     /* --- Elrendezés --- */
     .main-wrapper { display: flex; margin-top: 75px; min-height: calc(100vh - 75px); }
 
-   .sidebar {
-    position: fixed; /* Fix pozíció a képernyő bal szélén */
-    top: 70px; /* A header magasságától függően állítsd be */
+  .sidebar {
+    position: fixed;
+    top: 80px; /* Header magassága */
     left: 0;
-    height: calc(100vh - 70px); /* A teljes maradék képernyőmagasság */
-    width: 60px; /* Alaphelyzetben csak az ikonok látszanak */
-    overflow-y: auto; /* Ha sok a liga, ezen belül lehessen görgetni */
+    height: calc(100vh - 80px);
+    width: 70px; /* Összecsukott állapot */
     background: rgba(10, 10, 18, 0.95);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-    transition: width 0.3s ease;
+    border-right: 1px solid rgba(0, 183, 255, 0.2);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000;
-    padding-top: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-top: 20px;
 }
+        
 .sidebar::-webkit-scrollbar {
     width: 4px;
 }
@@ -100,8 +102,8 @@
     border-radius: 10px;
 }        
 .sidebar:hover {
-    width: 220px; /* Megnyúlt szélesség a szövegeknek */
-}       
+    width: 240px; /* Kinyílt állapot */
+} 
 .sidebar:hover, .sidebar.open { 
     width: 280px; 
 }
@@ -212,18 +214,16 @@
     .pos-num-box { width: 34px; height: 34px; line-height: 34px; margin: 0 auto; border-radius: 8px; font-weight: 900; font-family: 'Orbitron'; font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
     /* --- Liga Választó & Dátum --- */
-    .league-item { 
-    margin: 8px 10px; 
-    padding: 10px; 
-    border-radius: 12px; /* Szabályos lekerekített négyzet alap */
-    display: flex; 
-    align-items: center; 
-    gap: 20px; /* Távolság az ikon és a szöveg között */
-    cursor: pointer; 
-    transition: 0.3s; 
+   .league-item {
+    margin: 10px 12px;
+    padding: 8px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
     border: 1px solid transparent;
-    white-space: nowrap; /* A szöveg ne törjön több sorba */
-    overflow: hidden;    
+    gap: 15px;
 }
     .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); }
     .league-item img { 
@@ -243,23 +243,24 @@
     font-size: 11px;
 }
 .league-icon-wrapper {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px; /* Garantálja, hogy ne nyomódjon össze */
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px; /* Szabályos kerekített négyzet */
-    padding: 4px;
+    border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-}   
+    flex-shrink: 0; /* Megakadályozza a torzulást */
+}
 /* SZÖVEG MEGJELENÍTÉSE NYITÁSKOR */
 .sidebar:hover .league-item span,
 .sidebar:hover .league-name-text {
     opacity: 1;
     display: inline-block; /* Vagy block, a flex-et nem zavarva */
-}
+    pointer-events: auto
+}     
 .league-item:hover .league-icon-wrapper {
     background: rgba(14, 165, 233, 0.2); /* Neon kék háttér hovernél */
     border: 1px solid var(--neon-blue);
@@ -267,13 +268,24 @@
 .league-item:hover {
     background: rgba(255, 255, 255, 0.05);
 }    
+.league-item:hover, .league-item.active {
+    background: rgba(0, 183, 255, 0.1);
+    border-color: rgba(0, 183, 255, 0.5);
+    box-shadow: 0 0 10px rgba(0, 183, 255, 0.2);
+}        
 .league-name-text {
-    display: none;
     opacity: 0;
     white-space: nowrap;
-    transition: opacity 0.3s ease;
-    font-size: 12px;
-    font-weight: 600;
+    transition: opacity 0.2s ease;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    color: #fff;
+    pointer-events: none;
+}
+.league-icon-wrapper img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
 }        
     .date-strip { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; scrollbar-width: none; width: 100%; }
     .date-pill { flex: 0 0 auto; padding: 10px 18px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); cursor: pointer; font-family: 'Orbitron'; font-size: 10px; }
@@ -467,7 +479,7 @@ let prevScores = new Map();
 let flashingMatches = new Set();
 let globalOdds = []; // Itt tároljuk az API-ból jött oddsokat
 let activeBets = JSON.parse(localStorage.getItem('lp_activeBets')) || [];
-
+let currentLeagueId = 'all'; // Alapból minden liga
 
         
 // --- 2. SEGÉDFÜGGVÉNYEK ---
@@ -774,15 +786,18 @@ async function renderMatches() {
     if (typeof renderDateSelector === 'function') renderDateSelector(); 
 
     const filtered = allMatches.filter(m => {
-        if (!m.utcDate || !m.competition) return false;
-        const mDate = m.utcDate.split('T')[0];
-        const leagueId = m.competition.id.toString();
-        
-        const dateMatch = (mDate === selectedDate);
-        const leagueMatch = (selectedLeagues.size === 0 || selectedLeagues.has(leagueId));
-        
-        return dateMatch && leagueMatch;
-    });
+    if (!m.utcDate || !m.competition) return false;
+    const mDate = m.utcDate.split('T')[0];
+    const leagueId = m.competition.id.toString();
+    
+    const dateMatch = (mDate === selectedDate);
+    
+    // Módosított feltétel: ha a Set üres, minden meccs látszik (alapállapot)
+    // Ha van benne elem, akkor csak azok
+    const leagueMatch = (selectedLeagues.size === 0 || selectedLeagues.has(leagueId));
+    
+    return dateMatch && leagueMatch;
+});
 
     if (filtered.length === 0) {
         cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3; font-family:'Orbitron'; font-size:12px;">NINCS MECCS EKKOR: ${selectedDate}</p>`;
@@ -873,6 +888,26 @@ async function renderMatches() {
         }
     }).join('');
 }
+// --- ÚJ FÜGGVÉNY: LIGÁK KEZELÉSE ---
+function toggleLeague(leagueId, element) {
+    if (selectedLeagues.has(leagueId)) {
+        selectedLeagues.delete(leagueId);
+        element.classList.remove('active');
+    } else {
+        selectedLeagues.add(leagueId);
+        element.classList.add('active');
+    }
+    
+    // Ha minden ligát kivettünk, vizuálisan olyan, mintha minden be lenne jelölve
+    // Vagy ha azt akarod, hogy kattintásra frissüljön:
+    renderMatches();
+}
+function highlightAllLeagues() {
+    document.querySelectorAll('.league-item').forEach(item => {
+        item.classList.add('active');
+        // Opcionálisan: selectedLeagues.add(item.dataset.leagueId);
+    });
+}        
 // --- 6. UI LOGIKA ---
 function renderDateSelector() {
     const selector = document.getElementById("date-selector");
@@ -1713,33 +1748,30 @@ async function updateTooltipData() {
 // Futtatás indítása
 initSexyTooltip();
 
+// Liga kattintás kezelése
 document.querySelectorAll('.league-item').forEach(item => {
     item.addEventListener('click', () => {
-        // Aktív osztály kezelése
-        document.querySelectorAll('.league-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
+        const leagueId = item.getAttribute('data-league-id');
 
-        const selectedLeague = item.getAttribute('data-league-id'); // Pl. 'premier-league'
-        filterMatches(selectedLeague);
+        // Ha ugyanarra kattint, akkor "kikapcsolja" a szűrőt (visszaáll mindenre)
+        if (currentLeagueId === leagueId) {
+            currentLeagueId = 'all';
+            item.classList.remove('active');
+        } else {
+            // Egyébként aktiválja az adott ligát
+            document.querySelectorAll('.league-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            currentLeagueId = leagueId;
+        }
+        
+        renderMatches(); // Frissíti a listát
     });
-});
-
-function filterMatches(leagueId) {
-    const today = new Date().toISOString().split('T')[0]; // Mai nap: "2026-02-25"
-    
-    // Feltételezve, hogy az 'allMatchesData' az összes meccset tartalmazza
-    const filteredMatches = allMatchesData.filter(match => {
-        const matchDate = match.commence_time.split('T')[0];
-        // Csak akkor marad, ha MAI és a kiválasztott LIGÁBÓL van
-        return matchDate === today && match.league_key === leagueId;
-    });
-
-    displayMatches(filteredMatches); // Meghívja a meccseket kirajzoló függvényedet
-}        
+}); 
         
     </script>
 </body>
 </html>
+
 
 
 
