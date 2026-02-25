@@ -8,11 +8,20 @@ const { createClient } = require('@supabase/supabase-js');
 const fetch = require("node-fetch");
 const http = require('http');
 const { Server } = require('socket.io');
+
+// 1. ELŐSZÖR létrehozzuk az express app-ot!
+const app = express(); 
+
+// 2. MOST már átadhatjuk az app-ot a szervernek, mert már létezik
 const server = http.createServer(app);
-const io = new Server(server);
+
+// 3. Végül inicializáljuk a socketet a szerveren
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]}});
 
 // 2. INICIALIZÁLÁS
-const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname)));
@@ -395,6 +404,7 @@ server.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
