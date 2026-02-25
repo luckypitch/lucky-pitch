@@ -79,16 +79,29 @@
     /* --- Elrendezés --- */
     .main-wrapper { display: flex; margin-top: 75px; min-height: calc(100vh - 75px); }
 
-   .sidebar { 
-    width: 70px; /* Csak az ikonok látszanak */
-    background: var(--glass); 
-    backdrop-filter: blur(25px); 
-    border-right: 1px solid var(--border); 
-    overflow-x: hidden; /* Ne lógjon ki a szöveg */
-    flex-shrink: 0;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Sima nyitás */
-    z-index: 1500;
+   .sidebar {
+    position: fixed; /* Fix pozíció a képernyő bal szélén */
+    top: 70px; /* A header magasságától függően állítsd be */
+    left: 0;
+    height: calc(100vh - 70px); /* A teljes maradék képernyőmagasság */
+    width: 60px; /* Alaphelyzetben csak az ikonok látszanak */
+    overflow-y: auto; /* Ha sok a liga, ezen belül lehessen görgetni */
+    background: rgba(10, 10, 18, 0.95);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    transition: width 0.3s ease;
+    z-index: 1000;
+    padding-top: 10px;
 }
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background: var(--neon-blue);
+    border-radius: 10px;
+}        
+.sidebar:hover {
+    width: 220px; /* Megnyúlt szélesség a szövegeknek */
+}       
 .sidebar:hover, .sidebar.open { 
     width: 280px; 
 }
@@ -210,6 +223,7 @@
     transition: 0.3s; 
     border: 1px solid transparent;
     white-space: nowrap; /* A szöveg ne törjön több sorba */
+    overflow: hidden;    
 }
     .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); }
     .league-item img { 
@@ -241,10 +255,10 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
 }   
 /* SZÖVEG MEGJELENÍTÉSE NYITÁSKOR */
-.sidebar:hover .league-name-text,
-.sidebar.open .league-name-text {
-    display: block;
+.sidebar:hover .league-item span,
+.sidebar:hover .league-name-text {
     opacity: 1;
+    display: inline-block; /* Vagy block, a flex-et nem zavarva */
 }
 .league-item:hover .league-icon-wrapper {
     background: rgba(14, 165, 233, 0.2); /* Neon kék háttér hovernél */
@@ -1698,9 +1712,35 @@ async function updateTooltipData() {
 }
 // Futtatás indítása
 initSexyTooltip();
+
+document.querySelectorAll('.league-item').forEach(item => {
+    item.addEventListener('click', () => {
+        // Aktív osztály kezelése
+        document.querySelectorAll('.league-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+
+        const selectedLeague = item.getAttribute('data-league-id'); // Pl. 'premier-league'
+        filterMatches(selectedLeague);
+    });
+});
+
+function filterMatches(leagueId) {
+    const today = new Date().toISOString().split('T')[0]; // Mai nap: "2026-02-25"
+    
+    // Feltételezve, hogy az 'allMatchesData' az összes meccset tartalmazza
+    const filteredMatches = allMatchesData.filter(match => {
+        const matchDate = match.commence_time.split('T')[0];
+        // Csak akkor marad, ha MAI és a kiválasztott LIGÁBÓL van
+        return matchDate === today && match.league_key === leagueId;
+    });
+
+    displayMatches(filteredMatches); // Meghívja a meccseket kirajzoló függvényedet
+}        
+        
     </script>
 </body>
 </html>
+
 
 
 
