@@ -29,19 +29,20 @@ body.light {
     --neon-blue: #0284c7;
 }
 
+/* --- ALAPOK ÉS GÖRDÜLÉS --- */
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 body { 
     background: var(--bg); 
     color: var(--text); 
     font-family: 'Inter', sans-serif; 
-    height: 100vh; 
-    overflow-x: hidden; 
-    position: relative; 
     transition: background 0.5s; 
+    /* Itt engedjük a body görgetését, hogy a sticky elemek működjenek */
+    overflow-x: hidden;
+    min-height: 100vh;
 }
 
-/* --- Háttér Animációk --- */
+/* --- HÁTTÉR ANIMÁCIÓK --- */
 .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; filter: blur(100px); opacity: 0.5; }
 .blob { position: absolute; width: 600px; height: 600px; border-radius: 50%; mix-blend-mode: screen; animation: move 25s infinite alternate ease-in-out; }
 .blob-1 { background: var(--cl-gs); top: -10%; left: -10%; }
@@ -49,141 +50,174 @@ body {
 .blob-3 { background: var(--el-gs); top: 30%; left: 30%; animation-delay: -10s; }
 @keyframes move { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10vw, 10vh) scale(1.2); } }
 
-/* --- Banner & Navigáció --- */
-#goal-banner {
-    position: fixed; top: -100px; left: 0; right: 0; height: 65px; z-index: 9999 !important;
-    background: var(--neon-green); color: #000; display: flex; align-items: center; justify-content: center;
-    font-family: 'Orbitron'; font-weight: 900; font-size: 1.6rem;
-    transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 0 50px rgba(0,255,136,0.6);
-}
-#goal-banner.show { top: 0; }
-
+/* --- NAVIGÁCIÓ (Fixált) --- */
 nav { 
     position: fixed; top: 0; left: 0; right: 0; height: 75px; 
     display: flex; justify-content: space-between; align-items: center; 
     padding: 0 30px; background: var(--glass); backdrop-filter: blur(20px); 
-    border-bottom: 1px solid var(--border); z-index: 2000; 
+    border-bottom: 1px solid var(--border); z-index: 5000; 
 }
 .logo { font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 3px; }
 
-/* --- Elrendezés --- */
-.main-wrapper { display: flex; margin-top: 75px; min-height: calc(100vh - 75px); }
+/* Nav Tools: Sötét mód, Pénz vissza, stb. */
+.nav-tools { display: flex; align-items: center; gap: 12px; }
+.tool-btn { 
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 16px; border-radius: 10px;
+    cursor: pointer; font-family: 'Orbitron'; font-size: 11px; transition: 0.3s;
+}
+.tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.2); box-shadow: 0 0 15px var(--neon-blue); }
 
-/* --- SIDEBAR (Bal oldal) --- */
+/* --- ELRENDEZÉS: STICKY OLDALSÁVOK --- */
+.main-wrapper { 
+    display: flex; 
+    margin-top: 75px; 
+    width: 100%; 
+    padding: 0 20px;
+}
+
+/* SIDEBAR: Veled jön görgetésnél! */
 .sidebar {
-    width: 70px;
+    width: 80px;
+    position: sticky; /* EZ A KULCS: Veled jön lefelé */
+    top: 95px; /* Nav magassága + egy kis padding */
+    height: calc(100vh - 115px);
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-x: hidden;
-    white-space: nowrap;
+    overflow-y: auto;
+    background: rgba(10, 10, 12, 0.4);
+    border: 1px solid var(--border);
+    border-radius: 20px;
     flex-shrink: 0;
-    background: rgba(10, 10, 12, 0.6);
-    border-right: 1px solid var(--border);
+    z-index: 4000;
 }
-.sidebar:hover { width: 280px; }
+.sidebar::-webkit-scrollbar { width: 0px; }
+.sidebar:hover { width: 280px; background: rgba(10, 10, 12, 0.85); backdrop-filter: blur(15px); }
 
-.sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
+.sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); letter-spacing: 2px; }
 
+/* Liga elemek: KUPA Nagyobbra véve */
 .league-item {
-    display: flex; align-items: center; padding: 12px 17px; cursor: pointer;
-    border-left: 3px solid transparent; transition: 0.2s;
+    display: flex; align-items: center; padding: 15px 17px; cursor: pointer;
+    border-left: 4px solid transparent; transition: 0.2s;
 }
 .league-icon-wrapper {
-    width: 40px; height: 40px; min-width: 40px; display: flex; align-items: center; justify-content: center;
-    background: rgba(255, 255, 255, 0.05); border-radius: 10px; border: 1px solid var(--border);
+    width: 46px; height: 46px; min-width: 46px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255, 255, 255, 0.05); border-radius: 12px;
+    border: 1px solid var(--border);
 }
-.league-icon-wrapper img { width: 28px; height: 28px; object-fit: contain; }
+.league-icon-wrapper img { width: 32px; height: 32px; object-fit: contain; }
 
 .league-name-text {
-    opacity: 0; width: 0; overflow: hidden; white-space: nowrap;
-    transition: opacity 0.3s ease, width 0.3s ease;
-    margin-left: 10px; font-family: 'Orbitron'; font-size: 13px; color: #fff;
+    opacity: 0; margin-left: 15px; font-family: 'Orbitron'; font-size: 13px; color: #fff;
+    transition: opacity 0.3s ease; white-space: nowrap;
 }
-.sidebar:hover .league-name-text { opacity: 1; width: 180px; }
+.sidebar:hover .league-name-text { opacity: 1; }
+.league-item:hover, .league-item.active { background: rgba(0, 183, 255, 0.1); border-left-color: var(--neon-blue); }
 
-.league-item:hover, .league-item.active {
-    background: rgba(0, 183, 255, 0.1); border-left: 3px solid var(--neon-blue);
-    box-shadow: 0 0 10px rgba(0, 183, 255, 0.2);
-}
-
-/* --- TARTALOM TERÜLET (Középen) --- */
+/* --- TARTALOM (MECCSEK) --- */
 .content-area { 
-    flex: 1; display: flex; flex-direction: column; align-items: center; 
-    padding: 25px; overflow-y: auto; scrollbar-width: none; 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    padding: 0 40px 40px 40px; 
 }
-#match-container { width: 100%; max-width: 850px; }
 
-/* Dátumválasztó */
+#match-container { width: 100%; max-width: 900px; }
+
+/* Dátumválasztó középen */
 #date-selector {
-    display: flex; justify-content: center; gap: 12px; margin-bottom: 25px;
-    width: 100%; flex-wrap: nowrap; overflow-x: auto;
+    display: flex; justify-content: center; gap: 12px; margin-bottom: 30px;
+    position: sticky; top: 95px; z-index: 3000; background: var(--bg); padding: 10px; border-radius: 15px;
 }
 .date-btn {
-    background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); color: rgba(255, 255, 255, 0.5);
-    padding: 12px 20px; border-radius: 12px; font-family: 'Orbitron'; font-size: 11px; cursor: pointer; transition: 0.3s;
+    background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
+    color: rgba(255, 255, 255, 0.5); padding: 12px 22px; border-radius: 12px;
+    font-family: 'Orbitron'; font-size: 11px; cursor: pointer; transition: 0.3s;
 }
 .date-btn.active { background: rgba(0, 243, 255, 0.15); border-color: #00f3ff; color: #00f3ff; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); }
 
-/* --- MECCSKÁRTYA & TEAM EFFEKTEK --- */
+/* MECCSKÁRTYA ÉS EFFEKTEK */
 .match-card {
     background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 24px;
-    padding: 25px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 20px;
-    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 30px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 20px;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(10px);
 }
-.match-card:hover { border-color: var(--neon-blue); background: rgba(30, 41, 59, 0.6); transform: translateY(-4px); }
+.match-card:hover { border-color: var(--neon-blue); transform: translateY(-4px); background: rgba(30, 41, 59, 0.6); }
 
-.team-link { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; }
-.team-link img { width: 55px; height: 55px; object-fit: contain; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.team-link { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; }
+.team-link img { width: 65px; height: 65px; object-fit: contain; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
-/* Glow és elfordulás animáció a csapatnévre/logóra */
+/* Glow + Elfordulás */
 .team-link:hover img { 
     transform: rotate(15deg) scale(1.2); 
-    filter: drop-shadow(0 0 15px var(--neon-blue)); 
+    filter: drop-shadow(0 0 20px var(--neon-blue)); 
 }
-.team-link span { font-weight: 800; font-family: 'Orbitron'; font-size: 11px; text-align: center; }
+.team-link span { font-weight: 800; font-family: 'Orbitron'; font-size: 11px; text-align: center; color: var(--text); }
 
-.score-display { font-family: 'Orbitron'; font-size: 2.2rem; font-weight: 900; color: var(--neon-green); }
+.score-display { font-family: 'Orbitron'; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); text-shadow: 0 0 20px rgba(0, 255, 136, 0.3); }
 .score-live { color: var(--neon-red); animation: pulse 1s infinite; text-shadow: 0 0 15px var(--neon-red); }
 
-/* Odds Gombok */
-.match-odds-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
+/* Odds Sor */
+.match-odds-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; }
 .odds-btn {
-    background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px;
-    padding: 12px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 15px;
+    padding: 15px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s;
 }
-.odds-btn:hover { background: rgba(14, 165, 233, 0.2); border-color: var(--neon-blue); }
-.odds-val { font-family: 'Orbitron'; font-size: 13px; font-weight: bold; color: var(--neon-green); }
+.odds-btn:hover { background: rgba(14, 165, 233, 0.2); border-color: var(--neon-blue); transform: translateY(-2px); }
+.odds-val { font-family: 'Orbitron'; font-size: 15px; font-weight: bold; color: var(--neon-green); }
 
-/* --- ÉLŐ TABELLA (Sidebar formázás) --- */
+/* --- ÉLŐ TABELLA (Veled jön görgetésnél!) --- */
 .standings-sidebar {
-    width: 380px; background: rgba(10, 10, 12, 0.8); border-left: 1px solid var(--border);
-    padding: 20px; overflow-y: auto; flex-shrink: 0; backdrop-filter: blur(20px);
+    width: 380px;
+    position: sticky; /* EZ A MÁSIK KULCS */
+    top: 95px;
+    height: calc(100vh - 115px);
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
 }
+.standings-sidebar::-webkit-scrollbar { width: 4px; }
+.standings-sidebar::-webkit-scrollbar-thumb { background: var(--neon-blue); border-radius: 10px; }
 
-.standings-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
-.standings-table th { font-family: 'Orbitron'; font-size: 10px; color: var(--neon-blue); padding: 10px; text-transform: uppercase; }
-.standings-table td { padding: 14px 8px; background: rgba(255,255,255,0.03); text-align: center; font-size: 12px; border-top: 1px solid var(--border); }
+.standings-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+.standings-table th { font-family: 'Orbitron'; font-size: 10px; color: var(--neon-blue); padding: 10px; text-align: center; opacity: 0.7; }
+.standings-table td { padding: 15px 10px; background: rgba(255,255,255,0.03); border-radius: 0; text-align: center; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.05); }
 
 .pos-num {
-    width: 30px; height: 30px; line-height: 30px; margin: 0 auto; background: var(--neon-blue);
-    color: #000; border-radius: 8px; font-weight: 900; font-family: 'Orbitron'; font-size: 11px;
+    width: 32px; height: 32px; line-height: 32px; margin: 0 auto; background: var(--neon-blue);
+    color: #000; border-radius: 8px; font-weight: 900; font-family: 'Orbitron'; font-size: 12px;
 }
 
-/* Tooltip */
+/* --- BANNER ÉS TOOLTIP --- */
+#goal-banner {
+    position: fixed; top: -100px; left: 0; right: 0; height: 65px; z-index: 9999 !important;
+    background: var(--neon-green); color: #000; display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron'; font-weight: 900; font-size: 1.6rem; transition: 0.6s;
+}
+#goal-banner.show { top: 0; }
+
 .sexy-tooltip {
-    position: fixed; width: 280px; background: rgba(15, 15, 26, 0.98);
-    border: 1px solid #00b7ff; border-radius: 12px; padding: 15px;
-    z-index: 10001; opacity: 0; visibility: hidden; transition: 0.3s;
+    position: fixed; width: 300px; background: #0b0b14; border: 1px solid var(--neon-blue);
+    border-radius: 15px; padding: 20px; z-index: 10001; opacity: 0; visibility: hidden; transition: 0.3s;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.8);
 }
 .sexy-tooltip.active { opacity: 1; visibility: visible; }
 
-/* --- Animációk --- */
+/* --- ANIMÁCIÓK --- */
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 @keyframes goal-flash {
     0% { background-color: rgba(255, 62, 62, 0.95); transform: scale(1.02); }
-    50% { background-color: rgba(255, 62, 62, 0.3); transform: scale(1); }
+    50% { background-color: rgba(30, 41, 59, 0.4); transform: scale(1); }
     100% { background-color: rgba(255, 62, 62, 0.95); transform: scale(1.02); }
 }
-.match-card.goal-highlight { animation: goal-flash 0.5s ease-in-out infinite !important; }
+.match-card.goal-highlight { animation: goal-flash 0.5s infinite !important; border-color: #fff !important; }
         
     /* --- Mobil Nézet --- */
     .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
@@ -1617,6 +1651,7 @@ function handleLeagueClick(id) {
     </script>
 </body>
 </html>
+
 
 
 
