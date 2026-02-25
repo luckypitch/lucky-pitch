@@ -1979,16 +1979,11 @@ function handleLeagueClick(id) {
 // Socket inicializálása
 const socket = io();
 
-function toggleChat(matchId) {
-    const section = document.getElementById(`chat-section-${matchId}`);
-    if (section.style.display === 'none' || !section.style.display) {
-        section.style.display = 'block';
-        socket.emit('join-chat', matchId);
-    } else {
-        section.style.display = 'none';
-    }
-}
+// --- CHAT RENDSZER ---
 
+/**
+ * Üzenet küldése a szervernek
+ */
 function sendChatMessage(matchId) {
     const input = document.getElementById(`chat-input-${matchId}`);
     if (!input) return;
@@ -2029,7 +2024,46 @@ function toggleChat(matchId) {
         chatSection.style.display = "none";
     }
 }
+
+/**
+ * Beérkező üzenetek (Trash-talk és Gólok) kezelése
+ */
+if (typeof socket !== 'undefined') {
+    socket.on('new-msg', (data) => {
+        console.log("Adat érkezett a szervertől:", data);
         
+        // A szerverről érkező matchId alapján megkeressük a konténert
+        const id = data.matchId || data.match_id;
+        const chatContainer = document.getElementById(`chat-messages-${id}`);
+        
+        if (chatContainer) {
+            const msgDiv = document.createElement('div');
+            
+            // Stílus beállítása JS-ből, hogy biztosan jól nézzen ki
+            msgDiv.style.cssText = `
+                background: rgba(255, 255, 255, 0.05);
+                padding: 6px 12px;
+                border-radius: 8px;
+                margin-bottom: 6px;
+                font-size: 11px;
+                text-align: left;
+                border-left: 3px solid ${data.color || '#00d4ff'};
+            `;
+
+            msgDiv.innerHTML = `
+                <strong style="color:${data.color || '#00d4ff'}">${data.user}:</strong> 
+                <span style="color: #eee;">${data.message}</span>
+            `;
+            
+            chatContainer.appendChild(msgDiv);
+            
+            // Automatikus görgetés az aljára
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        } else {
+            console.warn("Nem található chat konténer ehhez a meccshez:", id);
+        }
+    });
+}     
 function onGoalScored(matchId, teamName, newScore) {
     // Rendszerüzenet küldése a chatbe mindenkinél
     io.to(`match_${matchId}`).emit('new-msg', {
@@ -2042,6 +2076,7 @@ function onGoalScored(matchId, teamName, newScore) {
     </script>
 </body>
 </html>
+
 
 
 
