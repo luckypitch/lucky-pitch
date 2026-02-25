@@ -793,35 +793,64 @@ function getSmartOdds(match) {
         a: (1.6 + rng(3) * 3).toFixed(2)
     };
 
-    // Névtisztító segédfüggvény a pontosabb párosításhoz
-    const clean = (name) => name.toLowerCase()
-        .replace(/\bfc\b|\bafc\b|\bcf\b|\bclub\b|\batlético\b|\batl.\b/g, '')
-        .trim();
+    if (!globalOdds || globalOdds.length === 0) return result;
 
-    if (globalOdds && globalOdds.length > 0) {
-        const mHome = clean(match.homeTeam.name);
-        const mAway = clean(match.awayTeam.name);
+    // Névtisztító segédfüggvény
+    const clean = (name) => {
+        if (!name) return "";
+        return name.toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Ékezetek eltávolítása
+            .replace(/\bfc\b|\bafc\b|\bcf\b|\bclub\b|\batletico\b|\batl.\b|\bsports\b/g, '')
+            .replace(/[^a-z0-9]/g, '') // Csak betűk és számok maradjanak
+            .trim();
+    };
 
-        const found = globalOdds.find(o => {
-            const oHome = clean(o.home_team);
-            const oAway = clean(o.away_team);
-            // Ha a tisztított név benne van a másikban
-            return oHome.includes(mHome) || mHome.includes(oHome) || 
-                   oAway.includes(mAway) || mAway.includes(oAway);
-        });
+    const mHome = clean(match.homeTeam.name);
+    const mAway = clean(match.awayTeam.name);
 
-        if (found && found.bookmakers?.[0]) {
-            const market = found.bookmakers[0].markets.find(m => m.key === 'h2h');
-            if (market) {
-                // Megkeressük a konkrét árakat
-                const hPrice = market.outcomes.find(out => clean(out.name).includes(mHome) || mHome.includes(clean(out.name)))?.price;
-                const aPrice = market.outcomes.find(out => clean(out.name).includes(mAway) || mAway.includes(clean(out.name)))?.price;
-                const dPrice = market.outcomes.find(out => out.name.toLowerCase().includes('draw') || out.name.toLowerCase() === 'x')?.price;
+    // PONTOSABB KERESÉS: Mindkét csapatnak egyeznie kell
+    const found = globalOdds.find(o => {
+        const oHome = clean(o.home_team);
+        const oAway = clean(o.away_team);
+        
+        // Szigorúbb feltétel: a hazainak a hazaihoz, vendégnek a vendéghez kell hasonlítania
+        const homeMatch = oHome.includes(mHome) || mHome.includes(oHome);
+        const awayMatch = oAway.includes(mAway) || mAway.includes(oAway);
+        
+        return homeMatch && awayMatch; 
+    });
 
-                if (hPrice && aPrice && dPrice) {
-                    result = { h: hPrice.toFixed(2), d: dPrice.toFixed(2), a: aPrice.toFixed(2) };
-                    // DEBUG: console.log("SIKERES ODDS PÁROSÍTÁS:", match.homeTeam.name);
-                }
+    if (found && found.bookmakers?.[0]) {
+        // Megkeressük a h2h (győzelem/döntetlen/vereség) piacot
+        const market = found.bookmakers[0].markets.find(m => m.key === 'h2h');
+        
+        if (market && market.outcomes.length >= 3) {
+            const oHome = clean(found.home_team);
+            const oAway = clean(found.away_team);
+
+            // Megkeressük a konkrét kimeneteleket
+            const hPrice = market.outcomes.find(out => {
+                const outName = clean(out.name);
+                return outName.includes(oHome) || oHome.includes(outName);
+            })?.price;
+
+            const aPrice = market.outcomes.find(out => {
+                const outName = clean(out.name);
+                return outName.includes(oAway) || oAway.includes(outName);
+            })?.price;
+
+            const dPrice = market.outcomes.find(out => 
+                out.name.toLowerCase().includes('draw') || 
+                out.name.toLowerCase() === 'x' ||
+                out.name.toLowerCase() === 'remis'
+            )?.price;
+
+            if (hPrice && aPrice && dPrice) {
+                result = { 
+                    h: hPrice.toFixed(2), 
+                    d: dPrice.toFixed(2), 
+                    a: aPrice.toFixed(2) 
+                };
             }
         }
     }
@@ -1846,6 +1875,7 @@ function handleLeagueClick(id) {
     </script>
 </body>
 </html>
+
 
 
 
