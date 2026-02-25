@@ -370,6 +370,14 @@ const keepServerAlive = async () => {
 // 3. 14 percenkénti indítás
 setInterval(keepServerAlive, 840000);
 
+Ez a kód szerkezetileg már jó, de ahogy beszéltük, a duplikálás elleni védelem (a szűrő) még hiányzik belőle. Ha most 5 ember nézi a meccset, 5 Stadion üzenet fog megjelenni egyszerre.
+
+Így néz ki a teljes, végleges szerver oldali kódod, beleértve a szűrőt is, ami megakadályozza, hogy kétszer (vagy többször) írja ki ugyanazt a gólt:
+JavaScript
+
+// A fájl tetején, a socket.on-on KÍVÜL hozd létre a memóriát
+const processedGoals = new Set();
+
 // Chat szobák kezelése
 io.on('connection', (socket) => {
     console.log('Egy felhasználó csatlakozott a chathoz');
@@ -381,7 +389,6 @@ io.on('connection', (socket) => {
 
     // 2. Trash-talk üzenet fogadása és továbbítása
     socket.on('send-msg', (data) => {
-        // Továbbítjuk a szobának az üzenetet és a matchId-t is!
         io.to(`match_${data.matchId}`).emit('new-msg', {
             matchId: data.matchId,
             user: data.user,
@@ -390,16 +397,30 @@ io.on('connection', (socket) => {
         });
     });
 
-    // 3. ÚJ: Gól jelentés fogadása a klienstől (Stadion üzenet)
+    // 3. Gól jelentés fogadása a klienstől (Duplikáció szűréssel)
     socket.on('goal-detected-client', (data) => {
-        // Ezt io.emit-tel küldjük (mindenkinek), nem csak egy szobának, 
-        // hogy a "GÓL!" villogás mindenkinél beinduljon
+        // Egyedi azonosító a meccshez és az álláshoz (pl: "12345-2-1")
+        const goalKey = `${data.matchId}-${data.score}`;
+
+        // HA EZT A GÓLT MÁR JELENTETTE VALAKI, MEGÁLLUNK
+        if (processedGoals.has(goalKey)) {
+            return; 
+        }
+
+        // Ha új, betesszük a listára és küldjük mindenkinek
+        processedGoals.add(goalKey);
+
         io.emit('new-msg', {
             matchId: data.matchId,
             user: "🏟️ STADION",
             message: `GÓÓÓÓL! ${data.teamName} betalált! Állás: ${data.score}`,
             color: "#ff3e3e"
         });
+
+        // 60 másodperc után töröljük, hogy a következő gólt lehessen jelenteni
+        setTimeout(() => {
+            processedGoals.delete(goalKey);
+        }, 60000);
     });
 
     socket.on('disconnect', () => {
@@ -417,6 +438,7 @@ server.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
