@@ -786,7 +786,6 @@ function getSmartOdds(match) {
     const seed = match.id || 0;
     const rng = (s) => Math.abs(Math.sin(seed + s));
 
-    // Alapértelmezett generált oddsok (FALLBACK)
     let result = {
         h: (1.4 + rng(1) * 2).toFixed(2),
         d: (2.8 + rng(2) * 1.5).toFixed(2),
@@ -795,63 +794,45 @@ function getSmartOdds(match) {
 
     if (!globalOdds || globalOdds.length === 0) return result;
 
-    // Névtisztító segédfüggvény
     const clean = (name) => {
         if (!name) return "";
         return name.toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Ékezetek eltávolítása
-            .replace(/\bfc\b|\bafc\b|\bcf\b|\bclub\b|\batletico\b|\batl.\b|\bsports\b/g, '')
-            .replace(/[^a-z0-9]/g, '') // Csak betűk és számok maradjanak
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/\bfc\b|\bafc\b|\bcf\b|\bclub\b|\batletico\b|\batl.\b|\bsports\b|\bfr\b/g, '') // FR-t is kivesszük
+            .replace(/[^a-z0-9]/g, ' ') // Nem töröljük a szóközöket, csak a fura karaktereket
             .trim();
     };
 
     const mHome = clean(match.homeTeam.name);
     const mAway = clean(match.awayTeam.name);
 
-    // PONTOSABB KERESÉS: Mindkét csapatnak egyeznie kell
+    // Keresés finomítása
     const found = globalOdds.find(o => {
         const oHome = clean(o.home_team);
         const oAway = clean(o.away_team);
-        
-        // Szigorúbb feltétel: a hazainak a hazaihoz, vendégnek a vendéghez kell hasonlítania
-        const homeMatch = oHome.includes(mHome) || mHome.includes(oHome);
-        const awayMatch = oAway.includes(mAway) || mAway.includes(oAway);
-        
-        return homeMatch && awayMatch; 
+
+        // Ellenőrizzük, hogy a szavak átfedik-e egymást (pl. "Botafogo FR" vs "Botafogo")
+        const isHomeMatch = oHome.includes(mHome) || mHome.includes(oHome);
+        const isAwayMatch = oAway.includes(mAway) || mAway.includes(oAway);
+
+        return isHomeMatch && isAwayMatch;
     });
 
     if (found && found.bookmakers?.[0]) {
-        // Megkeressük a h2h (győzelem/döntetlen/vereség) piacot
         const market = found.bookmakers[0].markets.find(m => m.key === 'h2h');
         
-        if (market && market.outcomes.length >= 3) {
-            const oHome = clean(found.home_team);
-            const oAway = clean(found.away_team);
-
-            // Megkeressük a konkrét kimeneteleket
-            const hPrice = market.outcomes.find(out => {
-                const outName = clean(out.name);
-                return outName.includes(oHome) || oHome.includes(outName);
-            })?.price;
-
-            const aPrice = market.outcomes.find(out => {
-                const outName = clean(out.name);
-                return outName.includes(oAway) || oAway.includes(outName);
-            })?.price;
-
-            const dPrice = market.outcomes.find(out => 
-                out.name.toLowerCase().includes('draw') || 
-                out.name.toLowerCase() === 'x' ||
-                out.name.toLowerCase() === 'remis'
-            )?.price;
-
-            if (hPrice && aPrice && dPrice) {
-                result = { 
-                    h: hPrice.toFixed(2), 
-                    d: dPrice.toFixed(2), 
-                    a: aPrice.toFixed(2) 
-                };
-            }
+        if (market) {
+            // Itt a kimeneteleket a csapatnév alapján párosítjuk az API-ból jövő eredeti nevekkel
+            market.outcomes.forEach(outcome => {
+                const outName = clean(outcome.name);
+                if (outName.includes(clean(found.home_team)) || clean(found.home_team).includes(outName)) {
+                    result.h = outcome.price.toFixed(2);
+                } else if (outName.includes(clean(found.away_team)) || clean(found.away_team).includes(outName)) {
+                    result.a = outcome.price.toFixed(2);
+                } else if (outName.includes('draw') || outName === 'x' || outName.includes('remis')) {
+                    result.d = outcome.price.toFixed(2);
+                }
+            });
         }
     }
     return result;
@@ -1875,6 +1856,7 @@ function handleLeagueClick(id) {
     </script>
 </body>
 </html>
+
 
 
 
