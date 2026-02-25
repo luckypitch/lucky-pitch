@@ -343,21 +343,28 @@ app.get('/keep-alive', (req, res) => {
 });
 
 // 2. Az önhívó funkció
+const axios = require('axios');
+
+// 1. Végpont a pingeléshez
+app.get('/keep-alive', (req, res) => {
+    res.status(200).send('LuckyPitch szerver ébren van!');
+});
+
+// 2. Az ébresztő funkció a te URL-eddel
 const keepServerAlive = async () => {
-    // Cseréld ki a saját Render-es URL-edre!
-    const url = "https://a-te-appod-neve.onrender.com/keep-alive"; 
+    const url = "https://lucky-pitch.onrender.com/keep-alive"; 
     
     try {
         const response = await axios.get(url);
-        console.log(`[Ping] Állapot: ${response.status} - Szerver pörög.`);
+        // Ez csak a szerver konzolján fog látszódni a Render dashboardon
+        console.log(`[Keep-Alive] Sikeres ping: ${new Date().toLocaleString()} - Status: ${response.status}`);
     } catch (error) {
-        console.error("[Ping] Hiba az ébresztés során:", error.message);
+        console.error("[Keep-Alive] Hiba:", error.message);
     }
 };
 
-// 3. Indítás 14 percenként (840.000 ms)
+// 3. 14 percenkénti indítás (840 000 ms)
 setInterval(keepServerAlive, 840000);
-
 
 // SZERVER INDÍTÁSA
 const PORT = process.env.PORT || 3000;
@@ -369,4 +376,5 @@ app.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
