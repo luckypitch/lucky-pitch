@@ -80,10 +80,9 @@
    .main-wrapper { 
     display: flex;
     margin-top: 75px;
-    /* Alapból hagyunk helyet a becsukott sidebarnak (80px) */
+    /* A padding-left értéke mindig egyezzen meg a sidebar aktuális szélességével */
     padding-left: 80px; 
     transition: padding-left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    min-height: calc(100vh - 75px);
 }
 .main-wrapper:has(.sidebar:hover),
 .main-wrapper:has(.sidebar.open) {
@@ -149,13 +148,20 @@
     }
     .standings-sidebar.open { transform: translateX(0); }
 
-    .content-area { 
+   .content-area { 
     flex: 1;
-    height: calc(100vh - 75px);
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Ez rakja középre a kártyákat */
     padding: 25px;
+    min-height: calc(100vh - 75px);
+    overflow-y: auto;
 }
-    #match-container { width: 100%; max-width: 800px; }
+    #match-container { 
+    width: 100%;
+    max-width: 850px; /* Beállítja a kártyák maximális szélességét */
+    margin: 0 auto;   /* Biztosítja a középső igazítást */
+}
 
     /* --- Meccskártyák (Javított Struktúra) --- */
     .match-card {
@@ -1839,6 +1845,7 @@ function handleLeagueClick(id) {
     </script>
 </body>
 </html>
+
 
 
 
