@@ -81,14 +81,14 @@
 
   .sidebar {
     position: fixed;
-    top: 80px; /* Header magassága */
+    top: 70px /* Header magassága */
     left: 0;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 70px);
     width: 70px; /* Összecsukott állapot */
     background: rgba(10, 10, 18, 0.95);
     border-right: 1px solid rgba(0, 183, 255, 0.2);
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 1000;
+    z-index: 999;
     overflow-x: hidden;
     overflow-y: auto;
     padding-top: 20px;
@@ -473,7 +473,7 @@
 // --- 1. GLOBÁLIS ÁLLAPOT ---
 let currentLang = localStorage.getItem('lp_lang') || 'HU';
 const todayStr = new Date().toLocaleDateString('sv');
-let selectedDate = new Date().toLocaleDateString('sv');
+let selectedDate = new Date().toISOString().split('T')[0];
 let savedLeagues = localStorage.getItem('lp_selectedLeagues');
 let selectedLeagues = new Set();
 let allMatches = [];
@@ -789,11 +789,10 @@ async function renderMatches() {
     if (typeof renderDateSelector === 'function') renderDateSelector(); 
 
    const filtered = allMatches.filter(m => {
-    if (!m.utcDate || !m.competition) return false;
+    if (!m.utcDate) return false;
     const mDate = m.utcDate.split('T')[0];
-    const leagueId = m.competition.id.toString();
     
-    const dateMatch = (mDate === selectedDate);
+    return mDate === selectedDate;
     
     // Csak akkor szűrjön ligára, ha van kijelölt liga
     const leagueMatch = (selectedLeagues.size === 0 || selectedLeagues.has(leagueId));
@@ -1773,6 +1772,7 @@ document.querySelectorAll('.league-item').forEach(item => {
     </script>
 </body>
 </html>
+
 
 
 
