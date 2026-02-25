@@ -1014,13 +1014,6 @@ async function renderMatches() {
             const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
             const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
             const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
-
-            Megvan a huncutság! A kódodban a Chat Panel (match-chat-section) már benne van a kártya alján, de a gombot, ami láthatóvá tenné, véletlenül kihagytad az "ELEMZÉS" mellől.
-
-Mivel a képen látszik, hogy kevés a hely, a legelegánsabb megoldás, ha a chat gombot közvetlenül az ELEMZÉS gomb alá tesszük be egy kis kék neon kerettel.
-Így cseréld le a return részt:
-JavaScript
-
 return `
     <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
         ${myBet ? `
@@ -2037,6 +2030,7 @@ function onGoalScored(matchId, teamName, newScore) {
     </script>
 </body>
 </html>
+
 
 
 
