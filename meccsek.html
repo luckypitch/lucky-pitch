@@ -789,12 +789,16 @@ async function renderMatches() {
     if (typeof renderDateSelector === 'function') renderDateSelector(); 
 
    const filtered = allMatches.filter(m => {
-    if (!m.utcDate) return false;
+    if (!m.utcDate || !m.competition) return false;
+    
     const mDate = m.utcDate.split('T')[0];
+    const leagueId = String(m.competition.id);
     
-    return mDate === selectedDate;
+    // Dátum egyezés
+    const dateMatch = (mDate === selectedDate);
     
-    // Csak akkor szűrjön ligára, ha van kijelölt liga
+    // Liga szűrés: Ha nincs kiválasztva semmi, minden látszik. 
+    // Ha van a Set-ben valami, akkor csak azokat mutatjuk.
     const leagueMatch = (selectedLeagues.size === 0 || selectedLeagues.has(leagueId));
     
     return dateMatch && leagueMatch;
@@ -1772,6 +1776,7 @@ document.querySelectorAll('.league-item').forEach(item => {
     </script>
 </body>
 </html>
+
 
 
 
