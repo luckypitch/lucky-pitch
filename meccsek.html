@@ -1995,9 +1995,8 @@ function sendChatMessage(matchId) {
 
     const message = input.value.trim();
     
-    // Ellenőrizzük, hogy van-e üzenet és él-e a kapcsolat
     if (message && typeof socket !== 'undefined') {
-        console.log("Üzenet küldése:", message); // Ezt látnod kell az F12 konzolban!
+        console.log("Üzenet küldése a szerverre:", { matchId, message });
         
         socket.emit('send-msg', {
             matchId: matchId,
@@ -2006,32 +2005,29 @@ function sendChatMessage(matchId) {
             color: '#00d4ff'
         });
         
-        input.value = ''; // Mező ürítése
+        input.value = ''; // Mező ürítése küldés után
     } else {
-        console.error("Socket nincs inicializálva vagy üres az üzenet!");
+        console.error("Hiba: Socket nincs inicializálva vagy üres az üzenet!");
     }
 }
 
-// Az üzenetek fogadása - JAVÍTOTT NÉV: 'new-msg'
-if (typeof socket !== 'undefined') {
-    socket.on('new-msg', (data) => {
-        console.log("Üzenet érkezett:", data); // Ellenőrzéshez
+/**
+ * Chat ablak megjelenítése/elrejtése és belépés a socket szobába
+ */
+function toggleChat(matchId) {
+    const chatSection = document.getElementById(`chat-section-${matchId}`);
+    if (!chatSection) return;
+
+    if (chatSection.style.display === "none" || chatSection.style.display === "") {
+        chatSection.style.display = "block";
         
-        // Fontos: a szerver matchId-t küld, a kliensnek ezt kell keresnie
-        const chatContainer = document.getElementById(`chat-messages-${data.matchId}`);
-        
-        if (chatContainer) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'chat-bubble';
-            // Stílus hozzáadása, hogy jól nézzen ki
-            msgDiv.style.cssText = "background:rgba(255,255,255,0.05); padding:5px 10px; border-radius:8px; font-size:11px; margin-bottom:5px; text-align:left;";
-            
-            msgDiv.innerHTML = `<strong style="color:${data.color}">${data.user}:</strong> ${data.message}`;
-            
-            chatContainer.appendChild(msgDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight; 
+        // Szólunk a szervernek, hogy erre a meccsre figyelünk (szoba)
+        if (typeof socket !== 'undefined') {
+            socket.emit('join-chat', matchId);
         }
-    });
+    } else {
+        chatSection.style.display = "none";
+    }
 }
         
 function onGoalScored(matchId, teamName, newScore) {
@@ -2046,6 +2042,7 @@ function onGoalScored(matchId, teamName, newScore) {
     </script>
 </body>
 </html>
+
 
 
 
