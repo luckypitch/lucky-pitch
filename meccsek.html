@@ -788,21 +788,28 @@ async function renderMatches() {
     // --- 2. DÁTUMVÁLASZTÓ ÉS SZŰRÉS ---
     if (typeof renderDateSelector === 'function') renderDateSelector(); 
 
-   const filtered = allMatches.filter(m => {
-    if (!m.utcDate || !m.competition) return false;
+  const filtered = allMatches.filter(m => {
+    // 1. Alapadatok ellenőrzése
+    if (!m || !m.utcDate || !m.competition) return false;
     
+    // 2. Dátum kinyerése (YYYY-MM-DD)
     const mDate = m.utcDate.split('T')[0];
-    const leagueId = String(m.competition.id);
     
-    // Dátum egyezés
-    const dateMatch = (mDate === selectedDate);
+    // 3. Liga ID kinyerése stringként
+    const mLeagueId = String(m.competition.id);
     
-    // Liga szűrés: Ha nincs kiválasztva semmi, minden látszik. 
-    // Ha van a Set-ben valami, akkor csak azokat mutatjuk.
-    const leagueMatch = (selectedLeagues.size === 0 || selectedLeagues.has(leagueId));
+    // 4. Szűrési feltételek
+    const isCorrectDate = (mDate === selectedDate);
     
-    return dateMatch && leagueMatch;
+    // Ha a Set üres, minden liga mehet, különben csak ami benne van
+    const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
+    
+    return isCorrectDate && isCorrectLeague;
 });
+
+// DEBUG: Ha még mindig nem jelenik meg semmi, látni fogod miért
+if (filtered.length === 0 && allMatches.length > 0) {
+    console.warn("Szűrés után 0 meccs maradt! Ellenőrizd a dátumot:", selectedDate);
 
     if (filtered.length === 0) {
         cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3; font-family:'Orbitron'; font-size:12px;">NINCS MECCS EKKOR: ${selectedDate}</p>`;
@@ -907,12 +914,7 @@ function toggleLeague(leagueId, element) {
     // Vagy ha azt akarod, hogy kattintásra frissüljön:
     renderMatches();
 }
-function highlightAllLeagues() {
-    document.querySelectorAll('.league-item').forEach(item => {
-        item.classList.add('active');
-        // Opcionálisan: selectedLeagues.add(item.dataset.leagueId);
-    });
-}        
+
 // --- 6. UI LOGIKA ---
 function renderDateSelector() {
     const selector = document.getElementById("date-selector");
@@ -1320,26 +1322,23 @@ if (localStorage.getItem('lp_theme') === 'light') {
 
 function renderLeagues() {
     const listContainer = document.getElementById("league-list");
-    if (!listContainer) return;
-
-    if (!allMatches || !Array.isArray(allMatches)) return;
+    if (!listContainer || !allMatches || allMatches.length === 0) return;
 
     const unique = new Map();
-    
-    // JAVÍTÁS: Kivettük a .filter-t, hogy minden ligát lássunk, amiről jött adat
     allMatches.forEach(m => {
         if (m && m.competition) {
-            unique.set(m.competition.id, m.competition);
+            unique.set(m.competition.id.toString(), m.competition);
         }
     });
 
     const leagueItemsHtml = [...unique.values()].map(l => {
         const idStr = l.id.toString();
+        // Akkor aktív, ha a Set-ben benne van, VAGY ha a Set üres (ekkor minden aktív)
         const isActive = selectedLeagues.has(idStr);
         
         return `
             <div class="league-item ${isActive ? 'active' : ''}" 
-                 onclick="event.stopPropagation(); toggleLeagueSelection('${idStr}')">
+                 onclick="handleLeagueClick('${idStr}')">
                 <div class="league-icon-wrapper">
                     <img src="${l.emblem}" alt="${l.name}" onerror="this.src='https://via.placeholder.com/32?text=?'">
                 </div>
@@ -1776,6 +1775,7 @@ document.querySelectorAll('.league-item').forEach(item => {
     </script>
 </body>
 </html>
+
 
 
 
