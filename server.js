@@ -374,21 +374,33 @@ setInterval(keepServerAlive, 840000);
 io.on('connection', (socket) => {
     console.log('Egy felhasználó csatlakozott a chathoz');
 
-    // Belépés egy konkrét meccs szobájába
+    // 1. Belépés egy konkrét meccs szobájába
     socket.on('join-chat', (matchId) => {
         socket.join(`match_${matchId}`);
     });
 
-    // Üzenet fogadása és továbbítása a szobának
-   socket.on('send-msg', (data) => {
-    // A 'data' tartalmazza a matchId-t, amit a kliens küldött
-    io.to(`match_${data.matchId}`).emit('new-msg', {
-        matchId: data.matchId, // EZ HIÁNYZIK MOST!
-        user: data.user,
-        message: data.message,
-        color: data.color
+    // 2. Trash-talk üzenet fogadása és továbbítása
+    socket.on('send-msg', (data) => {
+        // Továbbítjuk a szobának az üzenetet és a matchId-t is!
+        io.to(`match_${data.matchId}`).emit('new-msg', {
+            matchId: data.matchId,
+            user: data.user,
+            message: data.message,
+            color: data.color || '#00d4ff'
+        });
     });
-});
+
+    // 3. ÚJ: Gól jelentés fogadása a klienstől (Stadion üzenet)
+    socket.on('goal-detected-client', (data) => {
+        // Ezt io.emit-tel küldjük (mindenkinek), nem csak egy szobának, 
+        // hogy a "GÓL!" villogás mindenkinél beinduljon
+        io.emit('new-msg', {
+            matchId: data.matchId,
+            user: "🏟️ STADION",
+            message: `GÓÓÓÓL! ${data.teamName} betalált! Állás: ${data.score}`,
+            color: "#ff3e3e"
+        });
+    });
 
     socket.on('disconnect', () => {
         console.log('Felhasználó lecsatlakozott');
@@ -405,6 +417,7 @@ server.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
