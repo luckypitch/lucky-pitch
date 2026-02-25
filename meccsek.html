@@ -84,7 +84,7 @@
     top: 70px /* Header magassága */
     left: 0;
     height: calc(100vh - 70px);
-    width: 70px; /* Összecsukott állapot */
+    width: 200px;
     background: rgba(10, 10, 18, 0.95);
     border-right: 1px solid rgba(0, 183, 255, 0.2);
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -92,6 +92,7 @@
     overflow-x: hidden;
     overflow-y: auto;
     padding-top: 20px;
+    flex-shrink: 0;
 }
         
 .sidebar::-webkit-scrollbar {
@@ -214,26 +215,25 @@
     .pos-num-box { width: 34px; height: 34px; line-height: 34px; margin: 0 auto; border-radius: 8px; font-weight: 900; font-family: 'Orbitron'; font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
     /* --- Liga Választó & Dátum --- */
-   .league-item {
-    margin: 10px 12px;
-    padding: 8px;
-    border-radius: 12px;
+  .league-item {
     display: flex;
     align-items: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    padding: 6px 10px;
+    margin: 2px 5px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.02);
     border: 1px solid transparent;
-    gap: 15px;
+    transition: all 0.2s;
 }
-    .league-item.active { background: rgba(0, 255, 136, 0.1); border-color: var(--neon-green); }
-    .league-item img { 
-    width: 32px; 
-    height: 32px; 
-    min-width: 32px; /* Ne nyomódjon össze */
-    object-fit: contain; 
-    border-radius: 8px; /* Kicsit kerekített négyzet */
-    background: rgba(255,255,255,0.05); /* Enyhe háttér az ikonnak, hogy kitűnjön */
-    padding: 4px;
+    .league-item.active {
+    background: rgba(0, 255, 136, 0.1);
+    border-color: #00ff88;
+}
+   .league-item img {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    object-fit: contain;
 }
 .league-item span {
     opacity: 0;
@@ -518,38 +518,44 @@ async function updateData() {
             console.warn("Odds API hiba."); 
         }
 
-        // 2. Meccsek letöltése
+       // 2. Meccsek letöltése
         const res = await fetch("/live-matches");
         const data = await res.json();
         
-        // Rugalmas adatkezelés (ha a matches objektumban van, vagy ha maga a tömb)
         allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
 
         if (allMatches.length > 0) {
+            // --- JAVÍTÁS 1: Automatikus kijelölés első betöltésnél ---
+            // Ha a selectedLeagues üres, töltsük fel az összes elérhető liga ID-jával
+            if (selectedLeagues.size === 0) {
+                allMatches.forEach(m => {
+                    if (m.competition && m.competition.id) {
+                        selectedLeagues.add(String(m.competition.id));
+                    }
+                });
+            }
+
             // Dátumválasztó frissítése
             if (typeof renderDateSelector === 'function') renderDateSelector();
             
-            // LIGÁK RENDERELÉSE
+            // --- JAVÍTÁS 2: Ligák és Meccsek renderelése ---
             const leagueContainer = document.getElementById("league-list"); 
             if (typeof renderLeagues === 'function' && leagueContainer) {
-                renderLeagues(); 
+                renderLeagues(); // Ez most már csak a MAI ligákat fogja mutatni, ha frissítetted a renderLeagues-t
             }
 
-            // MECCSEK RENDERELÉSE
             if (typeof renderMatches === 'function') renderMatches();
             
-            // Egyéb ellenőrzések (ha léteznek)
             if (typeof checkGoals === 'function') checkGoals();
             if (typeof checkBetResults === 'function') checkBetResults();
         }
         
-        console.log("Sikeres frissítés. Meccsek száma:", allMatches.length);
+        console.log("Sikeres frissítés. Meccsek:", allMatches.length);
         
     } catch (e) {
         console.error("Hiba az updateData futásakor:", e);
     }
 }
-
 // --- 3. EGYENLEG ÉS AUTH ---
 async function refreshBalance() {
     if (window.Clerk && Clerk.user) {
@@ -1308,13 +1314,19 @@ if (localStorage.getItem('lp_theme') === 'light') {
 }
 
 function renderLeagues() {
-    const listContainer = document.getElementById("league-list");
-    if (!listContainer || !allMatches || allMatches.length === 0) return;
+   const listContainer = document.getElementById("league-list");
+    if (!listContainer) return;
+
+    // CSAK az adott naphoz tartozó meccseket nézzük a liga-listához
+    const matchesOnSelectedDate = allMatches.filter(m => {
+        const mDate = m.utcDate.split('T')[0];
+        return mDate === selectedDate;
+    });
 
     const unique = new Map();
-    allMatches.forEach(m => {
-        if (m && m.competition) {
-            unique.set(m.competition.id.toString(), m.competition);
+    matchesOnSelectedDate.forEach(m => {
+        if (m.competition && m.competition.id) {
+            unique.set(String(m.competition.id), m.competition);
         }
     });
 
@@ -1760,6 +1772,7 @@ document.querySelectorAll('.league-item').forEach(item => {
     </script>
 </body>
 </html>
+
 
 
 
