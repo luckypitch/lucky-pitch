@@ -370,11 +370,6 @@ const keepServerAlive = async () => {
 // 3. 14 percenkénti indítás
 setInterval(keepServerAlive, 840000);
 
-Ez a kód szerkezetileg már jó, de ahogy beszéltük, a duplikálás elleni védelem (a szűrő) még hiányzik belőle. Ha most 5 ember nézi a meccset, 5 Stadion üzenet fog megjelenni egyszerre.
-
-Így néz ki a teljes, végleges szerver oldali kódod, beleértve a szűrőt is, ami megakadályozza, hogy kétszer (vagy többször) írja ki ugyanazt a gólt:
-JavaScript
-
 // A fájl tetején, a socket.on-on KÍVÜL hozd létre a memóriát
 const processedGoals = new Set();
 
@@ -438,6 +433,7 @@ server.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
