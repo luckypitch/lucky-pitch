@@ -84,7 +84,7 @@
     top: 70px /* Header magassága */
     left: 0;
     height: calc(100vh - 70px);
-    width: 70px; /* Összecsukott állapot */
+    width: 280px; /* Összecsukott állapot */
     background: rgba(10, 10, 18, 0.95);
     border-right: 1px solid rgba(0, 183, 255, 0.2);
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -92,6 +92,7 @@
     overflow-x: hidden;
     overflow-y: auto;
     padding-top: 20px;
+    flex-shrink: 0;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -1781,6 +1782,7 @@ function handleLeagueClick(id) {
     </script>
 </body>
 </html>
+
 
 
 
