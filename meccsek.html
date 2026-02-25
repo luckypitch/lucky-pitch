@@ -80,18 +80,10 @@
     .main-wrapper { display: flex; margin-top: 75px; min-height: calc(100vh - 75px); }
 
   .sidebar {
-    position: fixed;
-    top: 70px /* Header magassága */
-    left: 0;
-    height: calc(100vh - 70px);
-    width: 200px;
-    background: rgba(10, 10, 18, 0.95);
-    border-right: 1px solid rgba(0, 183, 255, 0.2);
+    width: 60px; /* Csak az ikonoknak elég hely */
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 999;
     overflow-x: hidden;
-    overflow-y: auto;
-    padding-top: 20px;
+    white-space: nowrap;
     flex-shrink: 0;
 }
         
@@ -103,13 +95,22 @@
     border-radius: 10px;
 }        
 .sidebar:hover {
-    width: 240px; /* Kinyílt állapot */
-} 
-.sidebar:hover, .sidebar.open { 
+    width: 200px;
+}
+.sidebar:hover .header-text,
+.sidebar:hover .league-name-text {
+    opacity: 1;
+}
+    .sidebar:hover, .sidebar.open { 
     width: 280px; 
 }
     .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
-
+.sidebar .header-text, 
+.sidebar .league-name-text {
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-left: 10px;
+}
     .standings-sidebar { 
         position: fixed; right: 0; top: 75px; bottom: 0; width: 400px; 
         z-index: 1500; background: var(--bg); border-left: 1px solid var(--border); 
@@ -215,25 +216,21 @@
     .pos-num-box { width: 34px; height: 34px; line-height: 34px; margin: 0 auto; border-radius: 8px; font-weight: 900; font-family: 'Orbitron'; font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
     /* --- Liga Választó & Dátum --- */
-  .league-item {
+ .league-item {
     display: flex;
     align-items: center;
-    padding: 6px 10px;
-    margin: 2px 5px;
-    border-radius: 6px;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid transparent;
-    transition: all 0.2s;
+    padding: 10px 15px; /* Kényelmes kattintási felület */
+    cursor: pointer;
+    border-left: 3px solid transparent;
 }
-    .league-item.active {
+  .league-item.active {
     background: rgba(0, 255, 136, 0.1);
-    border-color: #00ff88;
+    border-left-color: #00ff88;
 }
-   .league-item img {
-    width: 20px;
-    height: 20px;
-    margin-right: 8px;
-    object-fit: contain;
+  .league-icon-wrapper img {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0; /* Ne torzuljon az ikon */
 }
 .league-item span {
     opacity: 0;
@@ -482,7 +479,7 @@ let flashingMatches = new Set();
 let globalOdds = []; // Itt tároljuk az API-ból jött oddsokat
 let activeBets = JSON.parse(localStorage.getItem('lp_activeBets')) || [];
 let currentLeagueId = 'all'; // Alapból minden liga
-
+let isFirstLoad = true; // Segédváltozó a legtetejére
         
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
@@ -507,51 +504,46 @@ function translateStatus(status) {
 
 async function updateData() {
     try {
-        // 1. Oddsok letöltése
+        // 1. Meccsek letöltése
+        const res = await fetch("/live-matches");
+        const data = await res.json();
+        allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
+
+        // 2. Oddsok letöltése
         try {
             const oddsRes = await fetch("/api/odds-data");
             if (oddsRes.ok) {
                 const oddsData = await oddsRes.json();
                 globalOdds = Array.isArray(oddsData) ? oddsData : [];
             }
-        } catch (e) { 
-            console.warn("Odds API hiba."); 
+        } catch (e) { console.warn("Odds API hiba"); }
+
+        // 3. Automatikus kijelölés logikája (Csak az első sikeres betöltésnél)
+        if (isFirstLoad && allMatches.length > 0) {
+            allMatches.forEach(m => {
+                if (m.competition && m.competition.id) {
+                    selectedLeagues.add(String(m.competition.id));
+                }
+            });
+            isFirstLoad = false; // Kikapcsoljuk, hogy a user szűrése megmaradjon
         }
 
-       // 2. Meccsek letöltése
-        const res = await fetch("/live-matches");
-        const data = await res.json();
+        // 4. Renderelés
+        // A DateStrip-et nem kell minden alkalommal újrarajzolni, ha nem változott a nap
+        if (typeof renderDateStrip === 'function') renderDateStrip();
         
-        allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
+        // Ligák és meccsek frissítése
+        if (typeof renderLeagues === 'function') renderLeagues();
+        if (typeof renderMatches === 'function') renderMatches();
 
+        // 5. Ellenőrzések
         if (allMatches.length > 0) {
-            // --- JAVÍTÁS 1: Automatikus kijelölés első betöltésnél ---
-            // Ha a selectedLeagues üres, töltsük fel az összes elérhető liga ID-jával
-            if (selectedLeagues.size === 0) {
-                allMatches.forEach(m => {
-                    if (m.competition && m.competition.id) {
-                        selectedLeagues.add(String(m.competition.id));
-                    }
-                });
-            }
-
-            // Dátumválasztó frissítése
-            if (typeof renderDateSelector === 'function') renderDateSelector();
-            
-            // --- JAVÍTÁS 2: Ligák és Meccsek renderelése ---
-            const leagueContainer = document.getElementById("league-list"); 
-            if (typeof renderLeagues === 'function' && leagueContainer) {
-                renderLeagues(); // Ez most már csak a MAI ligákat fogja mutatni, ha frissítetted a renderLeagues-t
-            }
-
-            if (typeof renderMatches === 'function') renderMatches();
-            
             if (typeof checkGoals === 'function') checkGoals();
             if (typeof checkBetResults === 'function') checkBetResults();
         }
-        
-        console.log("Sikeres frissítés. Meccsek:", allMatches.length);
-        
+
+        console.log("Adatok frissítve. Meccsek:", allMatches.length);
+
     } catch (e) {
         console.error("Hiba az updateData futásakor:", e);
     }
@@ -1768,10 +1760,25 @@ document.querySelectorAll('.league-item').forEach(item => {
         if (typeof renderMatches === 'function') renderMatches();
     });
 });
+function handleLeagueClick(id) {
+    const idStr = String(id);
+    
+    // Váltás: ha benne van kivesszük, ha nincs betesszük
+    if (selectedLeagues.has(idStr)) {
+        selectedLeagues.delete(idStr);
+    } else {
+        selectedLeagues.add(idStr);
+    }
+
+    // AZONNALI vizuális visszajelzés (nem várunk az API-ra)
+    renderLeagues(); 
+    renderMatches(); 
+}
         
     </script>
 </body>
 </html>
+
 
 
 
