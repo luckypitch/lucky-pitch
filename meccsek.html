@@ -108,8 +108,24 @@
 .sidebar:hover, .sidebar.open { 
     width: 280px; 
 }
-      .sidebar-header { padding: 20px; font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue); border-bottom: 1px solid var(--border); letter-spacing: 2px; text-transform: uppercase; }
-
+     .sidebar-header { 
+    padding: 20px; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; /* Távolság a kupa és a felirat között */
+    white-space: nowrap; /* Ne törje ketté a szöveget */
+    font-family: 'Orbitron'; 
+    font-size: 11px; 
+    color: var(--neon-blue); 
+    border-bottom: 1px solid var(--border); 
+    letter-spacing: 2px; 
+    text-transform: uppercase; 
+}
+.header-emoji {
+    font-size: 1.4rem; /* Hogy a kupa szép nagy legyen */
+    flex-shrink: 0;
+}
+        
     .standings-sidebar { 
         position: fixed; right: 0; top: 75px; bottom: 0; width: 400px; 
         z-index: 1500; background: var(--bg); border-left: 1px solid var(--border); 
@@ -1782,6 +1798,7 @@ function handleLeagueClick(id) {
     </script>
 </body>
 </html>
+
 
 
 
