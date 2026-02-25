@@ -2090,22 +2090,10 @@ if (typeof socket !== 'undefined') {
     });
 }
         
-// Ez a függvény küldi ki a socketen keresztül az üzenetet
-function onGoalScored(matchId, teamName, newScore) {
-    console.log(`[STADION LOG] Gól küldése: ${matchId}`);
-    
-    // Mindenkinek kiküldjük (io.emit), nem csak a szobának
-    io.emit('new-msg', {
-        matchId: matchId, 
-        user: "🏟️ STADION",
-        message: `GÓÓÓÓL! ${teamName} betalált! Állás: ${newScore}`,
-        color: "#ff3e3e" 
-    });
-}
-        
     </script>
 </body>
 </html>
+
 
 
 
