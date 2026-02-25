@@ -258,9 +258,9 @@
 .sidebar:hover .league-item span,
 .sidebar:hover .league-name-text {
     opacity: 1;
-    display: inline-block; /* Vagy block, a flex-et nem zavarva */
-    pointer-events: auto
-}     
+    width: 160px; /* Vagy amennyi kell a neveknek */
+    margin-left: 10px;
+}
 .league-item:hover .league-icon-wrapper {
     background: rgba(14, 165, 233, 0.2); /* Neon kék háttér hovernél */
     border: 1px solid var(--neon-blue);
@@ -275,8 +275,10 @@
 }        
 .league-name-text {
     opacity: 0;
+    width: 0; /* Alaphelyzetben nincs szélessége */
+    overflow: hidden;
     white-space: nowrap;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.3s ease, width 0.3s ease;
     font-family: 'Orbitron', sans-serif;
     font-size: 13px;
     color: #fff;
@@ -518,27 +520,28 @@ async function updateData() {
         }
 
         // 2. Meccsek letöltése
-        const res = await fetch("/live-matches");
+       const res = await fetch("/live-matches");
         const data = await res.json();
         allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
 
-        // 3. Renderelés (Ekkor már biztosan van globalOdds, ha az API adott választ)
         if (allMatches.length > 0) {
-            // Dátumválasztó frissítése (hogy eltűnjön a duplikált MA gomb)
+            // Dátumválasztó frissítése
             if (typeof renderDateSelector === 'function') renderDateSelector();
             
-            if (typeof renderLeagues === 'function') renderLeagues();
+            // LIGÁK RENDERELÉSE: Csak ha még nincs tartalom a sidebarban!
+            const sideBar = document.getElementById("league-sidebar-container"); // Ellenőrizd az ID-t
+            if (typeof renderLeagues === 'function' && sideBar && sideBar.innerHTML.trim() === "") {
+                renderLeagues();
+                highlightAllLeagues(); // Alapértelmezetten minden aktív
+            }
+
+            // Meccsek renderelése
             if (typeof renderMatches === 'function') renderMatches();
             
             checkGoals();
             checkBetResults();
         }
-        if (allMatches.length > 0) {
-    // Kényszerítsük a renderelést, hogy már a friss globalOdds-szal fusson le
-    renderMatches(); 
-}
         console.log("Adatok frissítve. Meccsek:", allMatches.length);
-
     } catch (e) {
         console.error("Hiba az updateData futásakor:", e);
     }
@@ -785,15 +788,14 @@ async function renderMatches() {
     // --- 2. DÁTUMVÁLASZTÓ ÉS SZŰRÉS ---
     if (typeof renderDateSelector === 'function') renderDateSelector(); 
 
-    const filtered = allMatches.filter(m => {
+   const filtered = allMatches.filter(m => {
     if (!m.utcDate || !m.competition) return false;
     const mDate = m.utcDate.split('T')[0];
     const leagueId = m.competition.id.toString();
     
     const dateMatch = (mDate === selectedDate);
     
-    // Módosított feltétel: ha a Set üres, minden meccs látszik (alapállapot)
-    // Ha van benne elem, akkor csak azok
+    // Csak akkor szűrjön ligára, ha van kijelölt liga
     const leagueMatch = (selectedLeagues.size === 0 || selectedLeagues.has(leagueId));
     
     return dateMatch && leagueMatch;
@@ -1771,6 +1773,7 @@ document.querySelectorAll('.league-item').forEach(item => {
     </script>
 </body>
 </html>
+
 
 
 
