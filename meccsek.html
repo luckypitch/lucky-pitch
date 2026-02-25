@@ -2001,11 +2001,19 @@ socket.on('new-msg', (data) => {
         container.scrollTop = container.scrollHeight; // Görgetés az aljára
     }
 });
-
+function onGoalScored(matchId, teamName, newScore) {
+    // Rendszerüzenet küldése a chatbe mindenkinél
+    io.to(`match_${matchId}`).emit('new-msg', {
+        user: "🏟️ STADION",
+        message: `GÓÓÓÓL! ${teamName} betalált! Állás: ${newScore}`,
+        color: "#ff3e3e" // Neon piros a gólnak
+    });
+}
         
     </script>
 </body>
 </html>
+
 
 
 
