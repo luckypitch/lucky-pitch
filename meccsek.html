@@ -2034,44 +2034,58 @@ function toggleChat(matchId) {
 }
 
 // Üzenet érkezésekor mentsük el a history-ba is!
-socket.on('new-msg', (data) => {
-    const id = data.matchId || data.match_id;
-    if (!id) return;
+if (typeof socket !== 'undefined') {
+    socket.on('new-msg', (data) => {
+        // 1. Ellenőrizzük az ID-t
+        const id = data.matchId || data.match_id;
+        if (!id) return;
 
-    // Elmentjük a memóriába (hogy frissítés után is ott legyen az 5-ben)
-    if (!chatHistory[id]) chatHistory[id] = [];
-    
-    const msgHTML = `
-        <div style="background:rgba(255,62,62,0.1); padding:5px 8px; border-radius:6px; font-size:11px; border: 1px solid rgba(255,62,62,0.3); margin-bottom:5px;">
-            <strong style="color:${data.color}">${data.user}:</strong> ${data.message}
-        </div>`;
-    
-    chatHistory[id].push(msgHTML);
-    if (chatHistory[id].length > 5) chatHistory[id] = chatHistory[id].slice(-5);
+        console.log("Adat érkezett a chathoz:", data);
 
-    // Megjelenítés
-    const container = document.getElementById(`chat-messages-${id}`);
-    if (container) {
-        container.innerHTML = chatHistory[id].join('');
-        container.scrollTop = container.scrollHeight;
+        // 2. Mentés az utolsó 5 üzenet közé (STADION üzenetet is mentjük!)
+        if (!chatHistory[id]) chatHistory[id] = [];
         
-        // EXTRA: Ha a STADION üzent, villantsuk meg a Chat gombot, ha zárva van!
-        if (data.user === "🏟️ STADION" && activeChatId !== String(id)) {
-            const btn = document.querySelector(`[onclick="toggleChat('${id}')"]`);
-            if (btn) {
-                btn.style.background = "#ff3e3e";
-                btn.innerText = "⚽ GÓL!";
+        const isStadion = data.user === "🏟️ STADION";
+        const msgHTML = `
+            <div style="background:${isStadion ? 'rgba(255,62,62,0.15)' : 'rgba(255,255,255,0.05)'}; 
+                        padding:5px 8px; border-radius:6px; font-size:11px; 
+                        border-left: 3px solid ${data.color}; margin-bottom:4px;">
+                <strong style="color:${data.color}">${data.user}:</strong> ${data.message}
+            </div>`;
+        
+        chatHistory[id].push(msgHTML);
+        if (chatHistory[id].length > 5) chatHistory[id] = chatHistory[id].slice(-5);
+
+        // 3. Megjelenítés a HTML-ben (ha létezik a konténer)
+        const container = document.getElementById(`chat-messages-${id}`);
+        if (container) {
+            container.innerHTML = chatHistory[id].join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 4. Ha gól van, és zárva a chat, adjunk jelzést a gombon!
+        if (isStadion && activeChatId !== String(id)) {
+            const chatBtn = document.querySelector(`#match-${id} [onclick="toggleChat('${id}')"]`);
+            if (chatBtn) {
+                chatBtn.style.boxShadow = "0 0 15px #ff3e3e";
+                chatBtn.style.borderColor = "#ff3e3e";
+                chatBtn.innerHTML = "⚽ GÓL!";
+                
+                // 10 másodperc után visszaállítjuk
                 setTimeout(() => {
-                    btn.style.background = "rgba(0, 212, 255, 0.1)";
-                    btn.innerText = "💬 CHAT";
-                }, 5000);
+                    chatBtn.style.boxShadow = "none";
+                    chatBtn.style.borderColor = "#00d4ff";
+                    chatBtn.innerHTML = "💬 CHAT";
+                }, 10000);
             }
         }
-    }
-});
+    });
+}
         
 function onGoalScored(matchId, teamName, newScore) {
-    // A sima io.emit minden csatlakozott böngészőnek elküldi
+    console.log(`[STADION] Gól küldése: ${matchId} - ${teamName}`);
+    
+    // io.emit-et használunk szoba nélkül, hogy MINDENKI megkapja
     io.emit('new-msg', {
         matchId: matchId, 
         user: "🏟️ STADION",
@@ -2083,6 +2097,7 @@ function onGoalScored(matchId, teamName, newScore) {
     </script>
 </body>
 </html>
+
 
 
 
