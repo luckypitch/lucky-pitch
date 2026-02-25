@@ -77,39 +77,41 @@
     .tool-btn:hover { border-color: var(--neon-blue); background: rgba(14, 165, 233, 0.2); }
 
     /* --- Elrendezés --- */
-   .main-wrapper { 
+  .main-wrapper { 
     display: flex;
     margin-top: 75px;
-    /* A padding-left értéke mindig egyezzen meg a sidebar aktuális szélességével */
+    /* Csak a becsukott állapot szélességét foglalja le fixen */
     padding-left: 80px; 
-    transition: padding-left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: calc(100vh - 75px);
+    transition: none; /* Ne legyen átmenet a paddingen, hogy ne mozogjanak a kártyák */
 }
 .main-wrapper:has(.sidebar:hover),
 .main-wrapper:has(.sidebar.open) {
-    padding-left: 280px;
+    padding-left: 80px; 
 }
 .sidebar { 
     width: 80px;
-    background: var(--glass); 
-    backdrop-filter: blur(25px); 
-    border-right: 1px solid var(--border); 
     position: fixed;
     top: 75px;
     left: 0;
     bottom: 0;
-    z-index: 1001;
+    background: var(--glass); 
+    backdrop-filter: blur(25px); 
+    border-right: 1px solid var(--border); 
+    z-index: 2000; /* Magasabb z-index, hogy a kártyák felett legyen */
     overflow-x: hidden; 
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s; 
 }
         
 /* NYITOTT ÁLLAPOT */
 .sidebar:hover, 
 .sidebar.open { 
     width: 280px;
-    align-items: flex-start;
+    /* Árnyék hozzáadása kinyitáskor, hogy jobban elváljon a tartalomtól */
+    box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
 }
 
 /* GÖRDÍTŐSÁV ELREJTÉSE */
@@ -148,14 +150,13 @@
     }
     .standings-sidebar.open { transform: translateX(0); }
 
-   .content-area { 
+  .content-area { 
     flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center; /* Ez rakja középre a kártyákat */
+    align-items: center;
     padding: 25px;
-    min-height: calc(100vh - 75px);
-    overflow-y: auto;
+    width: 100%;
 }
     #match-container { 
     width: 100%;
@@ -1845,6 +1846,7 @@ function handleLeagueClick(id) {
     </script>
 </body>
 </html>
+
 
 
 
