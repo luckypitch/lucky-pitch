@@ -788,44 +788,28 @@ async function renderMatches() {
     // --- 2. DÁTUMVÁLASZTÓ ÉS SZŰRÉS ---
     if (typeof renderDateSelector === 'function') renderDateSelector(); 
 
-  const filtered = allMatches.filter(m => {
-    // 1. Alapadatok ellenőrzése
-    if (!m || !m.utcDate || !m.competition) return false;
-    
-    // 2. Dátum kinyerése (YYYY-MM-DD)
-    const mDate = m.utcDate.split('T')[0];
-    
-    // 3. Liga ID kinyerése stringként
-    const mLeagueId = String(m.competition.id);
-    
-    // 4. Szűrési feltételek
-    const isCorrectDate = (mDate === selectedDate);
-    
-    // Ha a Set üres, minden liga mehet, különben csak ami benne van
-    const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
-    
-    return isCorrectDate && isCorrectLeague;
-});
+    const filtered = allMatches.filter(m => {
+        if (!m || !m.utcDate || !m.competition) return false;
+        const mDate = m.utcDate.split('T')[0];
+        const mLeagueId = String(m.competition.id);
+        const isCorrectDate = (mDate === selectedDate);
+        const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
+        return isCorrectDate && isCorrectLeague;
+    });
 
-// DEBUG: Ha még mindig nem jelenik meg semmi, látni fogod miért
-if (filtered.length === 0 && allMatches.length > 0) {
-    console.warn("Szűrés után 0 meccs maradt! Ellenőrizd a dátumot:", selectedDate);
-
+    // Ha nincs meccs, kiírjuk és MEGÁLLUNK
     if (filtered.length === 0) {
         cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3; font-family:'Orbitron'; font-size:12px;">NINCS MECCS EKKOR: ${selectedDate}</p>`;
         return;
     }
 
+    // Rendezés (Javított szintaxis)
     filtered.sort((a, b) => {
-    const dateA = new Date(a.utcDate).getTime();
-    const dateB = new Date(b.utcDate).getTime();
-
-    // Időpont szerint rendezünk
-    if (dateA !== dateB) {
-        return dateA - dateB;
-    }
-    // Ha az idő azonos, a fix ID alapján rögzítjük a sorrendet (nem fog ugrálni)
-    return String(a.id).localeCompare(String(b.id));});
+        const dateA = new Date(a.utcDate).getTime();
+        const dateB = new Date(b.utcDate).getTime();
+        if (dateA !== dateB) return dateA - dateB;
+        return String(a.id).localeCompare(String(b.id));
+    });
 
     // --- 3. RENDERELÉS ---
     cont.innerHTML = filtered.map(m => {
@@ -1752,29 +1736,28 @@ async function updateTooltipData() {
 // Futtatás indítása
 initSexyTooltip();
 
-// Liga kattintás kezelése
+// LIGA KATTINTÁS JAVÍTOTT LEZÁRÁSA
 document.querySelectorAll('.league-item').forEach(item => {
     item.addEventListener('click', () => {
         const leagueId = item.getAttribute('data-league-id');
 
-        // Ha ugyanarra kattint, akkor "kikapcsolja" a szűrőt (visszaáll mindenre)
-        if (currentLeagueId === leagueId) {
+        if (typeof currentLeagueId !== 'undefined' && currentLeagueId === leagueId) {
             currentLeagueId = 'all';
             item.classList.remove('active');
         } else {
-            // Egyébként aktiválja az adott ligát
             document.querySelectorAll('.league-item').forEach(i => i.classList.remove('active'));
             item.classList.add('active');
             currentLeagueId = leagueId;
         }
         
-        renderMatches(); // Frissíti a listát
+        if (typeof renderMatches === 'function') renderMatches();
     });
-}); 
+});
         
     </script>
 </body>
 </html>
+
 
 
 
