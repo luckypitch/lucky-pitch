@@ -370,9 +370,6 @@ const keepServerAlive = async () => {
 // 3. 14 percenkénti indítás
 setInterval(keepServerAlive, 840000);
 
-// A fájl tetején, a socket.on-on KÍVÜL hozd létre a memóriát
-const processedGoals = new Set();
-
 // 1. Segédfüggvény a kártékony kódok semlegesítéséhez (a fájl elejére)
 function escapeHtml(unsafe) {
     if (!unsafe || typeof unsafe !== 'string') return unsafe;
@@ -445,6 +442,7 @@ server.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
