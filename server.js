@@ -373,36 +373,49 @@ setInterval(keepServerAlive, 840000);
 // A fájl tetején, a socket.on-on KÍVÜL hozd létre a memóriát
 const processedGoals = new Set();
 
-// Chat szobák kezelése
+// 1. Segédfüggvény a kártékony kódok semlegesítéséhez (a fájl elejére)
+function escapeHtml(unsafe) {
+    if (!unsafe || typeof unsafe !== 'string') return unsafe;
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
+const processedGoals = new Set();
+
 io.on('connection', (socket) => {
     console.log('Egy felhasználó csatlakozott a chathoz');
 
-    // 1. Belépés egy konkrét meccs szobájába
     socket.on('join-chat', (matchId) => {
         socket.join(`match_${matchId}`);
     });
 
-    // 2. Trash-talk üzenet fogadása és továbbítása
+    // 2. Trash-talk ÜZENETEK TISZTÍTÁSA
     socket.on('send-msg', (data) => {
+        // Megtisztítjuk a felhasználó nevét és az üzenetet is
+        const cleanUser = escapeHtml(data.user);
+        const cleanMessage = escapeHtml(data.message);
+
+        // Ha üres az üzenet a tisztítás után, nem küldjük ki
+        if (!cleanMessage.trim()) return;
+
         io.to(`match_${data.matchId}`).emit('new-msg', {
             matchId: data.matchId,
-            user: data.user,
-            message: data.message,
+            user: cleanUser,
+            message: cleanMessage,
             color: data.color || '#00d4ff'
         });
     });
 
-    // 3. Gól jelentés fogadása a klienstől (Duplikáció szűréssel)
+    // 3. Gól jelentés (itt nem kell tisztítás, mert mi generáljuk a szöveget)
     socket.on('goal-detected-client', (data) => {
-        // Egyedi azonosító a meccshez és az álláshoz (pl: "12345-2-1")
         const goalKey = `${data.matchId}-${data.score}`;
 
-        // HA EZT A GÓLT MÁR JELENTETTE VALAKI, MEGÁLLUNK
-        if (processedGoals.has(goalKey)) {
-            return; 
-        }
+        if (processedGoals.has(goalKey)) return;
 
-        // Ha új, betesszük a listára és küldjük mindenkinek
         processedGoals.add(goalKey);
 
         io.emit('new-msg', {
@@ -412,7 +425,6 @@ io.on('connection', (socket) => {
             color: "#ff3e3e"
         });
 
-        // 60 másodperc után töröljük, hogy a következő gólt lehessen jelenteni
         setTimeout(() => {
             processedGoals.delete(goalKey);
         }, 60000);
@@ -433,6 +445,7 @@ server.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
