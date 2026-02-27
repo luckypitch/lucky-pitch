@@ -508,98 +508,120 @@
     backdrop-filter: blur(20px);  }
 
 @media screen and (max-width: 1100px) {
-    /* 1. FEJLÉC: Szétnyújtjuk, hogy ne legyen balra ragadva */
+    /* --- 1. NAVIGÁCIÓ: Balra rendezés és Profilkép javítás --- */
     nav {
         display: flex !important;
-        justify-content: space-between !important; /* Szélekre tolja a logót és a gombokat */
+        justify-content: flex-start !important; /* Mindent balra tolunk */
         align-items: center !important;
-        padding: 0 10px !important;
-        height: 60px !important;
-        width: 100% !important;
+        padding: 0 8px !important;
+        height: 65px !important;
+        width: 100vw !important;
         position: fixed !important;
         top: 0;
         left: 0;
-        background: #0a0a14 !important;
         z-index: 10001;
+        gap: 5px !important;
         box-sizing: border-box !important;
     }
 
-    /* Logó mérete és helye */
     .logo {
-        font-size: 1rem !important;
-        margin: 0 !important;
+        font-size: 0.8rem !important; /* Kisebb logó, hogy beférjen a profil */
+        margin-right: 5px !important;
         flex-shrink: 1 !important;
     }
 
-    /* Gombok a jobb szélen maradnak, de kisebbek, hogy kiférjenek */
     .nav-tools {
         display: flex !important;
-        justify-content: flex-end !important;
+        justify-content: flex-start !important;
         align-items: center !important;
         gap: 4px !important;
-        flex-shrink: 0 !important;
+        flex-grow: 1; /* Kitölti a maradék helyet balra */
     }
 
-    .tool-btn, #lang-btn, #theme-btn, nav a.tool-btn {
-        font-size: 0.7rem !important;
-        padding: 5px 8px !important;
+    /* Profilkép/User gomb nagyítása */
+    #user-button, #auth-container {
+        width: 35px !important;
+        height: 35px !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #user-button img {
+        width: 35px !important; /* Megnövelt profilkép */
+        height: 35px !important;
+        border-radius: 50%;
+        border: 2px solid var(--neon-green);
+    }
+
+    .tool-btn {
+        font-size: 0.65rem !important;
+        padding: 5px 6px !important;
         min-width: auto !important;
+        height: 32px !important;
     }
 
-    /* 2. MECCSEK ÉS DÁTUMOK: Középre tesszük őket */
+    /* --- 2. DÁTUMOK: CSÚSZKÁS (SLIDER) MEGOLDÁS --- */
+    #date-selector {
+        margin-top: 70px !important; /* Lehúzzuk a Nav alól */
+        display: flex !important;
+        flex-direction: row !important; /* EGY SOR */
+        overflow-x: auto !important; /* CSÚSZKÁS GÖRDÍTÉS */
+        overflow-y: hidden !important;
+        white-space: nowrap !important;
+        padding: 10px 15px !important;
+        gap: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        -webkit-overflow-scrolling: touch; /* Sima görgetés mobilra */
+        scrollbar-width: none; /* Scrollbar elrejtése */
+    }
+
+    #date-selector::-webkit-scrollbar {
+        display: none; /* Chrome/Safari scrollbar elrejtése */
+    }
+
+    .date-btn {
+        flex: 0 0 auto !important; /* Megakadályozza a gombok összenyomását */
+        min-width: 80px !important;
+        font-size: 0.8rem !important;
+        padding: 10px !important;
+        background: rgba(255,255,255,0.05) !important;
+        border-radius: 8px !important;
+        text-align: center;
+    }
+
+    /* --- 3. TARTALOM: A Sidebar eltolásának megszüntetése --- */
+    .sidebar {
+        position: fixed !important;
+        left: -100% !important; /* Teljesen kivesszük, nem tol el semmit */
+        width: 80% !important;
+        z-index: 10005;
+    }
+
     .main-wrapper {
-        margin-top: 70px !important; /* Lehúzzuk a nav alól */
-        margin-left: 0 !important;   /* Megszüntetjük a bal oldali sáv tolását */
+        margin-left: 0 !important; /* Megszünteti a bal oldali üres sávot */
+        margin-top: 0 !important;
+        padding: 0 0 100px 0 !important;
         width: 100% !important;
         display: flex !important;
         flex-direction: column !important;
-        align-items: center !important; /* MECCSEK KÖZÉPRE */
-        padding-bottom: 80px !important;
+        align-items: center !important; /* Meccsek középen */
     }
 
-    /* Dátumgombok szimmetrikusan középen */
-    #date-selector {
-        display: flex !important;
-        justify-content: center !important; 
-        flex-wrap: wrap !important;
-        gap: 8px !important;
-        width: 100% !important;
-        padding: 10px 0 !important;
-    }
-
-    /* Meccskártyák: Szimmetrikusak és középen */
     .match-card {
-        width: 92% !important;
-        max-width: 450px !important;
-        margin: 10px auto !important;
-        left: 0 !important;
+        width: 95% !important;
+        margin: 15px auto !important;
     }
 
-    /* 3. A LIGÁK (Sidebar) FIXÁLÁSA: Ne tolja el a tartalmat! */
-    .sidebar {
-        position: fixed !important; /* Kiszáll a dokumentumfolyamból */
-        left: -100% !important;    /* Alapból rejtett */
-        top: 60px !important;
-        width: 85% !important;
-        height: calc(100% - 120px) !important;
-        z-index: 10005 !important;
-        transition: left 0.3s ease;
-        background: #0a0a14 !important;
-    }
-
-    /* Amikor megnyitod az alsó panellel a ligákat */
-    .sidebar.open {
-        left: 0 !important;
-    }
-
-    /* 4. ALSÓ PANEL: Visszahozva a helyére */
+    /* --- 4. ALSÓ PANEL FIXÁLÁSA --- */
     .mobile-nav-container {
         display: flex !important;
         position: fixed !important;
         bottom: 0 !important;
         left: 0 !important;
         width: 100% !important;
-        height: 60px !important;
+        height: 65px !important;
         background: #0a0a14 !important;
         z-index: 10002 !important;
         justify-content: space-around !important;
@@ -2144,6 +2166,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
