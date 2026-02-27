@@ -509,70 +509,90 @@
     backdrop-filter: blur(20px); 
 }
 
-@media (max-width: 1100px) {
-    /* 1. Sidebar teljes elrejtése - hogy ne tolja el a tartalmat semennyire */
-    .sidebar { 
-        display: none !important; 
-    }
-
-    /* 2. Main-wrapper: Ez teszi KÖZÉPRE a meccseket */
-    .main-wrapper { 
-        margin-left: 0 !important; 
-        margin-right: 0 !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        padding-bottom: 80px; 
-        width: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important; /* Szemben, középen legyen minden */
-    }
-
-    .mobile-nav { display: flex; }
-    
-    /* 3. FEJLÉC: Logó zsugorítása, hogy a Login gomb is elférjen egy sorban */
+@media screen and (max-width: 1100px) {
+    /* 1. FEJLÉC: Mindent egy sorba kényszerítünk */
     header, .header-container {
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        padding: 0 15px !important;
+        padding: 0 8px !important;
         height: 60px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
+        gap: 5px !important;
     }
 
-    .logo-text, .header h1 { 
-        font-size: 1.1rem !important; /* Nem lesz túl nagy, így nem tolja ki a gombokat */
+    /* Logó: drasztikusan kisebb, hogy ne toljon el semmit */
+    .logo-text, header h1 {
+        font-size: 0.95rem !important; 
         margin: 0 !important;
-        white-space: nowrap;
+        flex-shrink: 1 !important;
     }
 
-    /* 4. DÁTUM VÁLASZTÓ: Görgethető, de nem csúszik el */
-    #date-selector {
-        width: 100% !important;
+    /* Fejléc jobb oldala (HU, Login, Vissza): egymás mellett, kicsiben */
+    .header-right, .user-auth-zone {
         display: flex !important;
-        justify-content: flex-start !important;
-        overflow-x: auto !important;
-        white-space: nowrap !important;
-        padding: 10px 15px !important;
-        gap: 10px !important;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
+        align-items: center !important;
+        gap: 4px !important;
+        scale: 0.85; /* Kicsit zsugorítjuk az egész blokkot */
+        transform-origin: right;
     }
 
-    #date-selector::-webkit-scrollbar { display: none; }
+    /* 2. DÁTUMOK: Szimmetrikus és középre zárt */
+    #date-selector {
+        display: flex !important;
+        justify-content: center !important; /* KÖZÉPRE teszi a gombokat */
+        flex-wrap: wrap !important; /* Ha nem fér el, törjön több sorba */
+        gap: 8px !important;
+        padding: 10px !important;
+        width: 100% !important;
+    }
 
     .date-btn {
-        flex: 0 0 auto !important; 
-        min-width: 80px;
-        padding: 10px 15px;
+        min-width: 65px !important;
+        padding: 6px 10px !important;
+        font-size: 0.75rem !important;
+        text-align: center !important;
     }
 
-    /* 5. MECCSKÁRTYA: Teljesen középen */
+    /* 3. LIGÁK (Sidebar) Visszahozása: Lebegő menüként */
+    .sidebar {
+        position: fixed !important;
+        left: -100% !important; /* Alapból elrejtve balra */
+        top: 60px !important;
+        width: 80% !important;
+        height: calc(100% - 130px) !important;
+        z-index: 2000 !important;
+        background: rgba(15, 15, 25, 0.98) !important;
+        transition: left 0.3s ease !important;
+        display: block !important; /* Visszakapcsolva */
+    }
+
+    /* Amikor a "LIGÁK" gombbal kinyitod (ha van rá JS osztályod) */
+    .sidebar.active, .sidebar.open {
+        left: 0 !important;
+    }
+
+    /* 4. MECCSEK: Tökéletesen középen */
+    .main-wrapper {
+        margin: 0 !important;
+        padding: 10px 0 80px 0 !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+
     .match-card {
-        width: 94% !important;
-        max-width: 500px;
-        margin: 10px auto !important; /* Az auto margó középre rakja */
+        width: 92% !important;
+        max-width: 450px !important;
+        margin: 10px 0 !important;
+    }
+
+    /* 5. Gombok elcsúszása ellen (Tippmix gombok) */
+    .odds-container, .bet-buttons {
+        display: flex !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        width: 100% !important;
     }
 
 /* Kiegészítő fixek a rázkódás ellen */
@@ -2121,6 +2141,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
