@@ -548,16 +548,24 @@
         margin-right: 2px !important;
     }
     
-.sidebar, .leagues-container, .standings-container {
-        width: 100% !important;
-        max-width: 100% !important;
-        left: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        display: block !important;
-        box-sizing: border-box !important;
-    }
+.sidebar { 
+        position: fixed; 
+        left: 0; 
+        top: 75px; 
+        width: 0px; /* Mobilon teljesen elrejthetjük */
+        height: calc(100% - 145px); 
+    } 
+ .standings-sidebar { width: 85%; }
 
+
+       .sidebar.open .header-text,
+
+.sidebar.open .league-item span { 
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.4s ease 0.2s; /* Késleltetve jelenik meg, miután a sidebar már tágul */
+} 
+    
     /* A lista elemei (pl. Copa Libertadores) szétnyújtása */
     .league-item {
         width: 100% !important;
@@ -2125,6 +2133,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
