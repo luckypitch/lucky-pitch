@@ -509,105 +509,84 @@
 }
 
 @media screen and (max-width: 1100px) {
-    /* 1. HÉZAGOK ELTÜNTETÉSE (A gap javítása) */
-    body, html {
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow-x: hidden;
-    }
-
-    .main-wrapper {
-        margin-top: 0 !important; /* Eltünteti a felső rést a nav alatt */
-        margin-left: 0 !important;
-        padding: 5px 0 100px 0 !important; /* Csak annyi padding, amennyi kell */
-        width: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-    }
-
-    /* 2. FEJLÉC (NAV) TÖKÉLETESÍTÉSE */
+    /* FEJLÉC: Szigorúan egy sor, nincs törés */
     nav {
         display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important; /* Tiltja a második sort */
         justify-content: space-between !important;
         align-items: center !important;
-        padding: 5px 12px !important;
-        height: 60px !important;
+        padding: 5px 5px !important; /* Minimális padding szélen */
+        height: 50px !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        background: rgba(10, 15, 30, 0.95) !important;
+        gap: 2px !important; /* Minimális rés az elemek között */
     }
 
+    /* Logó betűméret csökkentése */
     .logo {
-        font-size: 0.95rem !important; /* Kisebb, hogy beférjen minden */
-        flex: 0 1 auto !important;
+        font-size: 0.85rem !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        white-space: nowrap !important;
+        flex-shrink: 1 !important;
     }
 
+    /* Gombok konténere */
     .nav-tools {
         display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
         align-items: center !important;
-        gap: 6px !important;
-        flex: 0 0 auto !important;
+        gap: 3px !important; /* Nagyon szoros gombok */
+        flex-shrink: 0 !important;
     }
 
-    /* 3. BAJNOKSÁGOK ÉS TABELLA SZÉTNYÚJTÁSA */
-    /* Ez javítja ki, hogy a táblázatok ne legyenek elcsúszva balra */
-    .standings-container, .leagues-container, .sidebar, .sidebar-content {
+    /* Gombok egyedi méretezése */
+    .tool-btn, #lang-btn, #theme-btn, nav a.tool-btn {
+        font-size: 0.65rem !important; /* Apró betűk, hogy kiférjen */
+        padding: 4px 6px !important;
+        min-width: auto !important;
+        height: 28px !important;
+        line-height: 1 !important;
+    }
+
+    /* Az LP egyenleg szövege */
+    #balance-wrap {
+        font-size: 0.7rem !important;
+        margin-right: 2px !important;
+        white-space: nowrap !important;
+    }
+.sidebar, .leagues-container, .standings-container {
         width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 10px !important;
         left: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
         box-sizing: border-box !important;
     }
 
-    table {
+    /* A lista elemei (Copa Libertadores, stb.) */
+    .league-item {
         width: 100% !important;
-        margin: 0 auto !important;
-        border-collapse: collapse;
-    }
-
-    /* 4. DÁTUMOK: CSÚSZKÁS ÉS KÖZÉPRE ZÁRT */
-    #date-selector {
-        display: flex !important;
-        overflow-x: auto !important;
-        width: 100% !important;
-        padding: 10px !important;
-        gap: 12px !important;
+        padding: 10px 15px !important;
+        margin-left: 0 !important;
         justify-content: flex-start !important;
-        scrollbar-width: none;
+        box-sizing: border-box !important;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
     }
-
-    #date-selector::-webkit-scrollbar { display: none; }
-
-    .date-btn {
-        flex: 0 0 auto !important;
-        min-width: 85px !important;
+    
+    /* Dátum választó igazítása a fejléc alá */
+    #date-selector {
+        margin-left: 0 !important;
+        padding: 8px 10px !important;
+        justify-content: flex-start !important;
     }
-
-    /* 5. MECCSKÁRTYÁK: SZEMBEN ÉS SZÉLESEN */
-    .match-card .nav-tools, .match-card .buttons-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-    .analysis-btn {
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 90% !important;        /* Szélesebb lesz, majdnem kitölti a rendelkezésre álló helyet */
-    min-width: 100px !important;  /* De legalább 100px, hogy ne nyomódjon össze */
-    height: 35px !important;      /* Kényelmesebb rányomni ujjal */
-    font-size: 0.8rem !important; /* Olvasható betűméret (kb. 12-13px) */
-    text-decoration: none !important;
-    margin: 5px auto !important;
-    white-space: nowrap !important; /* Tilos kettétörni a szót */
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
+a[href*="elemzes"].tool-btn {
+        width: 85px !important; /* 70 helyett 85, hogy kiférjen a szó */
+        font-size: 9px !important; /* 7 helyett 9px az olvashatóságért */
+        padding: 4px !important;
+        text-align: center !important;
+    }  
     
 }   </style>
 </head>
@@ -2146,6 +2125,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
