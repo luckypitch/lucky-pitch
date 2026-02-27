@@ -500,107 +500,118 @@
     color: var(--neon-blue);
 }
 
-/* --- Mobil Nézet Alapok (Visszaállítva a régi verziód) --- */
-.mobile-nav { 
-    position: fixed; bottom: 0; left: 0; right: 0; height: 70px; 
-    background: var(--glass); display: none; justify-content: space-around; 
-    align-items: center; z-index: 1100; border-top: 1px solid var(--border); 
-    backdrop-filter: blur(20px);  }
-
 @media screen and (max-width: 1100px) {
-    /* RESET & GAP JAVÍTÁS */
-    body { padding-top: 60px !important; } /* Ez tolja le a tartalmat a nav alól pontosan */
+    /* 1. GAP JAVÍTÁS ÉS TEST ELRENDEZÉS */
+    body { 
+        padding-top: 60px !important; /* Pontosan a nav magassága */
+        overflow-x: hidden;
+    }
 
+    /* 2. NAVIGÁCIÓ (FELSŐ SÁV) */
     nav {
         display: flex !important;
-        justify-content: flex-start !important;
+        justify-content: space-between !important;
         align-items: center !important;
         padding: 0 10px !important;
         height: 60px !important;
         width: 100% !important;
         position: fixed !important;
-        top: 0;
-        left: 0;
-        z-index: 10000;
+        top: 0; left: 0; z-index: 10000;
         background: #0a0a14 !important;
-        gap: 5px !important;
     }
 
-    /* PROFILKÉP ÉS NAV TOOLS */
+    /* Profilkép igazítása */
     .nav-tools {
         display: flex !important;
         align-items: center !important;
-        gap: 5px !important;
-        margin-left: auto; /* Jobbra tolja a gombokat a logó mellől */
-    }
-
-    #auth-container, #user-button {
-        display: block !important;
-        width: 40px !important;
-        height: 40px !important;
+        gap: 8px !important;
     }
 
     #user-button img {
-        width: 40px !important; /* Szépen látható profilkép */
-        height: 40px !important;
-        border-radius: 50%;
-        border: 2px solid var(--neon-green);
-        object-fit: cover;
+        width: 38px !important;
+        height: 38px !important;
+        border: 1px solid var(--neon-green);
     }
 
-    /* DÁTUMVÁLASZTÓ - CSÚSZKÁS (Slider) */
+    /* 3. DÁTUMOK: FELTOLVA ÉS CSÚSZKÁSRA ÁLLÍTVA */
     #date-selector {
+        margin: 0 !important; /* Eltünteti a felső üres teret */
+        padding: 10px 5px !important;
         display: flex !important;
         overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch;
-        padding: 15px 10px !important;
         gap: 10px !important;
+        background: rgba(10, 10, 20, 0.5) !important;
         width: 100% !important;
-        background: transparent !important;
         scrollbar-width: none;
     }
     #date-selector::-webkit-scrollbar { display: none; }
 
     .date-btn {
         flex: 0 0 auto !important;
-        min-width: 90px !important;
-        font-size: 0.8rem !important;
+        min-width: 80px !important;
+        padding: 8px !important;
+        font-size: 0.75rem !important;
     }
 
-    /* TABELLA ÉS LIGÁK ILLESZKEDÉSE (Nincs több Gap) */
+    /* 4. SIDEBAR (LIGÁK) ELREJTÉSE */
+    .sidebar {
+        position: fixed !important;
+        top: 60px !important;
+        left: -110% !important; /* Teljesen kívül van */
+        width: 85% !important;
+        height: calc(100% - 120px) !important;
+        z-index: 10005 !important;
+        background: #0d0d17 !important;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        margin: 0 !important;
+        box-shadow: 10px 0 20px rgba(0,0,0,0.5);
+    }
+
+    .sidebar.open {
+        left: 0 !important; /* Csak akkor jön be, ha az 'open' classt megkapja */
+    }
+
+    /* 5. TARTALOM (TABELLA/MECCSEK) FELTOLÁSA */
     .main-wrapper {
-        margin-top: 0 !important;
-        padding: 0 0 100px 0 !important;
+        margin: 0 !important; /* Törli az asztali margót */
+        padding: 0 0 80px 0 !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
 
     .standings-container, .leagues-container {
-        margin-top: 0 !important; /* Eltünteti a rést a nav alatt */
+        margin-top: -5px !important; /* Minimális finomhangolás felfelé */
         width: 100% !important;
-        padding: 10px !important;
-        box-sizing: border-box;
+        padding: 0 10px !important;
     }
 
-    /* ALSÓ NAVIGÁCIÓ JAVÍTÁSA */
+    /* 6. ALSÓ NAVIGÁCIÓ: LEFINOMÍTVA */
     .mobile-nav {
         display: flex !important;
         position: fixed !important;
         bottom: 0 !important;
         left: 0 !important;
         width: 100% !important;
-        height: 70px !important;
-        background: #0d0d17 !important;
+        height: 60px !important; /* Kisebb magasság */
+        background: rgba(13, 13, 23, 0.95) !important;
+        backdrop-filter: blur(10px);
         z-index: 10001 !important;
         justify-content: space-around !important;
         align-items: center !important;
-        border-top: 2px solid var(--neon-blue) !important;
-        padding-bottom: env(safe-area-inset-bottom);
+        border-top: 1px solid rgba(0, 243, 255, 0.3) !important; /* Vékonyabb, áttetszőbb csík */
+        padding: 0 10px 5px 10px !important;
     }
 
     .mobile-nav .tool-btn {
         flex: 1;
-        margin: 5px;
-        font-size: 0.75rem !important;
-        height: 45px !important;
+        max-width: 100px;
+        height: 38px !important; /* Kecsesebb gombok */
+        font-size: 0.7rem !important;
+        background: rgba(255,255,255,0.05) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        border-radius: 6px !important;
+        margin: 0 5px !important;
     }
 }
   </style>
@@ -2140,6 +2151,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
