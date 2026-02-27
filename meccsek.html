@@ -505,113 +505,114 @@
     position: fixed; bottom: 0; left: 0; right: 0; height: 70px; 
     background: var(--glass); display: none; justify-content: space-around; 
     align-items: center; z-index: 1100; border-top: 1px solid var(--border); 
-    backdrop-filter: blur(20px); 
-}
-Ez a legnehezebb szakasz, de most a képeid és a pontos HTML kódod alapján pontosan látom a hibát: a nav és a gombok azért csúsznak el, mert a fix szélességek és a justify-content asztali beállításai "kiszorítják" őket a képernyőről, a dátumok pedig a fixed vagy absolute pozicionálás miatt csúsznak a fejléc alá.
-
-Itt a teljes, radikális javítás, ami mindent balra rendez, lehúzza a dátumokat a nav alól, és fixen rögzíti az alsó panelt.
-A Mindent Fixáló CSS (1100px alatt)
-CSS
+    backdrop-filter: blur(20px);  }
 
 @media screen and (max-width: 1100px) {
-    /* 1. FEJLÉC: Mindent balra rendezünk, hogy elférjen */
+    /* 1. FEJLÉC: Mindent balra kényszerítünk */
     nav {
         display: flex !important;
-        justify-content: flex-start !important; /* Balra kényszerítjük */
+        flex-direction: row !important;
+        justify-content: flex-start !important; /* BALRA RENDEZÉS */
         align-items: center !important;
-        padding: 5px !important;
-        height: 60px !important;
-        width: 100vw !important;
+        padding: 0 5px !important;
+        height: 55px !important;
+        width: 100% !important;
         position: fixed !important;
         top: 0;
         left: 0;
-        z-index: 10000;
-        gap: 5px !important;
+        z-index: 10001;
+        background: #0a0a14 !important;
+        gap: 4px !important; /* Nagyon szoros gombok */
         box-sizing: border-box !important;
+        overflow: hidden !important;
     }
 
+    /* Logó méretének drasztikus csökkentése, hogy maradjon hely a gomboknak */
     .logo {
-        font-size: 0.75rem !important; /* Kisebb logó */
-        margin-right: 5px !important; /* Minimális távolság */
+        font-size: 0.75rem !important;
+        margin: 0 !important;
+        padding-right: 2px !important;
+        white-space: nowrap !important;
         flex-shrink: 1 !important;
     }
 
+    /* Nav-tools: szintén balra rendezve */
     .nav-tools {
         display: flex !important;
-        justify-content: flex-start !important; /* Gombok is balra */
+        justify-content: flex-start !important;
+        align-items: center !important;
         gap: 3px !important;
         flex-shrink: 0 !important;
     }
 
+    /* Gombok: extra kicsi betű és padding */
     .tool-btn, #lang-btn, #theme-btn, nav a.tool-btn {
         font-size: 0.6rem !important;
         padding: 4px 5px !important;
+        height: 28px !important;
         min-width: auto !important;
+        white-space: nowrap !important;
     }
 
-    /* 2. DÁTUMOK: Lehúzzuk a nav alól */
-    #date-selector {
-        margin-top: 65px !important; /* Ezzel jön ki a NAV alól */
-        display: flex !important;
-        overflow-x: auto !important;
-        padding: 10px !important;
-        width: 100% !important;
-        justify-content: flex-start !important;
-        background: rgba(10, 15, 30, 0.9) !important;
+    /* Profil kép/ikon kisebb legyen */
+    #user-button img, .user-avatar {
+        width: 25px !important;
+        height: 25px !important;
     }
 
-    /* 3. TARTALOM (MECCSEK/LIGÁK): Nincs több balra elcsúszás */
+    /* LP Egyenleg szövege */
+    #balance-wrap {
+        font-size: 0.65rem !important;
+        margin: 0 !important;
+    }
+
+    /* 2. DÁTUMOK ÉS TARTALOM: Toljuk le a Nav alól */
     .main-wrapper {
-        margin: 0 !important; /* Töröljük az asztali eltolást */
-        padding: 0 0 100px 0 !important; /* Hely az alsó navnak */
+        margin-top: 55px !important; /* Pontosan a nav magassága */
+        padding: 10px 0 80px 0 !important;
         width: 100% !important;
+        margin-left: 0 !important;
         display: block !important;
     }
 
-    .match-card {
-        width: 95% !important;
-        margin: 15px auto !important; /* Középre igazítva szimmetrikusan */
-        left: 0 !important;
-    }
-
-    /* 4. LIGÁK LISTA: Teljes szélesség, ne lógjon ki balra */
-    .sidebar, .leagues-container {
+    /* Dátumválasztó sáv */
+    #date-selector {
+        display: flex !important;
+        overflow-x: auto !important;
+        padding: 10px 5px !important;
+        gap: 8px !important;
+        background: rgba(10, 15, 30, 0.95) !important;
         width: 100% !important;
-        left: 0 !important;
-        margin: 0 !important;
-        padding: 10px !important;
-        box-sizing: border-box !important;
+        justify-content: flex-start !important;
     }
 
-    .league-item {
-        width: 100% !important;
-        margin-left: 0 !important;
-    }
-
-    /* 5. ALSÓ KEZELŐPANEL: VISSZAHOZVA ÉS RÖGZÍTVE */
+    /* 3. ALSÓ PANEL: Fixen rögzítve a legaljára */
     .mobile-nav-container {
         display: flex !important;
         position: fixed !important;
         bottom: 0 !important;
         left: 0 !important;
         width: 100% !important;
-        height: 65px !important;
+        height: 60px !important;
         background: #0a0a14 !important;
-        z-index: 99999 !important;
+        z-index: 10002 !important;
         justify-content: space-around !important;
         align-items: center !important;
         border-top: 1px solid rgba(255,255,255,0.1) !important;
-        box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
     }
-}
 
-/* Elemzés gomb fixálása (a HTML style felülbírálása) */
-@media screen and (max-width: 1100px) {
-    a[href*="elemzes"].tool-btn {
-        width: 85px !important;
-        font-size: 10px !important;
-        padding: 6px !important;
-        text-align: center !important;
+    /* 4. BAJNOKSÁG LISTA (SideBar) FIX */
+    /* A képen látszik, hogy elcsúsztatja a tartalmat, ezért mobilon 
+       vegyük le az asztali margókat */
+    .sidebar {
+        width: 0px !important; /* Csak ha nyitva van legyen széles */
+        position: fixed !important;
+        left: 0;
+        z-index: 10005;
+    }
+
+    .sidebar.open {
+        width: 80% !important;
     }
 }
   </style>
@@ -2151,6 +2152,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
