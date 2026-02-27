@@ -536,8 +536,10 @@
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        padding: 5px 10px !important;
         height: 65px !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        padding: 0 10px !important;
         box-sizing: border-box !important;
     }
 
@@ -549,7 +551,7 @@
 
     .nav-tools {
         display: flex !important;
-        gap: 5px !important;
+        gap: 4px !important;
         align-items: center !important;
         flex-shrink: 0 !important;
     }
@@ -563,15 +565,12 @@
     /* 3. DÁTUMVÁLASZTÓ: CSÚSZKÁS RENDSZER (Slider) */
     #date-selector {
         display: flex !important;
-        justify-content: flex-start !important; 
-        overflow-x: auto !important; /* Oldalra görgethető */
-        overflow-y: hidden !important;
-        white-space: nowrap !important;
+        justify-content: flex-start !important; /* Csúszka miatt balról indul */
+        overflow-x: auto !important;
         width: 100% !important;
-        padding: 10px 15px !important;
-        gap: 12px !important;
-        -webkit-overflow-scrolling: touch !important;
-        scrollbar-width: none !important; /* Firefox hulla */
+        padding: 10px 5px !important;
+        gap: 10px !important;
+        -webkit-overflow-scrolling: touch;
     }
 
     #date-selector::-webkit-scrollbar {
@@ -579,16 +578,16 @@
     }
 
     .date-btn {
-        flex: 0 0 auto !important; /* Nem engedi összenyomni a gombokat */
+        flex: 0 0 auto !important;
         min-width: 80px !important;
-        padding: 10px !important;
-        font-size: 0.85rem !important;
     }
 
     /* 4. MECCSKÁRTYA: Szemben, középen */
-    .match-card {
+   .match-card {
         width: 95% !important;
-        margin: 10px auto !important;
+        max-width: 450px;
+        margin: 10px auto !important; /* Szimmetrikus margó */
+        display: block !important;
     }
 
 /* 5. ALSÓ NAVIGÁCIÓ (LIGÁK, MECCSEK, TABELLA) - Visszaadva az eredeti kódod */
@@ -2160,6 +2159,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
