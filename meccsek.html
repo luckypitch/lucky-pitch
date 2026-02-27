@@ -508,121 +508,108 @@
     backdrop-filter: blur(20px); 
 }
 
-@media (max-width: 1100px) {
-    /* 1. SIDEBAR JAVÍTÁS: Maradjon meg, de ne tolja el a tartalmat */
-    .sidebar { 
-        position: fixed; 
-        left: 0; 
-        top: 75px; 
-        width: 0px; 
-        height: calc(100% - 145px); 
-        overflow: hidden;
+@media screen and (max-width: 1100px) {
+    /* 1. HÉZAGOK ELTÜNTETÉSE (A gap javítása) */
+    body, html {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-x: hidden;
     }
 
-    .main-wrapper { 
-        padding-bottom: 90px; /* Megnövelve, hogy az alsó gombok ne takarjanak ki semmit */
+    .main-wrapper {
+        margin-top: 0 !important; /* Eltünteti a felső rést a nav alatt */
         margin-left: 0 !important;
+        padding: 5px 0 100px 0 !important; /* Csak annyi padding, amennyi kell */
         width: 100% !important;
         display: flex !important;
         flex-direction: column !important;
-        align-items: center !important; /* Meccsek középre igazítása */
+        align-items: center !important;
     }
 
-    .mobile-nav { display: flex; }
-    .standings-sidebar { width: 85%; }
-
-    /* 2. FEJLÉC (NAV) FIX: Hogy a LOGO és a LOGIN is látszódjon */
+    /* 2. FEJLÉC (NAV) TÖKÉLETESÍTÉSE */
     nav {
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        height: 65px !important;
-        box-sizing: border-box !important;
+        padding: 5px 12px !important;
+        height: 60px !important;
         width: 100% !important;
-        padding: 0 10px !important;
         box-sizing: border-box !important;
+        background: rgba(10, 15, 30, 0.95) !important;
     }
 
-    nav .logo {
-        font-size: 1rem !important; /* Kisebb logó mobilon */
-        flex-shrink: 1 !important;
-        margin-right: 5px !important;
+    .logo {
+        font-size: 0.95rem !important; /* Kisebb, hogy beférjen minden */
+        flex: 0 1 auto !important;
     }
 
     .nav-tools {
         display: flex !important;
-        gap: 4px !important;
         align-items: center !important;
-        flex-shrink: 0 !important;
+        gap: 6px !important;
+        flex: 0 0 auto !important;
     }
 
-    .tool-btn {
-        padding: 6px 8px !important;
-        font-size: 0.75rem !important;
-        min-width: auto !important;
+    /* 3. BAJNOKSÁGOK ÉS TABELLA SZÉTNYÚJTÁSA */
+    /* Ez javítja ki, hogy a táblázatok ne legyenek elcsúszva balra */
+    .standings-container, .leagues-container, .sidebar, .sidebar-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 10px !important;
+        left: 0 !important;
+        box-sizing: border-box !important;
     }
 
-    /* 3. DÁTUMVÁLASZTÓ: CSÚSZKÁS RENDSZER (Slider) */
+    table {
+        width: 100% !important;
+        margin: 0 auto !important;
+        border-collapse: collapse;
+    }
+
+    /* 4. DÁTUMOK: CSÚSZKÁS ÉS KÖZÉPRE ZÁRT */
     #date-selector {
         display: flex !important;
-        justify-content: flex-start !important; /* Csúszka miatt balról indul */
         overflow-x: auto !important;
         width: 100% !important;
-        padding: 10px 5px !important;
-        gap: 10px !important;
-        -webkit-overflow-scrolling: touch;
+        padding: 10px !important;
+        gap: 12px !important;
+        justify-content: flex-start !important;
+        scrollbar-width: none;
     }
 
-    #date-selector::-webkit-scrollbar {
-        display: none !important; /* Chrome/Safari hulla */
-    }
+    #date-selector::-webkit-scrollbar { display: none; }
 
     .date-btn {
         flex: 0 0 auto !important;
-        min-width: 80px !important;
+        min-width: 85px !important;
     }
 
-    /* 4. MECCSKÁRTYA: Szemben, középen */
-   .match-card {
-        width: 95% !important;
-        max-width: 450px;
-        margin: 10px auto !important; /* Szimmetrikus margó */
-        display: block !important;
-    }
-
-/* 5. ALSÓ NAVIGÁCIÓ (LIGÁK, MECCSEK, TABELLA) - Visszaadva az eredeti kódod */
-.mobile-nav-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60px;
-    background: rgba(20, 20, 30, 0.95);
-    backdrop-filter: blur(10px);
+    /* 5. MECCSKÁRTYÁK: SZEMBEN ÉS SZÉLESEN */
+    .match-card .nav-tools, .match-card .buttons-container {
     display: flex;
-    justify-content: space-around;
+    flex-direction: column;
     align-items: center;
-    z-index: 9999;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: env(safe-area-inset-bottom);
+    gap: 8px;
 }
 
-.sidebar.open .header-text,
-.sidebar.open .league-item span { 
-    opacity: 1;
-    visibility: visible;
-    transition: opacity 0.4s ease 0.2s;
+    .analysis-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 90% !important;        /* Szélesebb lesz, majdnem kitölti a rendelkezésre álló helyet */
+    min-width: 100px !important;  /* De legalább 100px, hogy ne nyomódjon össze */
+    height: 35px !important;      /* Kényelmesebb rányomni ujjal */
+    font-size: 0.8rem !important; /* Olvasható betűméret (kb. 12-13px) */
+    text-decoration: none !important;
+    margin: 5px auto !important;
+    white-space: nowrap !important; /* Tilos kettétörni a szót */
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-/* Globális elcsúszás gátló */
-html, body {
-    overflow-x: hidden;
-    width: 100%;
-    position: relative;
-    margin: 0;
-    padding: 0;
-}
-}    </style>
+    
+}   </style>
 </head>
 <body>
 
@@ -1108,7 +1095,7 @@ return `
                 <div class="score-display ${isLive ? 'score-live' : ''}" style="font-size: 18px; font-weight: 800; font-family: 'Orbitron';">${score}</div>
                 ${isLive ? '<div class="pulse-red" style="font-size: 8px; color: #ff3e3e;">LIVE</div>' : ''}
                 
-                <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size: 7px; text-decoration: none; width: 70px; display: block;">ELEMZÉS</a>
+                <a href="/elemzes?id=${m.id}" class="tool-btn analysis-btn">ELEMZÉS</a>
                 
                 <div onclick="toggleChat('${m.id}')" style="cursor: pointer; font-size: 8px; font-family: 'Orbitron'; color: #00d4ff; border: 1px solid #00d4ff; padding: 2px 6px; border-radius: 4px; background: rgba(0, 212, 255, 0.1); width: 70px;">
                     💬 CHAT
@@ -2159,6 +2146,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
