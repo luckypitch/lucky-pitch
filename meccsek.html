@@ -559,7 +559,7 @@
 
     #date-selector {
         margin: 0 !important;
-        padding: 10px 5px !important;
+        padding: 10px 0px !important;
         display: flex !important;
         overflow-x: auto !important; /* Marad a csúszka, mert ez a legjobb mobilra */
         gap: 8px !important;
@@ -577,7 +577,36 @@
         background: #0d0d17 !important;
         transition: left 0.3s ease;
     }
+    #sidebar-leagues, 
+    #sidebar-standings,
+    .sidebar, 
+    .standings-container {
+        position: fixed !important;
+        top: 60px !important; /* Pontosan a nav alja */
+        left: -110% !important; /* Alapból elrejtve balra */
+        width: 100% !important; /* Mobilon töltsék ki a szélességet */
+        height: calc(100% - 130px) !important; /* Nav és alsó panel levonva */
+        margin: 0 !important;
+        padding: 10px !important;
+        background: #0d0d17 !important;
+        z-index: 10005 !important;
+        transition: left 0.3s ease !important;
+        box-sizing: border-box !important;
+        overflow-y: auto !important; /* Görgethető legyen, ha hosszú a lista */
+    }
 
+    /* 2. Aktív állapot: Amikor a JS hozzáadja az 'open' osztályt */
+    #sidebar-leagues.open, 
+    #sidebar-standings.open {
+        left: 0 !important;
+    }
+
+    /* 3. A tartalom (táblázat belső része) ne legyen eltolva */
+    .standings-container table, 
+    .leagues-container ul {
+        margin-top: 0 !important;
+        width: 100% !important;
+    }
     .sidebar.open {
         left: 0 !important;
     }
@@ -2146,6 +2175,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
