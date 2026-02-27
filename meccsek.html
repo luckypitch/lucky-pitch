@@ -500,8 +500,7 @@
     color: var(--neon-blue);
 }
 
-
-/* --- Mobil Nézet Alapok --- */
+/* --- Mobil Nézet Alapok (Visszaállítva a régi verziód) --- */
 .mobile-nav { 
     position: fixed; bottom: 0; left: 0; right: 0; height: 70px; 
     background: var(--glass); display: none; justify-content: space-around; 
@@ -509,102 +508,122 @@
     backdrop-filter: blur(20px); 
 }
 
-@media screen and (max-width: 1100px) {
-    /* 1. FEJLÉC: Mindent egy sorba kényszerítünk */
-    header, .header-container {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        padding: 0 8px !important;
-        height: 60px !important;
-        gap: 5px !important;
+@media (max-width: 1100px) {
+    /* 1. SIDEBAR JAVÍTÁS: Maradjon meg, de ne tolja el a tartalmat */
+    .sidebar { 
+        position: fixed; 
+        left: 0; 
+        top: 75px; 
+        width: 0px; 
+        height: calc(100% - 145px); 
+        overflow: hidden;
     }
 
-    /* Logó: drasztikusan kisebb, hogy ne toljon el semmit */
-    .logo-text, header h1 {
-        font-size: 0.95rem !important; 
-        margin: 0 !important;
-        flex-shrink: 1 !important;
-    }
-
-    /* Fejléc jobb oldala (HU, Login, Vissza): egymás mellett, kicsiben */
-    .header-right, .user-auth-zone {
-        display: flex !important;
-        align-items: center !important;
-        gap: 4px !important;
-        scale: 0.85; /* Kicsit zsugorítjuk az egész blokkot */
-        transform-origin: right;
-    }
-
-    /* 2. DÁTUMOK: Szimmetrikus és középre zárt */
-    #date-selector {
-        display: flex !important;
-        justify-content: center !important; /* KÖZÉPRE teszi a gombokat */
-        flex-wrap: wrap !important; /* Ha nem fér el, törjön több sorba */
-        gap: 8px !important;
-        padding: 10px !important;
-        width: 100% !important;
-    }
-
-    .date-btn {
-        min-width: 65px !important;
-        padding: 6px 10px !important;
-        font-size: 0.75rem !important;
-        text-align: center !important;
-    }
-
-    /* 3. LIGÁK (Sidebar) Visszahozása: Lebegő menüként */
-    .sidebar {
-        position: fixed !important;
-        left: -100% !important; /* Alapból elrejtve balra */
-        top: 60px !important;
-        width: 80% !important;
-        height: calc(100% - 130px) !important;
-        z-index: 2000 !important;
-        background: rgba(15, 15, 25, 0.98) !important;
-        transition: left 0.3s ease !important;
-        display: block !important; /* Visszakapcsolva */
-    }
-
-    /* Amikor a "LIGÁK" gombbal kinyitod (ha van rá JS osztályod) */
-    .sidebar.active, .sidebar.open {
-        left: 0 !important;
-    }
-
-    /* 4. MECCSEK: Tökéletesen középen */
-    .main-wrapper {
-        margin: 0 !important;
-        padding: 10px 0 80px 0 !important;
+    .main-wrapper { 
+        padding-bottom: 90px; /* Megnövelve, hogy az alsó gombok ne takarjanak ki semmit */
+        margin-left: 0 !important;
         width: 100% !important;
         display: flex !important;
         flex-direction: column !important;
-        align-items: center !important;
+        align-items: center !important; /* Meccsek középre igazítása */
     }
 
-    .match-card {
-        width: 92% !important;
-        max-width: 450px !important;
-        margin: 10px 0 !important;
-    }
+    .mobile-nav { display: flex; }
+    .standings-sidebar { width: 85%; }
 
-    /* 5. Gombok elcsúszása ellen (Tippmix gombok) */
-    .odds-container, .bet-buttons {
+    /* 2. FEJLÉC (NAV) FIX: Hogy a LOGO és a LOGIN is látszódjon */
+    nav {
         display: flex !important;
-        justify-content: center !important;
-        gap: 5px !important;
-        width: 100% !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 5px 10px !important;
+        height: 65px !important;
+        box-sizing: border-box !important;
     }
 
-/* Kiegészítő fixek a rázkódás ellen */
+    nav .logo {
+        font-size: 1rem !important; /* Kisebb logó mobilon */
+        flex-shrink: 1 !important;
+        margin-right: 5px !important;
+    }
+
+    .nav-tools {
+        display: flex !important;
+        gap: 5px !important;
+        align-items: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .tool-btn {
+        padding: 6px 8px !important;
+        font-size: 0.75rem !important;
+        min-width: auto !important;
+    }
+
+    /* 3. DÁTUMVÁLASZTÓ: CSÚSZKÁS RENDSZER (Slider) */
+    #date-selector {
+        display: flex !important;
+        justify-content: flex-start !important; 
+        overflow-x: auto !important; /* Oldalra görgethető */
+        overflow-y: hidden !important;
+        white-space: nowrap !important;
+        width: 100% !important;
+        padding: 10px 15px !important;
+        gap: 12px !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important; /* Firefox hulla */
+    }
+
+    #date-selector::-webkit-scrollbar {
+        display: none !important; /* Chrome/Safari hulla */
+    }
+
+    .date-btn {
+        flex: 0 0 auto !important; /* Nem engedi összenyomni a gombokat */
+        min-width: 80px !important;
+        padding: 10px !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* 4. MECCSKÁRTYA: Szemben, középen */
+    .match-card {
+        width: 95% !important;
+        margin: 10px auto !important;
+    }
+
+/* 5. ALSÓ NAVIGÁCIÓ (LIGÁK, MECCSEK, TABELLA) - Visszaadva az eredeti kódod */
+.mobile-nav-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: rgba(20, 20, 30, 0.95);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 9999;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.sidebar.open .header-text,
+.sidebar.open .league-item span { 
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.4s ease 0.2s;
+}
+
+/* Globális elcsúszás gátló */
 html, body {
-    overflow-x: hidden !important;
+    overflow-x: hidden;
     width: 100%;
     position: relative;
     margin: 0;
     padding: 0;
 }
-}
-    </style>
+}    </style>
 </head>
 <body>
 
@@ -2141,6 +2160,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
