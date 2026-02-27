@@ -523,14 +523,51 @@
     visibility: visible;
     transition: opacity 0.4s ease 0.2s; /* Késleltetve jelenik meg, miután a sidebar már tágul */
 }
-        #date-selector {
-        justify-content: flex-start; /* Mobilon jobb, ha szélről indul a görgetés miatt */
-        padding-left: 20px;
+        /* A LUCKYPITCH felirat méretezése */
+    .logo-text, .header h1 { 
+        font-size: 1.2rem !important; 
+        letter-spacing: 1px;
     }
-    .date-btn {
-        padding: 10px 15px;
-        min-width: 80px;
+
+    /* A felső sáv elrendezése, hogy ne lógjon ki semmi */
+    header, .header-container { 
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 0 10px !important;
+        height: 60px !important;
     }
+
+    /* A bejelentkezési rész (ha van ilyen class-od) */
+    .user-auth, .login-btn {
+        scale: 0.8;
+        transform-origin: right;
+    }
+        match-card {
+    width: 95% !important;
+    margin: 8px auto !important;
+}
+       #date-selector {
+    display: flex !important;
+    overflow-x: auto !important; /* Oldalra görgethetőség */
+    overflow-y: hidden;
+    white-space: nowrap !important;
+    gap: 8px !important;
+    padding: 10px !important;
+    justify-content: flex-start !important; /* Balról induljon */
+    scrollbar-width: none; /* Firefox scrollbar elrejtése */
+}
+
+#date-selector::-webkit-scrollbar {
+    display: none; /* Chrome/Safari scrollbar elrejtése */
+}
+
+.date-btn {
+    flex: 0 0 auto !important; /* Ne engedje összenyomni a gombokat */
+    min-width: 75px !important;
+    padding: 8px 12px !important;
+    font-size: 0.85rem !important;
+}
     .mobile-nav-container {
         position: fixed;
         bottom: 0;
@@ -2093,6 +2130,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
