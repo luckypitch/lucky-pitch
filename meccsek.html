@@ -502,120 +502,85 @@
 
 
         
-    /* --- Mobil Nézet --- */
-    .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1100; border-top: 1px solid var(--border); backdrop-filter: blur(20px); }
-    
-    /* --- TELJES MOBIL OPTIMALIZÁLÁS --- */
+   /* --- VÉGLEGES MOBIL JAVÍTÁS --- */
 @media screen and (max-width: 1100px) {
-    /* 1. Alap elrendezés és Sidebar */
+    /* 1. Teljes oldal rázkódásmentesítése */
     html, body {
-        overflow-x: hidden;
-        width: 100%;
-        position: relative;
+        overflow-x: hidden !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
-    body {
-        padding-bottom: 70px; /* Hely a mobil menünek */
-    }
-
-    .sidebar { 
-        position: fixed; 
-        left: 0; 
-        top: 75px; 
-        width: 0px; 
-        height: calc(100% - 145px); 
-        visibility: hidden; /* Ne zavarjon bele a kattintásokba */
-    }
-
-    .main-wrapper { 
-        padding-bottom: 70px; 
-        width: 100%;
-    }
-
-    /* 2. Fejléc (Header) Fix - Hogy elférjen a logó és a profil */
-    header, .header-container { 
+    /* 2. Fejléc: Kisebb logó, hogy elférjen a jobb oldal */
+    header, .header-container {
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        padding: 0 15px !important;
-        height: 65px !important;
-        width: 100%;
-        box-sizing: border-box;
+        padding: 0 10px !important;
+        height: 60px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
-    .logo-text, header h1 { 
-        font-size: 1.2rem !important; 
-        letter-spacing: 1px;
-        margin: 0;
-        white-space: nowrap;
-    }
-
-    /* Bejelentkezés/Profil gomb kicsinyítése */
-    .user-auth, .login-btn, .header-right {
-        scale: 0.85;
-        transform-origin: right;
-        display: flex;
-        align-items: center;
-    }
-
-    /* 3. Dátumválasztó (#date-selector) - Gördíthető sáv */
-    #date-selector {
-        display: flex !important;
-        overflow-x: auto !important; 
-        overflow-y: hidden;
+    .logo-text, header h1 {
+        font-size: 1rem !important; /* Jelentősen kisebb, hogy beférjen a többi gomb */
         white-space: nowrap !important;
+        margin: 0 !important;
+    }
+
+    /* 3. A láthatatlan/elcsúszott Sidebar teljes elrejtése */
+    .sidebar {
+        display: none !important; /* Ha mobilon az alsó menüt használod, ezt teljesen lőjük le */
+    }
+
+    /* 4. Meccskártyák középre igazítása */
+    .main-wrapper {
+        margin: 0 !important;
+        padding: 60px 0 80px 0 !important; /* Fent a header, lent a nav miatt */
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important; /* Ez teszi középre a kártyákat */
+    }
+
+    .match-card {
+        width: 92% !important; /* Kicsit keskenyebb, hogy legyen margó kétoldalt */
+        max-width: 400px !important;
+        margin: 10px 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 5. Dátum gombok elcsúszásának javítása */
+    #date-selector {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: flex-start !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        padding: 10px 5px !important;
         gap: 8px !important;
-        padding: 10px 15px !important;
-        justify-content: flex-start !important; 
-        scrollbar-width: none; 
-        -webkit-overflow-scrolling: touch; /* Sima görgetés iOS-en */
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
     }
 
     #date-selector::-webkit-scrollbar {
-        display: none; 
+        display: none !important;
     }
 
     .date-btn {
-        flex: 0 0 auto !important; 
-        min-width: 80px !important;
-        padding: 10px 12px !important;
-        font-size: 0.85rem !important;
-        text-align: center;
+        flex: 0 0 auto !important; /* Megállítja az összenyomódást */
+        min-width: 70px !important;
+        font-size: 0.8rem !important;
     }
 
-    /* 4. Meccs kártyák (Match Cards) */
-    .match-card {
-        width: 95% !important;
-        margin: 10px auto !important;
-        box-sizing: border-box;
-    }
-
-    /* 5. Alsó Navigáció (Mobile Nav) */
-    .mobile-nav, .mobile-nav-container { 
-        display: flex !important;
-        position: fixed; 
-        bottom: 0; 
-        left: 0; 
-        right: 0; 
-        width: 100%;
-        height: 65px; 
-        background: rgba(20, 20, 30, 0.95); 
-        backdrop-filter: blur(20px); 
-        justify-content: space-around; 
-        align-items: center; 
-        z-index: 9999; 
-        border-top: 1px solid rgba(255, 255, 255, 0.1); 
-        padding-bottom: env(safe-area-inset-bottom);
+    /* 6. Alsó menü fixálása */
+    .mobile-nav-container {
+        width: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
     }
 }
-
-/* Sidebar nyitáskor (ha mobilon is használod) */
-.sidebar.open .header-text,
-.sidebar.open .league-item span { 
-    opacity: 1;
-    visibility: visible;
-    transition: opacity 0.4s ease 0.2s;
-} 
     </style>
 </head>
 <body>
@@ -2153,6 +2118,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
