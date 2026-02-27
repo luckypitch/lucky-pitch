@@ -501,7 +501,7 @@
 }
 
 
-/* --- Mobil Nézet --- */
+/* --- Mobil Nézet Alapok --- */
 .mobile-nav { 
     position: fixed; bottom: 0; left: 0; right: 0; height: 70px; 
     background: var(--glass); display: none; justify-content: space-around; 
@@ -510,25 +510,27 @@
 }
 
 @media (max-width: 1100px) {
-    /* 1. Sidebar teljes kikapcsolása, hogy ne tolja el a tartalmat */
+    /* 1. Sidebar teljes elrejtése - hogy ne tolja el a tartalmat semennyire */
     .sidebar { 
         display: none !important; 
     }
 
-    /* 2. Main-wrapper: KÖZÉPRE IGAZÍTÁS */
+    /* 2. Main-wrapper: Ez teszi KÖZÉPRE a meccseket */
     .main-wrapper { 
+        margin-left: 0 !important; 
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
         padding-bottom: 80px; 
-        margin-left: 0 !important; /* Ez volt a hiba, ami eltolta balra */
         width: 100% !important;
         display: flex !important;
         flex-direction: column !important;
-        align-items: center !important;
+        align-items: center !important; /* Szemben, középen legyen minden */
     }
 
     .mobile-nav { display: flex; }
-    .standings-sidebar { width: 95%; margin: 0 auto; }
-
-    /* 3. FEJLÉC: Logó zsugorítása és szétosztás */
+    
+    /* 3. FEJLÉC: Logó zsugorítása, hogy a Login gomb is elférjen egy sorban */
     header, .header-container {
         display: flex !important;
         justify-content: space-between !important;
@@ -540,55 +542,47 @@
     }
 
     .logo-text, .header h1 { 
-        font-size: 1.1rem !important; /* Hogy beférjen a bejelentkezés gomb mellé */
+        font-size: 1.1rem !important; /* Nem lesz túl nagy, így nem tolja ki a gombokat */
         margin: 0 !important;
+        white-space: nowrap;
     }
 
-    /* 4. DÁTUM VÁLASZTÓ: Középre igazítva, de görgethetően */
+    /* 4. DÁTUM VÁLASZTÓ: Görgethető, de nem csúszik el */
     #date-selector {
+        width: 100% !important;
         display: flex !important;
-        justify-content: flex-start !important; /* Görgetés miatt balról indul */
+        justify-content: flex-start !important;
         overflow-x: auto !important;
         white-space: nowrap !important;
-        width: 100% !important;
         padding: 10px 15px !important;
         gap: 10px !important;
         scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
     }
 
+    #date-selector::-webkit-scrollbar { display: none; }
+
     .date-btn {
-        flex: 0 0 auto !important; /* Ne engedje összenyomni a gombokat */
+        flex: 0 0 auto !important; 
         min-width: 80px;
         padding: 10px 15px;
     }
 
-    /* 5. MECCSKÁRTYA: Szemben legyen, ne csússzon el */
+    /* 5. MECCSKÁRTYA: Teljesen középen */
     .match-card {
         width: 94% !important;
-        margin: 10px auto !important; /* Az 'auto' teszi középre */
         max-width: 500px;
+        margin: 10px auto !important; /* Az auto margó középre rakja */
     }
 }
 
-/* --- Egyéb rögzítések --- */
+/* Kiegészítő fixek a rázkódás ellen */
 html, body {
-    overflow-x: hidden !important; /* Megállítja az oldalra lötyögést */
+    overflow-x: hidden !important;
     width: 100%;
-}
-
-.mobile-nav-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60px;
-    background: rgba(20, 20, 30, 0.95);
-    backdrop-filter: blur(10px);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    z-index: 9999;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    margin: 0;
+    padding: 0;
 }
     </style>
 </head>
@@ -2127,6 +2121,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
