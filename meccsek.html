@@ -507,64 +507,79 @@
     align-items: center; z-index: 1100; border-top: 1px solid var(--border); 
     backdrop-filter: blur(20px); 
 }
+Ez a legnehezebb szakasz, de most a képeid és a pontos HTML kódod alapján pontosan látom a hibát: a nav és a gombok azért csúsznak el, mert a fix szélességek és a justify-content asztali beállításai "kiszorítják" őket a képernyőről, a dátumok pedig a fixed vagy absolute pozicionálás miatt csúsznak a fejléc alá.
+
+Itt a teljes, radikális javítás, ami mindent balra rendez, lehúzza a dátumokat a nav alól, és fixen rögzíti az alsó panelt.
+A Mindent Fixáló CSS (1100px alatt)
+CSS
 
 @media screen and (max-width: 1100px) {
-    /* 1. FEJLÉC (NAV) - Mindent balra tolunk, hogy kiférjen */
+    /* 1. FEJLÉC: Mindent balra rendezünk, hogy elférjen */
     nav {
         display: flex !important;
-        justify-content: flex-start !important; /* Balra igazítás */
+        justify-content: flex-start !important; /* Balra kényszerítjük */
         align-items: center !important;
         padding: 5px !important;
+        height: 60px !important;
+        width: 100vw !important;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        z-index: 10000;
         gap: 5px !important;
-        width: 100% !important;
         box-sizing: border-box !important;
     }
 
     .logo {
-        font-size: 0.8rem !important; /* Kisebb logó */
-        margin-right: auto !important; /* Ez tolja el a gombokat jobbra, de hagy nekik helyet */
+        font-size: 0.75rem !important; /* Kisebb logó */
+        margin-right: 5px !important; /* Minimális távolság */
+        flex-shrink: 1 !important;
     }
 
     .nav-tools {
         display: flex !important;
+        justify-content: flex-start !important; /* Gombok is balra */
         gap: 3px !important;
+        flex-shrink: 0 !important;
     }
 
-    /* Gombok zsugorítása, hogy ne lógjanak ki */
     .tool-btn, #lang-btn, #theme-btn, nav a.tool-btn {
         font-size: 0.6rem !important;
         padding: 4px 5px !important;
         min-width: auto !important;
     }
 
-    /* 2. MECCSEK ÉS DÁTUMOK KÖZÉPRE/BALRA IGAZÍTÁSA */
-    .main-wrapper {
-        margin: 0 !important; /* Törli az asztali margót, ami eltolta */
-        padding: 10px 0 80px 0 !important;
-        width: 100% !important;
+    /* 2. DÁTUMOK: Lehúzzuk a nav alól */
+    #date-selector {
+        margin-top: 65px !important; /* Ezzel jön ki a NAV alól */
         display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
+        overflow-x: auto !important;
+        padding: 10px !important;
+        width: 100% !important;
+        justify-content: flex-start !important;
+        background: rgba(10, 15, 30, 0.9) !important;
     }
 
-    #date-selector {
+    /* 3. TARTALOM (MECCSEK/LIGÁK): Nincs több balra elcsúszás */
+    .main-wrapper {
+        margin: 0 !important; /* Töröljük az asztali eltolást */
+        padding: 0 0 100px 0 !important; /* Hely az alsó navnak */
         width: 100% !important;
-        justify-content: center !important; /* Dátumok középen */
-        padding: 10px 0 !important;
-        margin: 0 !important;
+        display: block !important;
     }
 
     .match-card {
-        width: 94% !important;
-        margin: 10px auto !important;
-        left: 0 !important; /* Biztosítja, hogy ne legyen elcsúszva */
+        width: 95% !important;
+        margin: 15px auto !important; /* Középre igazítva szimmetrikusan */
+        left: 0 !important;
     }
 
-    /* 3. BAJNOKSÁG LISTA (LIGÁK) SZÉTHÚZÁSA */
-    .leagues-container, .standings-container {
+    /* 4. LIGÁK LISTA: Teljes szélesség, ne lógjon ki balra */
+    .sidebar, .leagues-container {
         width: 100% !important;
+        left: 0 !important;
         margin: 0 !important;
-        padding: 0 10px !important;
+        padding: 10px !important;
         box-sizing: border-box !important;
     }
 
@@ -573,28 +588,30 @@
         margin-left: 0 !important;
     }
 
-    /* 4. ALSÓ KEZELŐPANEL VISSZAHOZÁSA */
+    /* 5. ALSÓ KEZELŐPANEL: VISSZAHOZVA ÉS RÖGZÍTVE */
     .mobile-nav-container {
-        display: flex !important; /* Biztosítjuk a megjelenést */
+        display: flex !important;
         position: fixed !important;
         bottom: 0 !important;
         left: 0 !important;
         width: 100% !important;
         height: 65px !important;
-        background: #0a0a0f !important; /* Sötét háttér, hogy látszódjon */
-        z-index: 99999 !important; /* Minden felett */
+        background: #0a0a14 !important;
+        z-index: 99999 !important;
         justify-content: space-around !important;
         align-items: center !important;
         border-top: 1px solid rgba(255,255,255,0.1) !important;
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
     }
+}
 
-    /* ELEMZÉS gomb fixálása, hogy ne legyen fos */
+/* Elemzés gomb fixálása (a HTML style felülbírálása) */
+@media screen and (max-width: 1100px) {
     a[href*="elemzes"].tool-btn {
-        width: 80px !important;
-        font-size: 8px !important;
-        padding: 5px !important;
-        display: block !important;
-        margin: 0 auto !important;
+        width: 85px !important;
+        font-size: 10px !important;
+        padding: 6px !important;
+        text-align: center !important;
     }
 }
   </style>
@@ -2134,6 +2151,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
