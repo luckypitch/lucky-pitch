@@ -502,9 +502,9 @@
 
 @media screen and (max-width: 1100px) {
     /* 1. GAP JAVÍTÁS ÉS TEST ELRENDEZÉS */
-    body { 
-        padding-top: 60px !important; /* Pontosan a nav magassága */
-        overflow-x: hidden;
+  body { 
+        padding-top: 60px !important; 
+        margin: 0 !important;
     }
 
     /* 2. NAVIGÁCIÓ (FELSŐ SÁV) */
@@ -534,15 +534,14 @@
     }
 
     /* 3. DÁTUMOK: FELTOLVA ÉS CSÚSZKÁSRA ÁLLÍTVA */
-    #date-selector {
-        margin: 0 !important; /* Eltünteti a felső üres teret */
-        padding: 10px 5px !important;
+   #date-selector {
+        margin-top: 0 !important; 
+        padding-bottom: 5px !important;
         display: flex !important;
-        overflow-x: auto !important;
-        gap: 10px !important;
-        background: rgba(10, 10, 20, 0.5) !important;
+        background: rgba(10, 10, 20, 0.8) !important;
         width: 100% !important;
-        scrollbar-width: none;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
     }
     #date-selector::-webkit-scrollbar { display: none; }
 
@@ -573,45 +572,28 @@
 
     /* 5. TARTALOM (TABELLA/MECCSEK) FELTOLÁSA */
     .main-wrapper {
-        margin: 0 !important; /* Törli az asztali margót */
-        padding: 0 0 80px 0 !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        display: block !important;
         width: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
     }
 
     .standings-container, .leagues-container {
-        margin-top: -5px !important; /* Minimális finomhangolás felfelé */
-        width: 100% !important;
-        padding: 0 10px !important;
+        margin-top: 0 !important;
+        padding-top: 10px !important;
     }
 
     /* 6. ALSÓ NAVIGÁCIÓ: LEFINOMÍTVA */
     .mobile-nav {
-        display: flex !important;
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 60px !important; /* Kisebb magasság */
-        background: rgba(13, 13, 23, 0.95) !important;
-        backdrop-filter: blur(10px);
-        z-index: 10001 !important;
-        justify-content: space-around !important;
-        align-items: center !important;
-        border-top: 1px solid rgba(0, 243, 255, 0.3) !important; /* Vékonyabb, áttetszőbb csík */
-        padding: 0 10px 5px 10px !important;
+        height: 55px !important;
+        border-top: 1px solid rgba(0, 243, 255, 0.2) !important; /* Finomabb vonal */
+        background: #0a0a14 !important;
     }
 
     .mobile-nav .tool-btn {
-        flex: 1;
-        max-width: 100px;
-        height: 38px !important; /* Kecsesebb gombok */
-        font-size: 0.7rem !important;
-        background: rgba(255,255,255,0.05) !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
-        border-radius: 6px !important;
-        margin: 0 5px !important;
+        height: 35px !important;
+        font-size: 0.65rem !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
     }
 }
   </style>
@@ -2151,6 +2133,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
