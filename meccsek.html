@@ -710,25 +710,28 @@
     <script>
 // --- 1. GLOBÁLIS ÁLLAPOT ---
 let currentLang = localStorage.getItem('lp_lang') || 'HU';
-const todayStr = new Date().toLocaleDateString('sv');
-let selectedDate = new Date().toISOString().split('T')[0];
-let savedLeagues = localStorage.getItem('lp_selectedLeagues');
-let selectedLeagues = new Set();
-let allMatches = [];
-let prevScores = new Map();
-let flashingMatches = new Set();
-let globalOdds = []; // Itt tároljuk az API-ból jött oddsokat
-let activeBets = JSON.parse(localStorage.getItem('lp_activeBets')) || [];
-let currentLeagueId = 'all'; // Alapból minden liga
-let isFirstLoad = true; // Segédváltozó a legtetejére
-let activeChatId = null; // Itt tároljuk, melyik meccs chatje van épp nyitva
-const chatHistory = {};  // Tárolja az üzeneteket meccsenként        
-// Ez a függvény garantálja, hogy a dátum formátuma (YYYY-MM-DD) egyezzen az API-val
+
+// Segédfüggvény a dátumhoz
 const getLocalDateString = (date = new Date()) => {
     return date.getFullYear() + '-' + 
            String(date.getMonth() + 1).padStart(2, '0') + '-' + 
            String(date.getDate()).padStart(2, '0');
 };
+
+const todayStr = getLocalDateString(); // Csak egyszer deklarálva
+let selectedDate = todayStr;           // Csak egyszer deklarálva
+
+let savedLeagues = localStorage.getItem('lp_selectedLeagues');
+let selectedLeagues = new Set();
+let allMatches = [];
+let prevScores = new Map();
+let flashingMatches = new Set();
+let globalOdds = []; 
+let activeBets = JSON.parse(localStorage.getItem('lp_activeBets')) || [];
+let currentLeagueId = 'all'; 
+let isFirstLoad = true; 
+let activeChatId = null; 
+const chatHistory = {};
    
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
@@ -917,16 +920,13 @@ function triggerGoalEffect(mId, tName, logo) {
     }
 }
 
-// --- 4. ADATKEZELÉS ---        
+// --- 4. ADATKEZELÉS (JAVÍTOTT ASYNC FUNKCIÓ) ---
 async function checkBetResults() {
     if (!activeBets || activeBets.length === 0) return;
-
     let updatedAny = false;
 
     for (let i = activeBets.length - 1; i >= 0; i--) {
         const bet = activeBets[i];
-
-        // Megkeressük a meccset az élő adatok között
         const match = allMatches.find(m => String(m.id) === String(bet.matchId));
 
         if (match && match.status === "FINISHED") {
@@ -934,24 +934,19 @@ async function checkBetResults() {
             const awayScore = match.score.fullTime.away;
             let won = false;
 
-            // Nyert-e a tipp?
             if (bet.type === 'H' && homeScore > awayScore) won = true;
             else if (bet.type === 'D' && homeScore === awayScore) won = true;
             else if (bet.type === 'V' && awayScore > homeScore) won = true;
 
             if (won) {
                 const prize = Math.floor(bet.amount * bet.odds);
-                const newTotal = window.userBalance + prize;
-
-                alert(`GRATULÁLUNK! 🎉\nA(z) ${match.homeTeam.name} meccsen nyertél ${prize} LP-t!`);
-
-                // Frissítjük a Supabase-t
-                await updateSupabaseBalance(newTotal);
+                // Fontos: Itt már működni fog az await, mert a függvény async!
+                await updateSupabaseBalance(window.userBalance + prize);
+                alert(`GRATULÁLUNK! 🎉\nNyertél ${prize} LP-t!`);
             } else {
-                alert(`Sajnos nem nyertél... ❌\nA(z) ${match.homeTeam.name} meccs végeredménye: ${homeScore}:${awayScore}`);
+                alert(`Sajnos nem nyertél... ❌`);
             }
 
-            // Töröljük az aktív fogadások közül, mert lezárult
             activeBets.splice(i, 1);
             updatedAny = true;
         }
@@ -959,7 +954,7 @@ async function checkBetResults() {
 
     if (updatedAny) {
         localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
-        renderMatches();
+        if (typeof renderMatches === 'function') renderMatches();
     }
 }
 
@@ -2222,6 +2217,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
