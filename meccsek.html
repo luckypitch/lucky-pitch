@@ -723,7 +723,15 @@ let currentLeagueId = 'all'; // Alapból minden liga
 let isFirstLoad = true; // Segédváltozó a legtetejére
 let activeChatId = null; // Itt tároljuk, melyik meccs chatje van épp nyitva
 const chatHistory = {};  // Tárolja az üzeneteket meccsenként        
-        
+// Ez a függvény garantálja, hogy a dátum formátuma (YYYY-MM-DD) egyezzen az API-val
+const getLocalDateString = (date = new Date()) => {
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(date.getDate()).padStart(2, '0');
+};
+
+const todayStr = getLocalDateString(); 
+let selectedDate = todayStr; // Alapértelmezetten a MA        
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
     if (!status) return 'transparent';
@@ -1038,15 +1046,56 @@ function getSmartOdds(match) {
     return result;
 }
 
-// --- 5. MEGJELENÍTÉS ---
+// --- 5. MEGJELENÍTÉS JAVÍTÁSA ---
 async function renderMatches() {
     const cont = document.getElementById("match-container");
     if (!cont) return;
 
     if (!allMatches || allMatches.length === 0) {
-        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3;">${currentLang==='HU'?'ADATOK BETÖLTÉSE...':'LOADING MATCHES...'}</p>`;
+        cont.innerHTML = `<div class="loading-box">${currentLang==='HU'?'ADATOK BETÖLTÉSE...':'LOADING...'}</div>`;
         return;
     }
+
+    // SZŰRÉS: Logoljuk ki, miért nem megy át a szűrőn
+    const filtered = allMatches.filter(m => {
+        if (!m || !m.utcDate) return false;
+        
+        // Csak a dátum részt hasonlítjuk össze (YYYY-MM-DD)
+        const mDate = m.utcDate.split('T')[0]; 
+        const isCorrectDate = (mDate === selectedDate);
+        
+        // Liga szűrés (ha üres a Set, minden ligát mutasson)
+        const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(String(m.competition.id)));
+        
+        return isCorrectDate && isCorrectLeague;
+    });
+
+    console.log(`Szűrés kész. Kiválasztott dátum: ${selectedDate}, Találatok: ${filtered.length}`);
+
+    if (filtered.length === 0) {
+        cont.innerHTML = `
+            <div style="text-align:center; padding:40px; opacity:0.5;">
+                <p>NINCS MECCS EKKOR: ${selectedDate}</p>
+                <button onclick="selectedDate='${allMatches[0].utcDate.split('T')[0]}'; renderMatches();" 
+                        style="background:var(--neon-blue); color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; font-family:'Orbitron'; font-size:10px;">
+                    UGRÁS AZ ELSŐ ELÉRHETŐ MECCSHEZ
+                </button>
+            </div>`;
+        return;
+    }
+
+    // Rendezés: ÉLŐ (LIVE/IN_PLAY) meccsek legyenek elöl
+    filtered.sort((a, b) => {
+        const statusPriority = { "IN_PLAY": 1, "LIVE": 1, "PAUSED": 2, "TIMED": 3, "SCHEDULED": 3, "FINISHED": 4 };
+        return (statusPriority[a.status] || 5) - (statusPriority[b.status] || 5);
+    });
+
+    // Itt jön a .map(...) részed, az maradhat az eredeti, de a kártyák generálása előtt 
+    // győződj meg róla, hogy a container-t üríted:
+    cont.innerHTML = filtered.map(m => { 
+        /* ... az eredeti return `...` részed ... */ 
+    }).join('');
+}
 
     // --- 1. FOGADÁSOK LEKÉRÉSE ---
     let currentUserBets = [];
@@ -2175,6 +2224,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
