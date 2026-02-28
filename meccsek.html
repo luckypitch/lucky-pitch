@@ -1228,27 +1228,44 @@ function toggleLeague(leagueId, element) {
     renderMatches();
 }
 
-// --- 6. UI LOGIKA ---
+// --- 6. UI LOGIKA JAVÍTVA ---
 function renderDateSelector() {
     const selector = document.getElementById("date-selector");
+    // Ha nincs hova rajzolni, vagy nincsenek meccsek, ne csináljon semmit
     if (!selector || !allMatches || allMatches.length === 0) return;
 
+    // Összeszedjük az egyedi dátumokat a meccsekből
     const datesSet = new Set();
     allMatches.forEach(m => {
-        if (m.utcDate) datesSet.add(m.utcDate.split('T')[0]);
+        if (m && m.utcDate) {
+            datesSet.add(m.utcDate.split('T')[0]);
+        }
     });
     
+    // Ha a jelenleg kiválasztott dátum nincs az új adatok között, 
+    // állítsuk be az első elérhető dátumra (ezzel elkerüljük az üres oldalt)
     const sortedDates = Array.from(datesSet).sort();
+    if (sortedDates.length > 0 && !datesSet.has(selectedDate)) {
+        console.log("A korábbi dátum nem elérhető, váltás:", sortedDates[0]);
+        selectedDate = sortedDates[0];
+    }
 
     selector.innerHTML = sortedDates.map(date => {
         const dObj = new Date(date);
-        const isActive = date === selectedDate;
-        // Feltételezve, hogy a todayStr definiálva van globálisan
-        const isToday = (typeof todayStr !== 'undefined' && date === todayStr);
-        const label = isToday ? 'MA' : dObj.toLocaleDateString('hu-HU', { weekday: 'short', day: 'numeric' });
+        const isActive = (date === selectedDate);
+        
+        // Biztonságos mai nap ellenőrzés
+        const checkToday = new Date().toLocaleDateString('sv');
+        const isToday = (date === checkToday);
+        
+        const label = isToday ? (currentLang === 'HU' ? 'MA' : 'TODAY') : 
+                      dObj.toLocaleDateString(currentLang === 'HU' ? 'hu-HU' : 'en-US', { weekday: 'short', day: 'numeric' });
 
+        // JAVÍTÁS: A renderMatches elé odaírjuk az await-et (vagy .then-t), 
+        // de az onclick-ben a legegyszerűbb aszinkron módon hívni
         return `
-            <button class="date-btn ${isActive ? 'active' : ''}" onclick="selectedDate='${date}'; renderMatches();">
+            <button class="date-btn ${isActive ? 'active' : ''}" 
+                    onclick="selectedDate='${date}'; renderMatches();">
                 ${label.toUpperCase()}
             </button>`;
     }).join('');
@@ -2153,6 +2170,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
