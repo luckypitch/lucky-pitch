@@ -287,8 +287,8 @@ const autoCheckResults = async () => {
         for (let bet of pendingBets) {
             try {
                 const apiRes = await fetch(`https://api.football-data.org/v4/matches/${bet.match_id}`, {
-                    headers: { 'X-Auth-Token': apiKey }
-                });
+    headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY } // Ne process.env-t, hanem a már összefésült változót használd!
+});
                 
                 if (!apiRes.ok) continue; // Ugorjunk a következőre, ha ez a meccs nem elérhető
 
@@ -443,6 +443,7 @@ server.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
