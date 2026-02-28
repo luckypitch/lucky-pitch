@@ -920,41 +920,53 @@ function triggerGoalEffect(mId, tName, logo) {
     }
 }
 
-// --- 4. ADATKEZELÉS (JAVÍTOTT ASYNC FUNKCIÓ) ---
+// --- JAVÍTOTT checkBetResults FÜGGVÉNY ---
 async function checkBetResults() {
+    // Ellenőrizzük, hogy vannak-e egyáltalán aktív fogadások
     if (!activeBets || activeBets.length === 0) return;
+
     let updatedAny = false;
 
+    // Hátulról előre haladunk a tömbben a törlések miatt
     for (let i = activeBets.length - 1; i >= 0; i--) {
         const bet = activeBets[i];
+        
+        // Megkeressük a meccset az adatok között
         const match = allMatches.find(m => String(m.id) === String(bet.matchId));
 
+        // Csak akkor értékeljük ki, ha a meccs befejeződött (FINISHED)
         if (match && match.status === "FINISHED") {
             const homeScore = match.score.fullTime.home;
             const awayScore = match.score.fullTime.away;
             let won = false;
 
+            // Logika ellenőrzése (H, D, V)
             if (bet.type === 'H' && homeScore > awayScore) won = true;
             else if (bet.type === 'D' && homeScore === awayScore) won = true;
             else if (bet.type === 'V' && awayScore > homeScore) won = true;
 
             if (won) {
                 const prize = Math.floor(bet.amount * bet.odds);
-                // Fontos: Itt már működni fog az await, mert a függvény async!
-                await updateSupabaseBalance(window.userBalance + prize);
-                alert(`GRATULÁLUNK! 🎉\nNyertél ${prize} LP-t!`);
+                const newBalance = (window.userBalance || 0) + prize;
+                
+                // ITT VOLT A HIBA: Most már az async miatt működik az await!
+                await updateSupabaseBalance(newBalance);
+                
+                alert(`GRATULÁLUNK! 🎉\n${bet.teamName} nyert, kaptál ${prize} LP-t!`);
             } else {
-                alert(`Sajnos nem nyertél... ❌`);
+                alert(`Sajnos a ${bet.teamName} fogadásod nem nyert. ❌`);
             }
 
+            // Töröljük a lezárt fogadást a listából
             activeBets.splice(i, 1);
             updatedAny = true;
         }
     }
 
+    // Ha történt változás, mentjük és újrarajzoljuk a felületet
     if (updatedAny) {
         localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
-        if (typeof renderMatches === 'function') renderMatches();
+        renderMatches();
     }
 }
 
@@ -1341,54 +1353,6 @@ async function placeBet(matchId, teamName, odds, type) {
     } catch (err) {
         console.error("Hiba:", err);
         alert("Hiba történt a mentés során. Kérlek próbáld újra!");
-    }
-}
-
-async function checkBetResults() {
-    // 1. Beolvassuk a helyi fogadásokat
-    let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
-    if (currentBets.length === 0) return;
-
-    let changed = false;
-
-    for (let bet of currentBets) {
-        // Csak a még nyitott fogadásokat nézzük
-        if (bet.status !== 'OPEN') continue;
-
-        // Megkeressük a meccset az élő adatok között
-        const match = allMatches.find(x => String(x.id) === String(bet.matchId));
-
-        // Ha a meccs véget ért (FINISHED)
-        if (match && (match.status === 'FINISHED' || match.status === 'AWARDED')) {
-            const homeScore = match.score.fullTime.home;
-            const awayScore = match.score.fullTime.away;
-            let actualWinner = '';
-
-            if (homeScore > awayScore) actualWinner = 'H';
-            else if (homeScore < awayScore) actualWinner = 'V';
-            else actualWinner = 'D';
-
-            if (bet.type === actualWinner) {
-                // --- NYERT! ---
-                const prize = Math.floor(bet.amount * bet.odds);
-                console.log(`GRATULÁLOK! Nyertél ${prize} LP-t a ${bet.teamName} meccsen!`);
-
-                // Jóváírjuk a szerveren és a kliensen is
-                await processWin(prize, bet.matchId);
-                bet.status = 'WON';
-            } else {
-                // --- VESZTETT ---
-                console.log(`Sajnos a ${bet.teamName} fogadásod nem jött be.`);
-                bet.status = 'LOST';
-            }
-            changed = true;
-        }
-    }
-
-    // Ha történt változás, elmentjük és újrarajzolunk
-    if (changed) {
-        localStorage.setItem('lp_activeBets', JSON.stringify(currentBets));
-        if (typeof renderMatches === 'function') renderMatches();
     }
 }
 
@@ -2217,6 +2181,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
