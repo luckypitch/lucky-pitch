@@ -779,17 +779,11 @@ async function loadInitialBalance() {
         const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}&t=${Date.now()}`);
         const data = await response.json();
         if (data && data.balance !== undefined) {
-            const balanceSpan = document.getElementById('user-balance');
-            const newBalance = Number(data.balance);
-            
-            // Ha nőtt az egyenleg (nyeremény), vizuális effekt
-            if (window.userBalance !== undefined && newBalance > window.userBalance) {
-                flashBalanceUpdate();
-            }
-
-            if (balanceSpan) balanceSpan.innerText = newBalance.toLocaleString();
-            document.getElementById('balance-wrap').style.display = 'flex';
-            window.userBalance = newBalance;
+            const span = document.getElementById('user-balance');
+            const wrap = document.getElementById('balance-wrap');
+            if (span) span.innerText = Number(data.balance).toLocaleString();
+            if (wrap) wrap.style.display = 'flex';
+            window.userBalance = data.balance;
         }
     } catch (err) { console.error("Egyenleg hiba:", err); }
 }
@@ -804,13 +798,21 @@ function flashBalanceUpdate() {
 // --- 4. ADATOK ÉS MECCSEK (Update & Render) ---
 async function updateData() {
     try {
+        // Meccsek lekérése
         const res = await fetch(`/live-matches?date=${selectedDate}`);
-        const data = await res.json();
-        allMatches = data.matches || data || [];
+        const matchData = await res.json();
+        allMatches = Array.isArray(matchData) ? matchData : (matchData.matches || []);
 
-        // Oddsok lekérése
-        const oddsRes = await fetch("/api/odds-data");
-        globalOdds = await oddsRes.json();
+        // Oddsok lekérése - JAVÍTVA
+        try {
+            const oddsRes = await fetch("/api/odds-data");
+            const oddsData = await oddsRes.json();
+            // Ellenőrizzük, hogy tömböt kaptunk-e!
+            globalOdds = Array.isArray(oddsData) ? oddsData : [];
+        } catch (err) {
+            console.warn("Odds API hiba, alapértelmezett oddsok használata");
+            globalOdds = [];
+        }
 
         if (isFirstLoad && allMatches.length > 0) {
             allMatches.forEach(m => selectedLeagues.add(String(m.competition.id)));
@@ -820,8 +822,10 @@ async function updateData() {
         renderLeagues();
         renderMatches();
         checkGoals();
-        checkBetResults(); // Minden frissítésnél megnézzük, vége lett-e egy meccsnek
-    } catch (e) { console.error("Update hiba:", e); }
+        checkBetResults();
+    } catch (e) {
+        console.error("Update hiba a lekérésben:", e);
+    }
 }
 
 function renderMatches() {
@@ -833,49 +837,61 @@ function renderMatches() {
         filtered = filtered.filter(m => String(m.competition.id) === currentLeagueId);
     }
 
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="no-matches">Nincsenek meccsek a választott szűrőkkel.</div>`;
+        return;
+    }
+
     container.innerHTML = filtered.map(match => {
         const isLive = ["IN_PLAY", "PAUSED"].includes(match.status);
         const score = match.score?.fullTime || { home: 0, away: 0 };
         const isFlashing = flashingMatches.has(String(match.id)) ? 'goal-highlight' : '';
-        const matchOdds = globalOdds.find(o => String(o.id) === String(match.id))?.odds || { home: 2.1, draw: 3.4, away: 2.8 };
+        
+        // Biztonságos keresés a tömbben
+        const foundMatchOdds = Array.isArray(globalOdds) ? globalOdds.find(o => String(o.id) === String(match.id)) : null;
+        const matchOdds = foundMatchOdds?.odds || { home: 2.10, draw: 3.20, away: 2.80 };
 
         return `
             <div class="match-card ${isFlashing}" id="match-${match.id}">
+                <div class="match-header">
+                    <span class="league-name">${match.competition.name}</span>
+                    <span class="match-status ${isLive ? 'live' : ''}">${isLive ? 'LIVE' : match.status}</span>
+                </div>
                 <div class="match-info-row">
-                    <div class="team-link" onclick="showStandings(${match.competition.id})">
-                        <img src="${match.homeTeam.crest}" alt="">
-                        <span>${match.homeTeam.name}</span>
+                    <div class="team-box home" onclick="showStandings(${match.competition.id}, ${match.homeTeam.id}, '${match.competition.code}')">
+                        <img src="${match.homeTeam.crest}" onerror="this.src='placeholder.png'">
+                        <span class="t-name">${match.homeTeam.shortName || match.homeTeam.name}</span>
                     </div>
-                    <div class="score-display ${isLive ? 'score-live' : ''}">
-                        ${score.home} - ${score.away}
+                    <div class="score-display">
+                        <span class="${isLive ? 'score-live' : ''}">${score.home ?? 0} : ${score.away ?? 0}</span>
                     </div>
-                    <div class="team-link" onclick="showStandings(${match.competition.id})">
-                        <img src="${match.awayTeam.crest}" alt="">
-                        <span>${match.awayTeam.name}</span>
+                    <div class="team-box away" onclick="showStandings(${match.competition.id}, ${match.awayTeam.id}, '${match.competition.code}')">
+                        <img src="${match.awayTeam.crest}" onerror="this.src='placeholder.png'">
+                        <span class="t-name">${match.awayTeam.shortName || match.awayTeam.name}</span>
                     </div>
                 </div>
                 
                 <div class="match-odds-row">
                     <button class="odds-btn" onclick="placeBet('${match.id}', 'H', ${matchOdds.home}, '${match.homeTeam.name}')">
-                        <span class="odds-label">HAZAI</span>
-                        <span class="odds-val">${matchOdds.home}</span>
+                        <small>H</small> <strong>${matchOdds.home}</strong>
                     </button>
                     <button class="odds-btn" onclick="placeBet('${match.id}', 'D', ${matchOdds.draw}, 'Döntetlen')">
-                        <span class="odds-label">DÖNTETLEN</span>
-                        <span class="odds-val">${matchOdds.draw}</span>
+                        <small>D</small> <strong>${matchOdds.draw}</strong>
                     </button>
                     <button class="odds-btn" onclick="placeBet('${match.id}', 'V', ${matchOdds.away}, '${match.awayTeam.name}')">
-                        <span class="odds-label">VENDÉG</span>
-                        <span class="odds-val">${matchOdds.away}</span>
+                        <small>V</small> <strong>${matchOdds.away}</strong>
                     </button>
                 </div>
 
-                <div class="btn-chat-toggle" onclick="toggleChat('${match.id}')">💬 CHAT</div>
-                <div id="chat-section-${match.id}" class="match-chat-section">
+                <div class="match-footer-actions">
+                    <button class="chat-toggle-btn" onclick="toggleChat('${match.id}')">💬 CHAT</button>
+                </div>
+
+                <div id="chat-section-${match.id}" class="match-chat-section" style="display:none;">
                     <div id="chat-messages-${match.id}" class="chat-messages"></div>
                     <div class="chat-input-area">
-                        <input type="text" id="chat-input-${match.id}" class="chat-input" placeholder="Üzenet...">
-                        <button class="chat-send-btn" onclick="sendMessage('${match.id}')">➤</button>
+                        <input type="text" id="chat-input-${match.id}" onkeypress="if(event.key==='Enter') sendChatMessage('${match.id}')" placeholder="Írj valamit...">
+                        <button onclick="sendChatMessage('${match.id}')">➤</button>
                     </div>
                 </div>
             </div>
@@ -1020,7 +1036,32 @@ function generateDateSelector() {
         container.appendChild(btn);
     }
 }
-
+function renderDateStrip() {
+    const selector = document.getElementById("date-selector");
+    if (!selector) return;
+    const dates = [];
+    for(let i = -1; i < 4; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        dates.push(getLocalDateString(d));
+    }
+    selector.innerHTML = dates.map(d => `
+        <button class="date-btn ${d === selectedDate ? 'active' : ''}" 
+                onclick="selectedDate='${d}'; renderDateStrip(); updateData();">
+            ${d === getLocalDateString() ? 'MA' : d.slice(5)}
+        </button>
+    `).join('');
+}
+async function loadUserBetsFromServer() {
+    if (!Clerk.user) return;
+    try {
+        const res = await fetch(`/api/user/bets?userId=${Clerk.user.id}`);
+        const bets = await res.json();
+        if (Array.isArray(bets)) localStorage.setItem('lp_activeBets', JSON.stringify(bets));
+    } catch (e) { console.warn("Tippek betöltése sikertelen"); }
+}
+        
+        
 // Téma váltás
 function toggleTheme() {
     const isLight = document.body.classList.toggle('light');
@@ -1072,67 +1113,14 @@ function toggleLeagueSelection(id) {
     renderLeagues();
     renderMatches(); // Frissítjük a középső részt is!
 }
-function getSmartOdds(match) {
-    const seed = match.id || 0;
-    const rng = (s) => Math.abs(Math.sin(seed + s));
-
-    let result = {
-        h: (1.4 + rng(1) * 2).toFixed(2),
-        d: (2.8 + rng(2) * 1.5).toFixed(2),
-        a: (1.6 + rng(3) * 3).toFixed(2)
-    };
-
-    if (!globalOdds || globalOdds.length === 0) return result;
-
-    const clean = (name) => {
-        if (!name) return "";
-        return name.toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            .replace(/\bfc\b|\bafc\b|\bcf\b|\bclub\b|\batletico\b|\batl.\b|\bsports\b|\bfr\b/g, '') // FR-t is kivesszük
-            .replace(/[^a-z0-9]/g, ' ') // Nem töröljük a szóközöket, csak a fura karaktereket
-            .trim();
-    };
-
-    const mHome = clean(match.homeTeam.name);
-    const mAway = clean(match.awayTeam.name);
-
-    // Keresés finomítása
-    const found = globalOdds.find(o => {
-        const oHome = clean(o.home_team);
-        const oAway = clean(o.away_team);
-
-        // Ellenőrizzük, hogy a szavak átfedik-e egymást (pl. "Botafogo FR" vs "Botafogo")
-        const isHomeMatch = oHome.includes(mHome) || mHome.includes(oHome);
-        const isAwayMatch = oAway.includes(mAway) || mAway.includes(oAway);
-
-        return isHomeMatch && isAwayMatch;
-    });
-
-    if (found && found.bookmakers?.[0]) {
-        const market = found.bookmakers[0].markets.find(m => m.key === 'h2h');
-        
-        if (market) {
-            // Itt a kimeneteleket a csapatnév alapján párosítjuk az API-ból jövő eredeti nevekkel
-            market.outcomes.forEach(outcome => {
-                const outName = clean(outcome.name);
-                if (outName.includes(clean(found.home_team)) || clean(found.home_team).includes(outName)) {
-                    result.h = outcome.price.toFixed(2);
-                } else if (outName.includes(clean(found.away_team)) || clean(found.away_team).includes(outName)) {
-                    result.a = outcome.price.toFixed(2);
-                } else if (outName.includes('draw') || outName === 'x' || outName.includes('remis')) {
-                    result.d = outcome.price.toFixed(2);
-                }
-            });
-        }
-    }
-    return result;
-}        
+   
 // Oldal indítása
 window.onload = startApp;
         
     </script>
 </body>
 </html>
+
 
 
 
