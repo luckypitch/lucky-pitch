@@ -341,6 +341,7 @@ app.get("/", (req, res) => res.sendFile(path.join(__dirname, "Home.html")));
 app.get("/go", (req, res) => res.sendFile(path.join(__dirname, "go.html")));
 app.get("/meccsek", (req, res) => res.sendFile(path.join(__dirname, "meccsek.html")));
 app.get("/elemzes", (req, res) => res.sendFile(path.join(__dirname, "elemzes.html")));
+app.get("/kontakt", (req, res) => res.sendFile(path.join(__dirname, "kontakt.html")));
 
 // BIZTONSÁGOS FALLBACK
 // Csak akkor irányítunk át, ha nem konkrét fájlt (.css, .js, .png) keres a böngésző
@@ -442,6 +443,7 @@ server.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
