@@ -730,7 +730,6 @@ const getLocalDateString = (date = new Date()) => {
            String(date.getDate()).padStart(2, '0');
 };
 
-const todayStr = getLocalDateString(); 
 let selectedDate = todayStr; // Alapértelmezetten a MA        
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
@@ -2224,6 +2223,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
