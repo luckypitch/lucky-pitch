@@ -759,61 +759,57 @@ async function updateData() {
         // 1. Meccsek letöltése
         const res = await fetch("/live-matches");
         const data = await res.json();
+        
+        // Biztosítjuk, hogy az allMatches mindig egy tömb legyen
         allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
 
-       // 2. Oddsok letöltése - JAVÍTOTT RÉSZ
+        // 2. Oddsok letöltése
         try {
-            console.log("Odds lekérése folyamatban...");
             const oddsRes = await fetch("/api/odds-data");
-            
-            if (!oddsRes.ok) {
-                throw new Error(`HTTP hiba! Státusz: ${oddsRes.status}`);
+            if (oddsRes.ok) {
+                const oddsData = await oddsRes.json();
+                // Kezeljük mindkét lehetséges API válaszformátumot
+                if (Array.isArray(oddsData)) {
+                    globalOdds = oddsData;
+                } else if (oddsData && oddsData.data && Array.isArray(oddsData.data)) {
+                    globalOdds = oddsData.data;
+                }
             }
-
-            const oddsData = await oddsRes.json();
-            console.log("Nyers odds adat a szerverről:", oddsData); // Itt látni fogjuk, ha üres
-
-            // Ellenőrizzük, hogy az oddsData ténylegesen meccseket tartalmazó tömb-e
-            if (oddsData && Array.isArray(oddsData)) {
-                globalOdds = oddsData;
-            } else if (oddsData && oddsData.data && Array.isArray(oddsData.data)) {
-                // Néha az API-k egy "data" objektumba csomagolják a tömböt
-                globalOdds = oddsData.data;
-            } else {
-                console.warn("Az odds formátum nem megfelelő vagy üres.");
-                globalOdds = [];
-            }
-            
-            console.log("globalOdds feltöltve, hossza:", globalOdds.length);
-            } catch (e) { 
-            console.error("Odds API hiba részletei:", e); 
+        } catch (e) { 
+            console.error("Odds API hiba:", e); 
             globalOdds = [];
         }
-        // 3. Automatikus kijelölés logikája (Csak az első sikeres betöltésnél)
+
+        // 3. Automatikus liga-kijelölés (Csak az legelső betöltésnél)
         if (isFirstLoad && allMatches.length > 0) {
             allMatches.forEach(m => {
                 if (m.competition && m.competition.id) {
                     selectedLeagues.add(String(m.competition.id));
                 }
             });
-            isFirstLoad = false; // Kikapcsoljuk, hogy a user szűrése megmaradjon
+            isFirstLoad = false; 
         }
 
-        // 4. Renderelés
-        // A DateStrip-et nem kell minden alkalommal újrarajzolni, ha nem változott a nap
+        // 4. RENDERELÉS - KRITIKUS JAVÍTÁS: AWAIT HASZNÁLATA
         if (typeof renderDateStrip === 'function') renderDateStrip();
-        
-        // Ligák és meccsek frissítése
         if (typeof renderLeagues === 'function') renderLeagues();
-        if (typeof renderMatches === 'function') renderMatches();
+        
+        // Mivel a renderMatches ASYNC, meg kell várni (await)!
+        if (typeof renderMatches === 'function') {
+            await renderMatches(); 
+        }
 
-        // 5. Ellenőrzések
+        // 5. Ellenőrzések (Gólok és Fogadások)
         if (allMatches.length > 0) {
             if (typeof checkGoals === 'function') checkGoals();
-            if (typeof checkBetResults === 'function') checkBetResults();
+            
+            // A fogadások ellenőrzése is ASYNC, ide is kell az await!
+            if (typeof checkBetResults === 'function') {
+                await checkBetResults();
+            }
         }
 
-        console.log("Adatok frissítve. Meccsek:", allMatches.length);
+        console.log(`Sikeres frissítés: ${allMatches.length} meccs, ${globalOdds.length} odds készlet.`);
 
     } catch (e) {
         console.error("Hiba az updateData futásakor:", e);
@@ -2157,6 +2153,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
