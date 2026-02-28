@@ -1072,12 +1072,68 @@ function toggleLeagueSelection(id) {
     renderLeagues();
     renderMatches(); // Frissítjük a középső részt is!
 }
+function getSmartOdds(match) {
+    const seed = match.id || 0;
+    const rng = (s) => Math.abs(Math.sin(seed + s));
+
+    let result = {
+        h: (1.4 + rng(1) * 2).toFixed(2),
+        d: (2.8 + rng(2) * 1.5).toFixed(2),
+        a: (1.6 + rng(3) * 3).toFixed(2)
+    };
+
+    if (!globalOdds || globalOdds.length === 0) return result;
+
+    const clean = (name) => {
+        if (!name) return "";
+        return name.toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/\bfc\b|\bafc\b|\bcf\b|\bclub\b|\batletico\b|\batl.\b|\bsports\b|\bfr\b/g, '') // FR-t is kivesszük
+            .replace(/[^a-z0-9]/g, ' ') // Nem töröljük a szóközöket, csak a fura karaktereket
+            .trim();
+    };
+
+    const mHome = clean(match.homeTeam.name);
+    const mAway = clean(match.awayTeam.name);
+
+    // Keresés finomítása
+    const found = globalOdds.find(o => {
+        const oHome = clean(o.home_team);
+        const oAway = clean(o.away_team);
+
+        // Ellenőrizzük, hogy a szavak átfedik-e egymást (pl. "Botafogo FR" vs "Botafogo")
+        const isHomeMatch = oHome.includes(mHome) || mHome.includes(oHome);
+        const isAwayMatch = oAway.includes(mAway) || mAway.includes(oAway);
+
+        return isHomeMatch && isAwayMatch;
+    });
+
+    if (found && found.bookmakers?.[0]) {
+        const market = found.bookmakers[0].markets.find(m => m.key === 'h2h');
+        
+        if (market) {
+            // Itt a kimeneteleket a csapatnév alapján párosítjuk az API-ból jövő eredeti nevekkel
+            market.outcomes.forEach(outcome => {
+                const outName = clean(outcome.name);
+                if (outName.includes(clean(found.home_team)) || clean(found.home_team).includes(outName)) {
+                    result.h = outcome.price.toFixed(2);
+                } else if (outName.includes(clean(found.away_team)) || clean(found.away_team).includes(outName)) {
+                    result.a = outcome.price.toFixed(2);
+                } else if (outName.includes('draw') || outName === 'x' || outName.includes('remis')) {
+                    result.d = outcome.price.toFixed(2);
+                }
+            });
+        }
+    }
+    return result;
+}        
 // Oldal indítása
 window.onload = startApp;
         
     </script>
 </body>
 </html>
+
 
 
 
