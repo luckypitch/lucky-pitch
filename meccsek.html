@@ -1051,58 +1051,18 @@ function getSmartOdds(match) {
     return result;
 }
 
-// --- 5. MEGJELENÍTÉS JAVÍTÁSA ---
+// --- 5. MEGJELENÍTÉS JAVÍTVA ---
 async function renderMatches() {
     const cont = document.getElementById("match-container");
     if (!cont) return;
 
+    // 1. Betöltési állapot kezelése
     if (!allMatches || allMatches.length === 0) {
         cont.innerHTML = `<div class="loading-box">${currentLang==='HU'?'ADATOK BETÖLTÉSE...':'LOADING...'}</div>`;
         return;
     }
 
-    // SZŰRÉS: Logoljuk ki, miért nem megy át a szűrőn
-    const filtered = allMatches.filter(m => {
-        if (!m || !m.utcDate) return false;
-        
-        // Csak a dátum részt hasonlítjuk össze (YYYY-MM-DD)
-        const mDate = m.utcDate.split('T')[0]; 
-        const isCorrectDate = (mDate === selectedDate);
-        
-        // Liga szűrés (ha üres a Set, minden ligát mutasson)
-        const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(String(m.competition.id)));
-        
-        return isCorrectDate && isCorrectLeague;
-    });
-
-    console.log(`Szűrés kész. Kiválasztott dátum: ${selectedDate}, Találatok: ${filtered.length}`);
-
-    if (filtered.length === 0) {
-        cont.innerHTML = `
-            <div style="text-align:center; padding:40px; opacity:0.5;">
-                <p>NINCS MECCS EKKOR: ${selectedDate}</p>
-                <button onclick="selectedDate='${allMatches[0].utcDate.split('T')[0]}'; renderMatches();" 
-                        style="background:var(--neon-blue); color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; font-family:'Orbitron'; font-size:10px;">
-                    UGRÁS AZ ELSŐ ELÉRHETŐ MECCSHEZ
-                </button>
-            </div>`;
-        return;
-    }
-
-    // Rendezés: ÉLŐ (LIVE/IN_PLAY) meccsek legyenek elöl
-    filtered.sort((a, b) => {
-        const statusPriority = { "IN_PLAY": 1, "LIVE": 1, "PAUSED": 2, "TIMED": 3, "SCHEDULED": 3, "FINISHED": 4 };
-        return (statusPriority[a.status] || 5) - (statusPriority[b.status] || 5);
-    });
-
-    // Itt jön a .map(...) részed, az maradhat az eredeti, de a kártyák generálása előtt 
-    // győződj meg róla, hogy a container-t üríted:
-    cont.innerHTML = filtered.map(m => { 
-        /* ... az eredeti return `...` részed ... */ 
-    }).join('');
-}
-
-    // --- 1. FOGADÁSOK LEKÉRÉSE ---
+    // 2. Felhasználói fogadások lekérése (Aszinkron)
     let currentUserBets = [];
     if (typeof Clerk !== 'undefined' && Clerk.user) {
         try {
@@ -1114,37 +1074,51 @@ async function renderMatches() {
                 currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
             }
         } catch (err) {
+            console.error("Bet fetch error:", err);
             currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
         }
     }
 
-    // --- 2. DÁTUMVÁLASZTÓ ÉS SZŰRÉS ---
+    // 3. Dátumválasztó frissítése (ha van ilyen függvényed)
     if (typeof renderDateSelector === 'function') renderDateSelector(); 
 
+    // 4. Szűrés: Dátum és Liga alapján
     const filtered = allMatches.filter(m => {
         if (!m || !m.utcDate || !m.competition) return false;
+        
         const mDate = m.utcDate.split('T')[0];
         const mLeagueId = String(m.competition.id);
+        
         const isCorrectDate = (mDate === selectedDate);
         const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
+        
         return isCorrectDate && isCorrectLeague;
     });
 
-    // Ha nincs meccs, kiírjuk és MEGÁLLUNK
+    // 5. Ha nincs találat, ugrási lehetőség felajánlása
     if (filtered.length === 0) {
-        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3; font-family:'Orbitron'; font-size:12px;">NINCS MECCS EKKOR: ${selectedDate}</p>`;
+        cont.innerHTML = `
+            <div style="text-align:center; padding:40px; opacity:0.5;">
+                <p style="font-family:'Orbitron'; font-size:12px;">NINCS MECCS EKKOR: ${selectedDate}</p>
+                <button onclick="selectedDate='${allMatches[0].utcDate.split('T')[0]}'; renderMatches();" 
+                        style="background:var(--neon-blue); color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; font-family:'Orbitron'; font-size:10px; margin-top:10px;">
+                    UGRÁS AZ ELSŐ ELÉRHETŐ MECCSHEZ
+                </button>
+            </div>`;
         return;
     }
 
-    // Rendezés (Javított szintaxis)
+    // 6. Rendezés: ÉLŐ meccsek előre, majd időrendben
     filtered.sort((a, b) => {
-        const dateA = new Date(a.utcDate).getTime();
-        const dateB = new Date(b.utcDate).getTime();
-        if (dateA !== dateB) return dateA - dateB;
-        return String(a.id).localeCompare(String(b.id));
+        const statusPriority = { "IN_PLAY": 1, "LIVE": 1, "PAUSED": 2, "TIMED": 3, "SCHEDULED": 3, "FINISHED": 4 };
+        const priorityA = statusPriority[a.status] || 5;
+        const priorityB = statusPriority[b.status] || 5;
+
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        return new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime();
     });
 
-    // --- 3. RENDERELÉS ---
+    // 7. HTML Generálás
     cont.innerHTML = filtered.map(m => {
         try {
             const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
@@ -1157,10 +1131,13 @@ async function renderMatches() {
                 : timeStr;
 
             const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
+            
+            // Megkeressük a felhasználó fogadását erre a meccsre
             const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
             const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
             const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
-return `
+
+            return `
     <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
         ${myBet ? `
             <div style="position: absolute; top: 0; left: 0; background: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">
@@ -1178,9 +1155,9 @@ return `
                 <div class="score-display ${isLive ? 'score-live' : ''}" style="font-size: 18px; font-weight: 800; font-family: 'Orbitron';">${score}</div>
                 ${isLive ? '<div class="pulse-red" style="font-size: 8px; color: #ff3e3e;">LIVE</div>' : ''}
                 
-                <a href="/elemzes?id=${m.id}" class="tool-btn analysis-btn">ELEMZÉS</a>
+                <a href="/elemzes?id=${m.id}" class="tool-btn analysis-btn" style="text-decoration:none;">ELEMZÉS</a>
                 
-                <div onclick="toggleChat('${m.id}')" style="cursor: pointer; font-size: 8px; font-family: 'Orbitron'; color: #00d4ff; border: 1px solid #00d4ff; padding: 2px 6px; border-radius: 4px; background: rgba(0, 212, 255, 0.1); width: 70px;">
+                <div onclick="toggleChat('${m.id}')" style="cursor: pointer; font-size: 8px; font-family: 'Orbitron'; color: #00d4ff; border: 1px solid #00d4ff; padding: 2px 6px; border-radius: 4px; background: rgba(0, 212, 255, 0.1); width: 70px; margin-top:5px;">
                     💬 CHAT
                 </div>
             </div>
@@ -1198,7 +1175,7 @@ return `
                             border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span style="font-size: 9px; color: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; display: block; font-family: 'Orbitron';">
-                            ${bStatus === 'WON' ? 'NYERTES' : bStatus === 'LOST' ? 'VESZTETT' : (myBet.type || 'LIVE') + ' TIPP'}
+                            ${bStatus === 'WON' ? 'NYERTES' : bStatus === 'LOST' ? 'VESZTETT' : 'AKTÍV TIPP'}
                         </span>
                         <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
                     </div>
@@ -1208,25 +1185,23 @@ return `
                         </span>
                     </div>
                 </div>
-            ` : (m.status === 'TIMED' || m.status === 'SCHEDULED' || m.status === 'POSTPONED') ? `
+            ` : (m.status === 'TIMED' || m.status === 'SCHEDULED') ? `
                 <div style="display: flex; gap: 8px; width: 100%;">
                     <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">H ${odds.h}</button>
                     <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">D ${odds.d}</button>
                     <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">V ${odds.a}</button>
                 </div>
             ` : `
-                <div style="text-align:center; font-size: 10px; opacity: 0.5; font-family: 'Orbitron';">${isLive ? 'ÉLŐ MECCS - LEZÁRVA' : 'FOGADÁS LEZÁRVA'}</div>
+                <div style="text-align:center; font-size: 10px; opacity: 0.5; font-family: 'Orbitron';">${isLive ? 'ÉLŐ MECCS - FOGADÁS LEZÁRVA' : 'FOGADÁS LEZÁRVA'}</div>
             `}
         </div>
 
         <div id="chat-section-${m.id}" class="match-chat-section" 
              style="display: ${activeChatId === String(m.id) ? 'block' : 'none'}; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 10px; padding-top: 10px;">
-            
             <div id="chat-messages-${m.id}" class="chat-messages" 
                  style="height: 120px; overflow-y: auto; margin-bottom: 10px; display:flex; flex-direction:column; gap:5px; text-align:left;">
                 ${chatHistory[m.id] ? chatHistory[m.id].join('') : ''}
             </div>
-
             <div class="chat-input-area" style="display:flex; gap:5px;">
                 <input type="text" id="chat-input-${m.id}" class="chat-input" placeholder="Trash-talk..." 
                        style="flex:1; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:5px; color:white; padding:5px 10px; font-size:11px;" 
@@ -1235,12 +1210,13 @@ return `
             </div>
         </div>
     </div>`;
-    } catch (err) {
-        console.error("Hiba egy kártya generálásakor:", err);
-        return '';
-    }
-}).join('');
+        } catch (err) {
+            console.error("Hiba egy kártya generálásakor:", err);
+            return '';
+        }
+    }).join('');
 }
+        
 // --- ÚJ FÜGGVÉNY: LIGÁK KEZELÉSE ---
 function toggleLeague(leagueId, element) {
     if (selectedLeagues.has(leagueId)) {
@@ -2181,6 +2157,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
