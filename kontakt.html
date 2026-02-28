@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUCKYPITCH - Kontakt</title>
+    <link rel="stylesheet" href="style.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .contact-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 150px);
+            padding: 20px;
+        }
+        .contact-card {
+            background: var(--card-bg);
+            border: 1px solid var(--neon-blue);
+            border-radius: 30px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(40px);
+            text-align: center;
+            box-shadow: 0 0 30px rgba(14, 165, 233, 0.2);
+        }
+        .contact-card h2 { font-family: 'Orbitron'; color: var(--neon-blue); margin-bottom: 20px; }
+        .contact-info { margin-bottom: 30px; text-align: left; }
+        .info-item { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; font-size: 14px; }
+        .info-item i { color: var(--neon-green); font-size: 20px; }
+        
+        form input, form textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+        form button { width: 100%; background: var(--neon-blue) !important; color: white !important; }
+    </style>
+</head>
+<body>
+    <div class="contact-container">
+        <div class="contact-card">
+            <h2>Kapcsolat</h2>
+            <div class="contact-info">
+                <div class="info-item"><i class="fas fa-envelope"></i> support@luckypitch.com</div>
+                <div class="info-item"><i class="fas fa-comment-dots"></i> 24/7 Élő Chat támogatás</div>
+            </div>
+            <form id="contact-form">
+                <input type="text" placeholder="Neved" required>
+                <input type="email" placeholder="E-mail címed" required>
+                <textarea placeholder="Üzeneted..." rows="4" required></textarea>
+                <button type="submit">ÜZENET KÜLDÉSE</button>
+            </form>
+        </div>
+    </div>
+<div class="radial-menu" id="radialMenu">
+    <div class="menu-toggle" onclick="toggleRadialMenu()">+</div>
+    <div class="menu-items">
+        <a href="Home.html" class="menu-item" style="--i:1;">🏠</a>
+        <a href="meccsek.html" class="menu-item" style="--i:2;">⚽</a>
+        <a href="elemzes.html" class="menu-item" style="--i:3;">📈</a>
+        <a href="kontakt.html" class="menu-item" style="--i:4;">📧</a> <div class="menu-item" style="--i:5;" onclick="toggleM('sidebar-standings')">📊</div>
+    </div>
+</div>
+  <script>// Auth lekezelés: Ha be van jelentkezve, mutassuk a képet, ha nincs, a Login gombot
+function updateAuthUI(user) {
+    const container = document.getElementById('auth-container');
+    const userBtn = document.getElementById('user-button');
+    
+    if (user && user.isLoggedIn) {
+        // Profilkép megjelenítése (a kép.png listádban szereplő logo.png vagy user kép alapján)
+        userBtn.innerHTML = `<img src="${user.photoURL || 'logo.png'}" onclick="window.location.href='/profile'">`;
+        userBtn.style.display = 'block';
+    } else {
+        // Bejelentkezés gomb, ha nincs user
+        container.innerHTML = `<button onclick="login()">LOGIN</button>`;
+    }
+}</script>
+    </body>
+</html>
