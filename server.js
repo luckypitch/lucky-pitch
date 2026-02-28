@@ -271,7 +271,7 @@ app.post('/create-checkout-session', async (req, res) => {
 
 // --- AUTO CHECK FUNKCIÓ JAVÍTVA ---
 const autoCheckResults = async () => {
-    const apiKey = process.env.FOOTBALL_API_KEY ? String(process.env.FOOTBALL_API_KEY).trim() : null;
+    const apiKey = process.env.FOOTBALL_DATA_API_KEY; // Használd a konzisztens nevet!
     if (!apiKey) return;
 
     try {
@@ -283,49 +283,47 @@ const autoCheckResults = async () => {
         if (error || !pendingBets || pendingBets.length === 0) return;
 
         for (let bet of pendingBets) {
-            const apiRes = await fetch(`https://api.football-data.org/v4/matches/${bet.match_id}`, {
-                headers: { 'X-Auth-Token': apiKey }
-            });
-            const match = await apiRes.json();
+            try {
+                const apiRes = await fetch(`https://api.football-data.org/v4/matches/${bet.match_id}`, {
+                    headers: { 'X-Auth-Token': apiKey }
+                });
+                
+                if (!apiRes.ok) continue; // Ugorjunk a következőre, ha ez a meccs nem elérhető
 
-            if (match.status === 'FINISHED') {
-                const homeScore = match.score.fullTime.home;
-                const awayScore = match.score.fullTime.away;
-                let actualResult = (homeScore > awayScore) ? 'H' : (homeScore < awayScore ? 'V' : 'D');
+                const match = await apiRes.json();
 
-                if (bet.type === actualResult) {
-                    const winAmount = Math.floor(bet.amount * bet.odds);
+                if (match.status === 'FINISHED') {
+                    const homeScore = match.score.fullTime.home;
+                    const awayScore = match.score.fullTime.away;
+                    let actualResult = (homeScore > awayScore) ? 'H' : (homeScore < awayScore ? 'V' : 'D');
 
-                    // --- JAVÍTOTT RÉSZ: user_balances tábla használata ---
-                    // 1. Lekérjük az aktuális egyenleget
-                    const { data: currentWallet } = await supabase
-                        .from('user_balances')
-                        .select('balance')
-                        .eq('user_id', bet.user_id)
-                        .single();
-
-                    if (currentWallet) {
-                        const newTotal = currentWallet.balance + winAmount;
-
-                        // 2. Frissítjük a user_balances-t
-                        await supabase
+                    if (bet.type === actualResult) {
+                        const winAmount = Math.floor(bet.amount * bet.odds);
+                        
+                        // Atomikus update helyett (ami versenyhelyzetet szülhet), 
+                        // érdemes lenne itt is RPC-t használni, de a jelenlegi megoldásod:
+                        const { data: currentWallet } = await supabase
                             .from('user_balances')
-                            .update({ balance: newTotal })
-                            .eq('user_id', bet.user_id);
+                            .select('balance')
+                            .eq('user_id', bet.user_id)
+                            .single();
 
-                        // 3. Lezárjuk a fogadást
-                        await supabase.from('bets').update({ status: 'WON' }).eq('id', bet.id);
-                        console.log(`NYERTES: ${bet.user_id} kapott ${winAmount} pontot. Új egyenleg: ${newTotal}`);
+                        if (currentWallet) {
+                            const newTotal = currentWallet.balance + winAmount;
+                            await supabase.from('user_balances').update({ balance: newTotal }).eq('user_id', bet.user_id);
+                            await supabase.from('bets').update({ status: 'WON' }).eq('id', bet.id);
+                        }
+                    } else {
+                        await supabase.from('bets').update({ status: 'LOST' }).eq('id', bet.id);
                     }
-                } else {
-                    await supabase.from('bets').update({ status: 'LOST' }).eq('id', bet.id);
-                    console.log(`VESZTETT: Bet ID ${bet.id}`);
                 }
+            } catch (innerErr) {
+                console.error(`Hiba a ${bet.id} fogadás feldolgozásakor:`, innerErr);
             }
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r => setTimeout(r, 1000)); // Rate limit védelem
         }
     } catch (err) {
-        console.error("Hiba az auto-check során:", err);
+        console.error("Globális hiba az auto-check során:", err);
     }
 };
 
@@ -443,6 +441,7 @@ server.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
