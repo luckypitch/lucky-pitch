@@ -122,6 +122,106 @@
     text-transform: uppercase; 
 }
 
+/* RADIAL MENU ALAPOK */
+.radial-menu {
+    position: fixed;
+    bottom: 90px; /* Az alsó navigációs sávod felett */
+    right: 25px;
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.menu-toggle {
+    width: 55px;
+    height: 55px;
+    background: var(--bg);
+    border: 2px solid var(--neon-blue);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--neon-blue);
+    font-size: 20px;
+    box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 2001;
+}
+
+/* Lüktető effekt a gombon */
+.menu-toggle::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--neon-blue);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+.radial-menu.active .menu-toggle {
+    transform: rotate(135deg); /* Plusz jelből X */
+    background: var(--neon-blue);
+    color: white;
+}
+
+.menu-items {
+    position: absolute;
+    width: 0;
+    height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.3s;
+}
+
+.menu-item {
+    position: absolute;
+    width: 45px;
+    height: 45px;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--neon-blue);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 18px;
+    opacity: 0;
+    transition: 0.4s;
+    cursor: pointer;
+    transform: scale(0);
+}
+
+/* Kinyílás: Balra és Felfelé ívben */
+.radial-menu.active .menu-item {
+    opacity: 1;
+    transform: scale(1);
+    /* Szögkiszámítás: 180 foktól 270 fokig */
+    left: calc(cos(var(--i) * 22deg + 140deg) * 110px);
+    top: calc(sin(var(--i) * 22deg + 140deg) * 110px);
+}
+
+.menu-item:hover {
+    background: var(--neon-blue);
+    box-shadow: 0 0 20px var(--neon-blue);
+    transform: scale(1.15);
+}
+
+/* Mobil elrejtés: Ha asztalin nem akarod látni */
+@media (min-width: 1101px) {
+    .radial-menu { display: none; }
+}
+        
         footer { 
             padding: 50px 10%; background: var(--glass); border-top: 1px solid var(--border); 
             display: flex; justify-content: space-between; align-items: center; margin-top: auto; 
@@ -233,7 +333,31 @@
         </div>
     </div>
 </section>
+<div class="radial-menu" id="radialMenu">
+    <div class="menu-toggle" onclick="toggleRadialMenu()">
+        <i class="fas fa-plus"></i>
+    </div>
+    
+    <div class="menu-items">
+        <a href="index.html" class="menu-item" style="--i:1;" title="Home">
+            <i class="fas fa-home"></i>
+        </a>
+        <div class="menu-item" style="--i:2;" onclick="toggleM('sidebar-leagues')" title="Ligák">
+            <i class="fas fa-trophy"></i>
+        </div>
+        <a href="home.html" class="menu-item" style="--i:3;" title="Meccsek">
+            <i class="fas fa-futball"></i>
+        </a>
+        <div class="menu-item" style="--i:4;" onclick="toggleM('sidebar-standings')" title="Tabella">
+            <i class="fas fa-table"></i>
+        </div>
+        <a href="profile.html" class="menu-item" style="--i:5;" title="Profil">
+            <i class="fas fa-user"></i>
+        </div>
+    </div>
+</div>
 
+    
 <footer>
     <div style="text-align: left;">
         <div class="logo" style="font-size: 1.1rem; margin-bottom: 5px;">LuckyPitch</div>
@@ -474,11 +598,31 @@ async function startApp() {
         console.error("Hiba az indítás során:", error);
     }
 }
+
+function toggleRadialMenu() {
+    document.getElementById('radialMenu').classList.toggle('active');
+}
+
+// Bezárás, ha a felhasználó a menün kívülre kattint
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('radialMenu');
+    if (!menu.contains(e.target) && menu.classList.contains('active')) {
+        menu.classList.remove('active');
+    }
+});
+
+// Fontos: a toggleM függvényednek kezelnie kell a radial menu bezárását is!
+const originalToggleM = window.toggleM;
+window.toggleM = function(id) {
+    document.getElementById('radialMenu').classList.remove('active');
+    if(typeof originalToggleM === "function") originalToggleM(id);
+};
     
 window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
