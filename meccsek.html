@@ -1052,86 +1052,89 @@ async function renderMatches() {
     const cont = document.getElementById("match-container");
     if (!cont) return;
 
-    // 1. Betöltési állapot kezelése
+    // 1. Állapot mentése (Hogy frissítés után is tudd, hol jártál)
+    if (typeof saveState === 'function') saveState();
+
+    // 2. Betöltési állapot kezelése
     if (!allMatches || allMatches.length === 0) {
-        cont.innerHTML = `<div class="loading-box">${currentLang==='HU'?'ADATOK BETÖLTÉSE...':'LOADING...'}</div>`;
+        cont.innerHTML = `<div class="loading-box">${typeof currentLang !== 'undefined' && currentLang==='HU'?'ADATOK BETÖLTÉSE...':'LOADING...'}</div>`;
         return;
     }
 
-    // 2. Felhasználói fogadások lekérése (Aszinkron)
-    let currentUserBets = [];
+    // 3. Felhasználói fogadások lekérése (Optimalizált: először a gyors cache-ből)
+    let currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
+    
+    // Csak akkor kérünk le friss adatot, ha be van jelentkezve (ne akassza meg a renderelést)
     if (typeof Clerk !== 'undefined' && Clerk.user) {
-        try {
-            const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}&t=${Date.now()}`);
-            if (response.ok) {
-                currentUserBets = await response.json();
-                localStorage.setItem('lp_activeBets', JSON.stringify(currentUserBets));
-            } else {
-                currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
-            }
-        } catch (err) {
-            console.error("Bet fetch error:", err);
-            currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
-        }
+        fetch(`/api/user/bets?userId=${Clerk.user.id}&t=${Date.now()}`)
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (data) localStorage.setItem('lp_activeBets', JSON.stringify(data));
+            })
+            .catch(e => console.warn("Bet sync error (háttérben):", e));
     }
 
-    // 3. Dátumválasztó frissítése (ha van ilyen függvényed)
-    if (typeof renderDateSelector === 'function') renderDateSelector(); 
-
-    // 4. Szűrés: Dátum és Liga alapján
+    // 4. Szűrés - JAVÍTOTT DÁTUM KEZELÉS
     const filtered = allMatches.filter(m => {
-        if (!m || !m.utcDate || !m.competition) return false;
+        if (!m || !m.utcDate) return false;
         
         const mDate = m.utcDate.split('T')[0];
-        const mLeagueId = String(m.competition.id);
+        const mLeagueId = String(m.competition?.id || "");
         
+        // Ha nincs kiválasztott dátum, állítsuk be az első meccs dátumára
+        if (!selectedDate && allMatches.length > 0) {
+            selectedDate = allMatches[0].utcDate.split('T')[0];
+        }
+
         const isCorrectDate = (mDate === selectedDate);
         const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
         
         return isCorrectDate && isCorrectLeague;
     });
-
-    // 5. Ha nincs találat, ugrási lehetőség felajánlása
+// 5. Ha nincs találat az adott napon
     if (filtered.length === 0) {
+        const firstAvailableDate = allMatches[0].utcDate.split('T')[0];
         cont.innerHTML = `
-            <div style="text-align:center; padding:40px; opacity:0.5;">
-                <p style="font-family:'Orbitron'; font-size:12px;">NINCS MECCS EKKOR: ${selectedDate}</p>
-                <button onclick="selectedDate='${allMatches[0].utcDate.split('T')[0]}'; renderMatches();" 
-                        style="background:var(--neon-blue); color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; font-family:'Orbitron'; font-size:10px; margin-top:10px;">
-                    UGRÁS AZ ELSŐ ELÉRHETŐ MECCSHEZ
+            <div style="text-align:center; padding:40px; background: rgba(255,255,255,0.02); border-radius:15px; border: 1px dashed rgba(255,255,255,0.1);">
+                <p style="font-family:'Orbitron'; font-size:12px; color: #888;">NINCS MECCS EKKOR: ${selectedDate}</p>
+                <button onclick="selectedDate='${firstAvailableDate}'; renderMatches();" 
+                        style="background:var(--neon-blue); color:black; border:none; padding:12px 20px; border-radius:8px; cursor:pointer; font-family:'Orbitron'; font-size:10px; margin-top:15px; font-weight:bold; box-shadow: 0 0 15px var(--neon-blue);">
+                    UGRÁS A KÖVETKEZŐ NAPRA (${firstAvailableDate})
                 </button>
             </div>`;
         return;
     }
 
-    // 6. Rendezés: ÉLŐ meccsek előre, majd időrendben
+    // 6. Rendezés (Változatlanul jó)
     filtered.sort((a, b) => {
         const statusPriority = { "IN_PLAY": 1, "LIVE": 1, "PAUSED": 2, "TIMED": 3, "SCHEDULED": 3, "FINISHED": 4 };
         const priorityA = statusPriority[a.status] || 5;
         const priorityB = statusPriority[b.status] || 5;
-
         if (priorityA !== priorityB) return priorityA - priorityB;
-        return new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime();
+        return new Date(a.utcDate) - new Date(b.utcDate);
     });
-
+    
     // 7. HTML Generálás
-    cont.innerHTML = filtered.map(m => {
-        try {
-            const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-            const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
-            const mDateObj = new Date(m.utcDate);
-            const timeStr = mDateObj.toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+   cont.innerHTML = filtered.map(m => {
+    try {
+        // Alapadatok előkészítése
+        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+        const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
+        const mDateObj = new Date(m.utcDate);
+        const timeStr = mDateObj.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
 
-            const score = (isLive || isFinished) && m.score && m.score.fullTime
-                ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
-                : timeStr;
+        // Pontszám vagy Kezdési idő megjelenítése
+        const score = (isLive || isFinished) && m.score && m.score.fullTime
+            ? `${m.score.fullTime.home}:${m.score.fullTime.away}`
+            : timeStr;
 
-            const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
-            
-            // Megkeressük a felhasználó fogadását erre a meccsre
-            const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
-            const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
-            const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
+        // Oddsok kezelése (fallback értékekkel)
+        const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : { h: 1.50, d: 3.20, a: 2.40 };
+        
+        // Fogadás keresése: Fontos a típus kényszerítés String-re!
+        const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
+        const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
+        const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
 
             return `
     <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
@@ -2133,6 +2136,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
