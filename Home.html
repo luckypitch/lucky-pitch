@@ -335,25 +335,14 @@
 </section>
 <div class="radial-menu" id="radialMenu">
     <div class="menu-toggle" onclick="toggleRadialMenu()">
-        <i class="fas fa-plus"></i>
+        <span class="plus-icon">+</span>
     </div>
-    
     <div class="menu-items">
-        <a href="index.html" class="menu-item" style="--i:1;" title="Home">
-            <i class="fas fa-home"></i>
-        </a>
-        <div class="menu-item" style="--i:2;" onclick="toggleM('sidebar-leagues')" title="Ligák">
-            <i class="fas fa-trophy"></i>
-        </div>
-        <a href="home.html" class="menu-item" style="--i:3;" title="Meccsek">
-            <i class="fas fa-futball"></i>
-        </a>
-        <div class="menu-item" style="--i:4;" onclick="toggleM('sidebar-standings')" title="Tabella">
-            <i class="fas fa-table"></i>
-        </div>
-        <a href="profile.html" class="menu-item" style="--i:5;" title="Profil">
-            <i class="fas fa-user"></i>
-        </div>
+        <a href="Home.html" class="menu-item" style="--i:1;" title="Főoldal">🏠</a>
+        <a href="meccsek.html" class="menu-item" style="--i:2;" title="Meccsek">⚽</a>
+        <a href="elemzes.html" class="menu-item" style="--i:3;" title="Elemzések">📈</a>
+        <div class="menu-item" style="--i:4;" onclick="openContact()" title="Kapcsolat">📧</div>
+        <div class="menu-item" style="--i:5;" onclick="toggleM('sidebar-standings')" title="Tabella">📊</div>
     </div>
 </div>
 
@@ -622,6 +611,7 @@ window.onload = startApp;
 </script>
 </body>
 </html>
+
 
 
 
