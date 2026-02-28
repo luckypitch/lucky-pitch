@@ -708,21 +708,15 @@
     </div>
 
     <script>
-// --- 1. GLOBÁLIS ÁLLAPOT ---
+// --- 1. GLOBÁLIS ÁLLAPOT ÉS KONSTANSOK ---
 let currentLang = localStorage.getItem('lp_lang') || 'HU';
-
-// Segédfüggvény a dátumhoz
 const getLocalDateString = (date = new Date()) => {
     return date.getFullYear() + '-' + 
            String(date.getMonth() + 1).padStart(2, '0') + '-' + 
            String(date.getDate()).padStart(2, '0');
 };
-
-const todayStr = getLocalDateString(); // Csak egyszer deklarálva
-let selectedDate = todayStr;           // Csak egyszer deklarálva
-
-let savedLeagues = localStorage.getItem('lp_selectedLeagues');
-let selectedLeagues = new Set();
+let selectedDate = getLocalDateString();
+let selectedLeagues = new Set(JSON.parse(localStorage.getItem('lp_selectedLeagues')) || []);
 let allMatches = [];
 let prevScores = new Map();
 let flashingMatches = new Set();
@@ -730,999 +724,17 @@ let globalOdds = [];
 let activeBets = JSON.parse(localStorage.getItem('lp_activeBets')) || [];
 let currentLeagueId = 'all'; 
 let isFirstLoad = true; 
-let activeChatId = null; 
-const chatHistory = {};
-   
-// --- 2. SEGÉDFÜGGVÉNYEK ---
-function getStatusColor(status) {
-    if (!status) return 'transparent';
-    const s = status.toLowerCase();
-    if (s.includes('champions league')) return '#0044ff';
-    if (s.includes('premier league')) return '#0044ff';
-    if (s.includes('europa league')) return '#cc7a00';
-    if (s.includes('conference league')) return '#00cc6a';
-    if (s.includes('relegation')) return '#ff3e3e';
-    return 'transparent';
-}
+let activeChatId = null;
+let balanceInterval = null;
 
-function translateStatus(status) {
-    if (currentLang !== 'HU') return status;
-    const s = status.toLowerCase();
-    if (s.includes('champions league')) return 'BL Zóna';
-    if (s.includes('premier league')) return 'PL feljutási Zóna';
-    if (s.includes('relegation')) return 'Kieső hely';
-    return status;
-}
-
-// --- ADATLEKÉRÉS (AZ ÁLTALAD KÜLDÖTT JAVÍTVA) ---
-        async function updateData() {
-            try {
-                console.log("Adatok frissítése indul...");
-                
-                // 1. Meccsek letöltése
-                const res = await fetch("/live-matches");
-                const data = await res.json();
-                allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
-
-                // 2. Oddsok letöltése
-                try {
-                    const oddsRes = await fetch("/api/odds-data");
-                    if (oddsRes.ok) {
-                        const oddsData = await oddsRes.json();
-                        if (Array.isArray(oddsData)) {
-                            globalOdds = oddsData;
-                        } else if (oddsData && oddsData.data && Array.isArray(oddsData.data)) {
-                            globalOdds = oddsData.data;
-                        }
-                    }
-                } catch (e) { 
-                    console.error("Odds API hiba:", e); 
-                    globalOdds = [];
-                }
-
-                // 3. Automatikus liga-kijelölés (Első alkalommal mindet mutatjuk)
-                if (isFirstLoad && allMatches.length > 0) {
-                    allMatches.forEach(m => {
-                        if (m.competition && m.competition.id) {
-                            selectedLeagues.add(String(m.competition.id));
-                        }
-                    });
-                    isFirstLoad = false; 
-                }
-
-                // 4. Renderelés
-                renderLeagues();
-                await renderMatches(); // Megvárjuk a meccsek legenerálását
-
-                // 5. Gól és Fogadás ellenőrzés
-                if (allMatches.length > 0) {
-                    checkGoals();
-                }
-
-                console.log(`Frissítve: ${allMatches.length} meccs.`);
-            } catch (e) {
-                console.error("Hiba az updateData futásakor:", e);
-            }
-        }
-// --- 3. EGYENLEG ÉS AUTH ---
-async function refreshBalance() {
-    if (!Clerk.user) return;
-
-    try {
-        // A végére tett t=${Date.now()} megakadályozza, hogy a böngésző a régi (cache) adatot mutassa
-        const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}&t=${Date.now()}`);
-        const data = await response.json();
-
-        if (data && data.balance !== undefined) {
-            const balanceSpan = document.getElementById('user-balance');
-            
-            // Vizuális visszajelzés, ha nőtt az egyenleg (nyeremény)
-            if (window.userBalance !== undefined && data.balance > window.userBalance) {
-                flashBalanceUpdate();
-            }
-
-            if (balanceSpan) {
-                balanceSpan.innerText = Number(data.balance).toLocaleString();
-            }
-            window.userBalance = data.balance; 
-        }
-    } catch (err) {
-        console.error("Hiba az egyenleg frissítésekor:", err);
-    }
-}
-function flashBalanceUpdate() {
-    const span = document.getElementById('user-balance');
-    if (!span) return;
-    span.style.color = "var(--neon-green)";
-    span.style.textShadow = "0 0 20px var(--neon-green)";
-    setTimeout(() => {
-        span.style.color = "";
-        span.style.textShadow = "";
-    }, 3000);
-}
-setInterval(refreshBalance, 30000);      
-        
-async function checkGoals() {
-    if (!allMatches || !Array.isArray(allMatches)) return;
-
-    allMatches.forEach(match => {
-        const matchId = match.id;
-        const currentScore = (match.score && match.score.fullTime) ? 
-            `${match.score.fullTime.home}-${match.score.fullTime.away}` : "0-0";
-
-        if (prevScores.has(matchId) && prevScores.get(matchId) !== currentScore) {
-            const oldScore = prevScores.get(matchId);
-            const [oldH, oldA] = oldScore.split('-').map(Number);
-            const [newH, newA] = currentScore.split('-').map(Number);
-
-            // GÓL ÉSZLELÉSE
-            let scoringTeam = null;
-            if (newH > oldH) scoringTeam = match.homeTeam.name;
-            if (newA > oldA) scoringTeam = match.awayTeam.name;
-
-            if (scoringTeam) {
-                // 1. Vizuális effekt (eredeti kódod)
-                if (typeof triggerGoalEffect === 'function') {
-                    triggerGoalEffect(matchId, scoringTeam, newH > oldH ? match.homeTeam.crest : match.awayTeam.crest);
-                }
-               if (typeof socket !== 'undefined') {
-    socket.emit('goal-detected-client', { // <-- Itt javítva a név!
-        matchId: matchId,
-        teamName: scoringTeam,
-        score: `${newH}-${newA}`
-    });
-}
-                // 2. CÍMSOR (TITLE) FRISSÍTÉSE
-                const originalTitle = document.title;
-                const goalTitle = `⚽ GÓL: ${scoringTeam} (${newH}:${newA}) ⚽`;
-                
-                document.title = goalTitle;
-
-                // 10 másodperc után visszaállítjuk az eredeti címet
-                setTimeout(() => {
-                    document.title = "LUCKYPITCH | Ultimate Live Tracker";
-                }, 10000);
-            }
-        }
-        prevScores.set(matchId, currentScore);
-    });
-}
-// --- DINAMIKUS EFFEKT (Ha ez is hiányozna) ---
-
-function triggerGoalEffect(mId, tName, logo) {
-    const b = document.getElementById('goal-banner');
-    const sound = document.getElementById('goal-sound');
-
-    // --- ÚJ RÉSZ: Meccskártya villogtatás indítása ---
-    if (typeof flashingMatches !== 'undefined') {
-        const stringId = String(mId);
-        flashingMatches.add(stringId);
-
-        // Újrarajzoljuk a meccseket, hogy megkapja a 'goal-highlight' osztályt
-        if (typeof renderMatches === 'function') renderMatches();
-
-        // 10 másodperc után levesszük a villogást
-        setTimeout(() => {
-            flashingMatches.delete(stringId);
-            if (typeof renderMatches === 'function') renderMatches();
-        }, 10000);
-    }
-    // ------------------------------------------------
-
-    if (b) {
-        document.getElementById('goal-team-name').innerText = tName;
-
-        const logoImg = document.getElementById('goal-logo');
-        if (logoImg) {
-            logoImg.src = logo || 'default-logo.png'; 
-            logoImg.style.display = logo ? 'block' : 'none';
-        }
-
-        b.classList.add('show');
-
-        if (sound) { 
-            sound.currentTime = 0; 
-            sound.play().catch(e => console.warn("Hang lejátszása hiba:", e)); 
-        }
-
-        setTimeout(() => b.classList.remove('show'), 5000);
-    }
-}
-
-// --- JAVÍTOTT checkBetResults FÜGGVÉNY ---
-async function checkBetResults() {
-    // Ellenőrizzük, hogy vannak-e egyáltalán aktív fogadások
-    if (!activeBets || activeBets.length === 0) return;
-
-    let updatedAny = false;
-
-    // Hátulról előre haladunk a tömbben a törlések miatt
-    for (let i = activeBets.length - 1; i >= 0; i--) {
-        const bet = activeBets[i];
-        
-        // Megkeressük a meccset az adatok között
-        const match = allMatches.find(m => String(m.id) === String(bet.matchId));
-
-        // Csak akkor értékeljük ki, ha a meccs befejeződött (FINISHED)
-        if (match && match.status === "FINISHED") {
-            const homeScore = match.score.fullTime.home;
-            const awayScore = match.score.fullTime.away;
-            let won = false;
-
-            // Logika ellenőrzése (H, D, V)
-            if (bet.type === 'H' && homeScore > awayScore) won = true;
-            else if (bet.type === 'D' && homeScore === awayScore) won = true;
-            else if (bet.type === 'V' && awayScore > homeScore) won = true;
-
-            if (won) {
-                const prize = Math.floor(bet.amount * bet.odds);
-                const newBalance = (window.userBalance || 0) + prize;
-                
-                // ITT VOLT A HIBA: Most már az async miatt működik az await!
-                await updateSupabaseBalance(newBalance);
-                
-                alert(`GRATULÁLUNK! 🎉\n${bet.teamName} nyert, kaptál ${prize} LP-t!`);
-            } else {
-                alert(`Sajnos a ${bet.teamName} fogadásod nem nyert. ❌`);
-            }
-
-            // Töröljük a lezárt fogadást a listából
-            activeBets.splice(i, 1);
-            updatedAny = true;
-        }
-    }
-
-    // Ha történt változás, mentjük és újrarajzoljuk a felületet
-    if (updatedAny) {
-        localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
-        renderMatches();
-    }
-}
-
-// Segédfüggvény a Supabase frissítéshez
-async function updateSupabaseBalance(newAmount, betData = null) {
-    try {
-        const res = await fetch('/api/user/update-balance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                userId: Clerk.user.id, 
-                balance: newAmount,
-                bet: betData // Itt küldjük el a fogadás részleteit is!
-            })
-        });
-
-        if (res.ok) {
-            window.userBalance = newAmount;
-            const balanceElem = document.getElementById('user-balance');
-            if (balanceElem) balanceElem.innerText = newAmount.toLocaleString();
-            return true;
-        }
-    } catch (e) {
-        console.error("Hiba a szerverrel való kommunikáció során:", e);
-        return false;
-    }
-}
-
-function getSmartOdds(match) {
-    const seed = match.id || 0;
-    const rng = (s) => Math.abs(Math.sin(seed + s));
-
-    let result = {
-        h: (1.4 + rng(1) * 2).toFixed(2),
-        d: (2.8 + rng(2) * 1.5).toFixed(2),
-        a: (1.6 + rng(3) * 3).toFixed(2)
-    };
-
-    if (!globalOdds || globalOdds.length === 0) return result;
-
-    const clean = (name) => {
-        if (!name) return "";
-        return name.toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            .replace(/\bfc\b|\bafc\b|\bcf\b|\bclub\b|\batletico\b|\batl.\b|\bsports\b|\bfr\b/g, '') // FR-t is kivesszük
-            .replace(/[^a-z0-9]/g, ' ') // Nem töröljük a szóközöket, csak a fura karaktereket
-            .trim();
-    };
-
-    const mHome = clean(match.homeTeam.name);
-    const mAway = clean(match.awayTeam.name);
-
-    // Keresés finomítása
-    const found = globalOdds.find(o => {
-        const oHome = clean(o.home_team);
-        const oAway = clean(o.away_team);
-
-        // Ellenőrizzük, hogy a szavak átfedik-e egymást (pl. "Botafogo FR" vs "Botafogo")
-        const isHomeMatch = oHome.includes(mHome) || mHome.includes(oHome);
-        const isAwayMatch = oAway.includes(mAway) || mAway.includes(oAway);
-
-        return isHomeMatch && isAwayMatch;
-    });
-
-    if (found && found.bookmakers?.[0]) {
-        const market = found.bookmakers[0].markets.find(m => m.key === 'h2h');
-        
-        if (market) {
-            // Itt a kimeneteleket a csapatnév alapján párosítjuk az API-ból jövő eredeti nevekkel
-            market.outcomes.forEach(outcome => {
-                const outName = clean(outcome.name);
-                if (outName.includes(clean(found.home_team)) || clean(found.home_team).includes(outName)) {
-                    result.h = outcome.price.toFixed(2);
-                } else if (outName.includes(clean(found.away_team)) || clean(found.away_team).includes(outName)) {
-                    result.a = outcome.price.toFixed(2);
-                } else if (outName.includes('draw') || outName === 'x' || outName.includes('remis')) {
-                    result.d = outcome.price.toFixed(2);
-                }
-            });
-        }
-    }
-    return result;
-}
-
-// --- 5. MEGJELENÍTÉS JAVÍTVA ÉS BEFEJEZVE ---
-async function renderMatches() {
-    const cont = document.getElementById("match-container");
-    if (!cont) return;
-
-    // 1. Állapot mentése
-    if (typeof saveState === 'function') saveState();
-
-    // 2. Betöltési állapot
-    if (!allMatches || allMatches.length === 0) {
-        cont.innerHTML = `<div class="loading-box" style="text-align:center; padding:50px; color:var(--neon-blue); font-family:'Orbitron';">ADATOK BETÖLTÉSE...</div>`;
-        return;
-    }
-
-    // 3. Felhasználói fogadások lekérése
-    let currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
-    
-    if (typeof Clerk !== 'undefined' && Clerk.user) {
-        fetch(`/api/user/bets?userId=${Clerk.user.id}&t=${Date.now()}`)
-            .then(res => res.ok ? res.json() : null)
-            .then(data => {
-                if (data) localStorage.setItem('lp_activeBets', JSON.stringify(data));
-            })
-            .catch(e => console.warn("Bet sync error:", e));
-    }
-
-    // 4. Szűrés
-    const filtered = allMatches.filter(m => {
-        if (!m || !m.utcDate) return false;
-        const mDate = m.utcDate.split('T')[0];
-        const mLeagueId = String(m.competition?.id || "");
-        if (!selectedDate && allMatches.length > 0) {
-            selectedDate = allMatches[0].utcDate.split('T')[0];
-        }
-        const isCorrectDate = (mDate === selectedDate);
-        const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
-        return isCorrectDate && isCorrectLeague;
-    });
-
-    // 5. Ha nincs találat
-    if (filtered.length === 0) {
-        const firstAvailableDate = allMatches[0]?.utcDate.split('T')[0] || "N/A";
-        cont.innerHTML = `
-            <div style="text-align:center; padding:40px; background: rgba(255,255,255,0.02); border-radius:15px; border: 1px dashed rgba(255,255,255,0.1);">
-                <p style="font-family:'Orbitron'; font-size:12px; color: #888;">NINCS MECCS EKKOR: ${selectedDate}</p>
-                <button onclick="selectedDate='${firstAvailableDate}'; renderMatches();" 
-                        style="background:var(--neon-blue); color:black; border:none; padding:12px 20px; border-radius:8px; cursor:pointer; font-family:'Orbitron'; font-size:10px; margin-top:15px; font-weight:bold; box-shadow: 0 0 15px var(--neon-blue);">
-                    UGRÁS A KÖVETKEZŐ NAPRA (${firstAvailableDate})
-                </button>
-            </div>`;
-        return;
-    }
-
-    // 6. Rendezés
-    filtered.sort((a, b) => {
-        const statusPriority = { "IN_PLAY": 1, "LIVE": 1, "PAUSED": 2, "TIMED": 3, "SCHEDULED": 3, "FINISHED": 4 };
-        const priorityA = statusPriority[a.status] || 5;
-        const priorityB = statusPriority[b.status] || 5;
-        if (priorityA !== priorityB) return priorityA - priorityB;
-        return new Date(a.utcDate) - new Date(b.utcDate);
-    });
-    
-    // 7. HTML Generálás (Befejezett rész)
-    cont.innerHTML = filtered.map(m => {
-        try {
-            const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-            const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
-            const mDateObj = new Date(m.utcDate);
-            const timeStr = mDateObj.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
-
-            const scoreDisplay = (isLive || isFinished) && m.score?.fullTime
-                ? `<span class="score-live">${m.score.fullTime.home}:${m.score.fullTime.away}</span>`
-                : `<span class="score-time">${timeStr}</span>`;
-
-            const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : { h: 1.50, d: 3.20, a: 2.40 };
-            const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
-            const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
-            
-            // Fogadás státuszának kijelzése
-            let betLabel = "";
-            if (myBet) {
-                const bStatus = String(myBet.status).toUpperCase();
-                const color = bStatus === 'WON' ? 'var(--neon-green)' : (bStatus === 'LOST' ? 'var(--neon-red)' : 'var(--neon-blue)');
-                betLabel = `<div style="color:${color}; font-size:9px; font-family:'Orbitron'; margin-top:5px;">FOGADÁS: ${myBet.type} (${bStatus})</div>`;
-            }
-
-            return `
-    <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-        ${myBet ? `
-            <div style="position: absolute; top: 0; left: 0; background: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">
-                ${bStatus === 'WON' ? 'WINNER' : bStatus === 'LOST' ? 'LOST' : 'LIVE BET'}
-            </div>
-        ` : ''}
-        
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px;">
-            <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
-                <img src="${m.homeTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
-                <span style="font-size: 11px; font-weight: 500;">${m.homeTeam.name}</span>
-            </div>
-            
-            <div style="flex: 0 0 100px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                <div class="score-display ${isLive ? 'score-live' : ''}" style="font-size: 18px; font-weight: 800; font-family: 'Orbitron';">${score}</div>
-                ${isLive ? '<div class="pulse-red" style="font-size: 8px; color: #ff3e3e;">LIVE</div>' : ''}
-                
-                <a href="/elemzes?id=${m.id}" class="tool-btn analysis-btn" style="text-decoration:none;">ELEMZÉS</a>
-                
-                <div onclick="toggleChat('${m.id}')" style="cursor: pointer; font-size: 8px; font-family: 'Orbitron'; color: #00d4ff; border: 1px solid #00d4ff; padding: 2px 6px; border-radius: 4px; background: rgba(0, 212, 255, 0.1); width: 70px; margin-top:5px;">
-                    💬 CHAT
-                </div>
-            </div>
-            
-            <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                <img src="${m.awayTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
-                <span style="font-size: 11px; font-weight: 500;">${m.awayTeam.name}</span>
-            </div>
-        </div>
-
-        <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
-            ${myBet ? `
-                <div style="background: ${bStatus === 'WON' ? 'rgba(0, 255, 136, 0.1)' : bStatus === 'LOST' ? 'rgba(255, 62, 62, 0.1)' : 'rgba(255, 170, 0, 0.1)'}; 
-                            border: 1px dashed ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; 
-                            border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <span style="font-size: 9px; color: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; display: block; font-family: 'Orbitron';">
-                            ${bStatus === 'WON' ? 'NYERTES' : bStatus === 'LOST' ? 'VESZTETT' : 'AKTÍV TIPP'}
-                        </span>
-                        <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
-                    </div>
-                    <div style="text-align: right;">
-                        <span style="font-size: 13px; font-weight: bold; color: ${bStatus === 'LOST' ? '#ff3e3e' : '#00ff88'};">
-                            ${bStatus === 'LOST' ? '0' : Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP
-                        </span>
-                    </div>
-                </div>
-            ` : (m.status === 'TIMED' || m.status === 'SCHEDULED') ? `
-                <div style="display: flex; gap: 8px; width: 100%;">
-                    <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">H ${odds.h}</button>
-                    <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">D ${odds.d}</button>
-                    <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">V ${odds.a}</button>
-                </div>
-            ` : `
-                <div style="text-align:center; font-size: 10px; opacity: 0.5; font-family: 'Orbitron';">${isLive ? 'ÉLŐ MECCS - FOGADÁS LEZÁRVA' : 'FOGADÁS LEZÁRVA'}</div>
-            `}
-        </div>
-
-        <div id="chat-section-${m.id}" class="match-chat-section" 
-             style="display: ${activeChatId === String(m.id) ? 'block' : 'none'}; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 10px; padding-top: 10px;">
-            <div id="chat-messages-${m.id}" class="chat-messages" 
-                 style="height: 120px; overflow-y: auto; margin-bottom: 10px; display:flex; flex-direction:column; gap:5px; text-align:left;">
-                ${chatHistory[m.id] ? chatHistory[m.id].join('') : ''}
-            </div>
-            <div class="chat-input-area" style="display:flex; gap:5px;">
-                <input type="text" id="chat-input-${m.id}" class="chat-input" placeholder="Trash-talk..." 
-                       style="flex:1; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:5px; color:white; padding:5px 10px; font-size:11px;" 
-                       onkeypress="if(event.key==='Enter') sendChatMessage('${m.id}')">
-                <button onclick="sendChatMessage('${m.id}')" style="background: #00d4ff; border:none; border-radius:5px; padding:0 10px; cursor:pointer; color:black; font-weight:bold;">🚀</button>
-            </div>
-        </div>
-    </div>`;
-        } catch (err) {
-            console.error("Hiba egy kártya generálásakor:", err);
-            return '';
-        }
-    }).join('');
-}
-        
-// --- ÚJ FÜGGVÉNY: LIGÁK KEZELÉSE ---
-function toggleLeague(leagueId, element) {
-    if (selectedLeagues.has(leagueId)) {
-        selectedLeagues.delete(leagueId);
-        element.classList.remove('active');
-    } else {
-        selectedLeagues.add(leagueId);
-        element.classList.add('active');
-    }
-    
-    // Ha minden ligát kivettünk, vizuálisan olyan, mintha minden be lenne jelölve
-    // Vagy ha azt akarod, hogy kattintásra frissüljön:
-    renderMatches();
-}
-
-// --- 6. UI LOGIKA JAVÍTVA ---
-function renderDateSelector() {
-    const selector = document.getElementById("date-selector");
-    // Ha nincs hova rajzolni, vagy nincsenek meccsek, ne csináljon semmit
-    if (!selector || !allMatches || allMatches.length === 0) return;
-
-    // Összeszedjük az egyedi dátumokat a meccsekből
-    const datesSet = new Set();
-    allMatches.forEach(m => {
-        if (m && m.utcDate) {
-            datesSet.add(m.utcDate.split('T')[0]);
-        }
-    });
-    
-    // Ha a jelenleg kiválasztott dátum nincs az új adatok között, 
-    // állítsuk be az első elérhető dátumra (ezzel elkerüljük az üres oldalt)
-    const sortedDates = Array.from(datesSet).sort();
-    if (sortedDates.length > 0 && !datesSet.has(selectedDate)) {
-        console.log("A korábbi dátum nem elérhető, váltás:", sortedDates[0]);
-        selectedDate = sortedDates[0];
-    }
-
-    selector.innerHTML = sortedDates.map(date => {
-        const dObj = new Date(date);
-        const isActive = (date === selectedDate);
-        
-        // Biztonságos mai nap ellenőrzés
-        const checkToday = new Date().toLocaleDateString('sv');
-        const isToday = (date === checkToday);
-        
-        const label = isToday ? (currentLang === 'HU' ? 'MA' : 'TODAY') : 
-                      dObj.toLocaleDateString(currentLang === 'HU' ? 'hu-HU' : 'en-US', { weekday: 'short', day: 'numeric' });
-
-        // JAVÍTÁS: A renderMatches elé odaírjuk az await-et (vagy .then-t), 
-        // de az onclick-ben a legegyszerűbb aszinkron módon hívni
-        return `
-            <button class="date-btn ${isActive ? 'active' : ''}" 
-                    onclick="selectedDate='${date}'; renderMatches();">
-                ${label.toUpperCase()}
-            </button>`;
-    }).join('');
-}
-
-async function placeBet(matchId, teamName, odds, type) {
-    // 1. BELÉPÉS ELLENŐRZÉSE
-    if (typeof Clerk === 'undefined' || !Clerk.user) {
-        alert("A fogadáshoz előbb be kell jelentkezned!");
-        Clerk.openSignIn({ afterSignInUrl: window.location.href });
-        return;
-    }
-
-    // 2. ÖSSZEG BEKÉRÉSE
-    const amountStr = prompt(`Mennyit teszel a következőre: ${teamName}? (Szorzó: ${odds})`, "100");
-    if (amountStr === null) return; 
-
-    const amount = parseInt(amountStr);
-    if (isNaN(amount) || amount <= 0) {
-        alert("Kérlek adj meg egy érvényes összeget!");
-        return;
-    }
-
-    // 3. EGYENLEG ELLENŐRZÉSE
-    if (amount > window.userBalance) {
-        alert(`Nincs elég egyenleged! Jelenlegi: ${window.userBalance} LP`);
-        return;
-    }
-
-    try {
-        const newBalance = window.userBalance - amount;
-
-        // --- A TRÜKK: CSAK EGYETLEN HÍVÁS A SZERVERNEK ---
-        // Itt nem használjuk a 'supabase' változót, mert a backend elintézi!
-        const res = await fetch('/api/user/update-balance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                userId: Clerk.user.id, 
-                balance: newBalance,
-                // Beküldjük a fogadás adatait is, a backend majd ebből ment a Supabase-be
-                bet: {
-                    matchId: String(matchId),
-                    teamName: teamName,
-                    amount: amount,
-                    odds: odds,
-                    type: type
-                }
-            })
-        });
-
-        if (res.ok) {
-            // SIKER: UI és Helyi adatok frissítése
-            window.userBalance = newBalance;
-            const balanceElem = document.getElementById('user-balance');
-            if (balanceElem) balanceElem.innerText = newBalance.toLocaleString();
-
-            // LocalStorage-ba is elmentjük a "LIVE BET" jelvény miatt
-            let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
-            currentBets.push({
-                matchId: String(matchId),
-                teamName: teamName,
-                amount: amount,
-                odds: odds,
-                status: 'OPEN'
-            });
-            localStorage.setItem('lp_activeBets', JSON.stringify(currentBets));
-
-            alert(`Sikeres fogadás!`);
-            if (typeof renderMatches === 'function') renderMatches();
-        } else {
-            throw new Error("A szerver elutasította a kérést.");
-        }
-    } catch (err) {
-        console.error("Hiba:", err);
-        alert("Hiba történt a mentés során. Kérlek próbáld újra!");
-    }
-}
-
-async function processWin(prizeAmount, matchId) {
-    try {
-        // Kiszámoljuk az új egyenleget
-        const newBalance = window.userBalance + prizeAmount;
-
-        const res = await fetch('/api/user/update-balance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: Clerk.user.id,
-                balance: newBalance,
-                // Opcionálisan küldhetünk egy megjegyzést a szervernek
-                note: `Nyeremény a(z) ${matchId} azonosítójú meccsről`
-            })
-        });
-
-        if (res.ok) {
-            window.userBalance = newBalance;
-            // Frissítjük a kijelzőt
-            const balanceElem = document.getElementById('user-balance');
-            if (balanceElem) balanceElem.innerText = newBalance.toLocaleString();
-        }
-    } catch (err) {
-        console.error("Hiba a nyeremény jóváírásakor:", err);
-    }
-}
-
-// --- EGYENLEG MENTÉSE AZ ADATBÁZISBA ---
-async function saveBalanceToDB(userId, newBalance) {
-    try {
-        const res = await fetch('/api/user/update-balance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                userId: userId, 
-                balance: newBalance // Itt a teljes új összeget küldjük
-            })
-        });
-        if (!res.ok) throw new Error("Database update failed");
-        console.log("Egyenleg elmentve a Supabase-be:", newBalance);
-    } catch (e) {
-        console.error("Hiba a mentés során:", e);
-    }
-}
-
-// --- EGYENLEG BETÖLTÉSE INDÍTÁSKOR ---
-async function loadInitialBalance() {
-    if (!Clerk.user) return;
-
-    try {
-        const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}`);
-        const data = await response.json();
-
-        if (data && data.balance !== undefined) {
-            const balanceSpan = document.getElementById('user-balance');
-            const balanceWrap = document.getElementById('balance-wrap'); // EZT ADTUK HOZZÁ
-
-            if (balanceSpan) {
-                balanceSpan.innerText = Number(data.balance).toLocaleString();
-            }
-
-            // Itt tesszük láthatóvá a dobozt!
-            if (balanceWrap) {
-                balanceWrap.style.display = 'flex'; 
-            }
-
-            window.userBalance = data.balance; 
-        }
-    } catch (err) {
-        console.error("Hiba az egyenleg megjelenítésekor:", err);
-    }
-}
-
-async function showStandings(leagueId, teamId, code, isAutoCall = false) {
-    const sidebar = document.querySelector('.standings-sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-    const target = document.getElementById("standings-target");
-
-    // 1. Sidebar és mobil nézet kezelése
-    if (sidebar && !isAutoCall) {
-        sidebar.classList.add('open');
-        if (overlay) overlay.classList.add('active');
-        // Mobilon görgetés tiltása a háttérben, ha nyitva a tabella
-        document.body.style.overflow = 'hidden'; 
-    }
-
-    if (!target) return;
-    target.innerHTML = `<div class="loading-spinner">LOADING...</div>`;
-
-    try {
-        // Query paraméter tisztítása (fontos, hogy az API nagybetűt várhat)
-        const queryParam = (code || leagueId)?.toString().toUpperCase();
-        if (!queryParam) throw new Error("Nincs érvényes azonosító");
-
-        const res = await fetch(`/api/standings/${queryParam}`);
-        if (!res.ok) throw new Error(`Szerver hiba: ${res.status}`);
-        
-        const data = await res.json();
-
-        // Részletes adatellenőrzés
-        if (!data || !data.standings || !Array.isArray(data.standings) || data.standings.length === 0) {
-            throw new Error("A tabella jelenleg nem elérhető ehhez a ligához.");
-        }
-
-        const standings = data.standings.find(s => s.type === 'TOTAL') || data.standings[0];
-        const tableData = standings.table;
-        if (!tableData) throw new Error("Üres táblázat.");
-
-        const total = tableData.length;
-        const isHU = typeof currentLang !== 'undefined' && currentLang === 'HU';
-
-        let html = `<table class="standings-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th style="text-align:left">${isHU ? 'CSAPAT' : 'TEAM'}</th>
-                            <th>P</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-
-        tableData.forEach(r => {
-            let status = r.description || "";
-            const pos = r.position;
-            const currentTeamId = r.team.id;
-            const isTarget = teamId && currentTeamId == teamId;
-
-            // Zóna logika beépítése
-            if (!status || status === "") {
-                if (['PL', 'PD', 'SA'].includes(code)) {
-                    if (pos <= 4) status = "Champions League Group Stage";
-                    else if (pos === 5) status = "Europa League Group Stage";
-                    else if (pos === 6) status = "Conference League Qualifiers";
-                    else if (pos >= total - 2) status = "Relegation";
-                } else if (code === 'BL1') {
-                    if (pos <= 4) status = "Champions League Group Stage";
-                    else if (pos === 5) status = "Europa League Group Stage";
-                    else if (pos === 16) status = "Osztályozó";
-                    else if (pos >= 17) status = "Relegation";
-                } else if (code === 'DED') { 
-                    if (pos <= 2) status = "Champions League Group Stage";
-                    else if (pos === 3) status = "Champions League Qualifiers";
-                    else if (pos === 4) status = "Europa League Qualifiers";
-                    else if (pos >= 5 && pos <= 8) status = "Conference League Play-offs";
-                    else if (pos === 16) status = "Osztályozó";
-                    else if (pos >= 17) status = "Relegation";
-                }   else if (code === 'FL1') {
-                    if (pos <= 3) status = "Champions League Group Stage";
-                    else if (pos === 4) status = "Champions League Qualifiers";
-                    else if (pos === 5) status = "Europa League Group Stage";
-                    else if (pos === 16) status = "Osztályozó";
-                    else if (pos >= 17) status = "Relegation";
-                } else if (code === 'PPL') {
-                            if (pos === 1) status = "Champions League Group Stage";
-                            else if (pos === 2) status = "Champions League Qualifiers";
-                            else if (pos === 3) status = "Europa League Qualifiers";
-                            else if (pos === 4) status = "Conference League Qualifiers";
-                            else if (pos === 16) status = "Osztályozó";
-                            else if (pos >= 17) status = "Relegation"; 
-                } else if (code === 'ELC') {
-                            if (pos <= 2) status = "Feljutás - Premier League";
-                            else if (pos <= 6) status = "Play-off (Championship)";
-                            else if (pos >= total - 2) status = "Relegation";
-                }else {
-                    if (pos === 1) status = "Bajnok / Feljutó";
-                    else if (pos >= total - 2) status = "Relegation";
-                }
-            }
-
-            const color = typeof getStatusColor === 'function' ? getStatusColor(status) : 'transparent';
-            const boxBg = color !== 'transparent' ? color : 'rgba(255,255,255,0.05)';
-            const boxText = color !== 'transparent' ? '#000' : 'var(--neon-blue)';
-
-            html += `
-                <tr class="${isTarget ? 'highlight-row' : ''}">
-                    <td class="pos-col" style="border-left: 3px solid ${color}">
-                        <div class="pos-num-box" style="background:${boxBg}; color:${boxText};">
-                            ${pos}
-                        </div>
-                    </td>
-                    <td style="text-align:left;">
-                        <div class="team-flex">
-                            <img src="${r.team.crest}" width="20" height="20" loading="lazy" onerror="this.src='placeholder.png'">
-                            <span class="t-name ${isTarget ? 'bold' : ''}">${r.team.shortName || r.team.name}</span>
-                        </div>
-                    </td>
-                    <td class="points-col">${r.points}</td>
-                </tr>`;
-        });
-
-        target.innerHTML = html + "</tbody></table>";
-
-    } catch (e) { 
-        console.error("Standings Error:", e);
-        target.innerHTML = `
-            <div class="error-msg">
-                <p>⚠️ ${e.message}</p>
-            </div>`; 
-    }
-}
-        
-function updateStaticTexts() {
-    const isHU = currentLang === 'HU';
-    const langBtn = document.getElementById('lang-btn');
-    const hLeagues = document.getElementById('h-leagues');
-    const hTable = document.getElementById('h-table');
-    const backLink = document.getElementById('back-link');
-
-    if (langBtn) langBtn.innerText = currentLang;
-    if (hLeagues) hLeagues.innerText = isHU ? '🏆 Bajnokságok' : '🏆 Leagues';
-    if (hTable) hTable.innerText = isHU ? '📊 Élő Tabella' : '📊 Live Standings';
-    if (backLink) backLink.innerText = isHU ? 'VISSZA' : 'BACK';
-
-    // Mobil gombok
-    const mLeagues = document.getElementById('m-leagues');
-    const mMatches = document.getElementById('m-matches');
-    const mTable = document.getElementById('m-table');
-    if (mLeagues) mLeagues.innerText = isHU ? 'LIGÁK' : 'LEAGUES';
-    if (mMatches) mMatches.innerText = isHU ? 'MECCSEK' : 'MATCHES';
-    if (mTable) mTable.innerText = isHU ? 'TABELLA' : 'TABLE';
-
-    const placeholder = document.getElementById('standings-placeholder');
-    if (placeholder) placeholder.innerText = isHU ? 'VÁLASSZ EGY CSAPATOT' : 'CHOOSE A TEAM';
-}
-// Nyelv váltása (HU <-> EN)
-function toggleLang() {
-    currentLang = currentLang === 'HU' ? 'EN' : 'HU';
-    saveState(); // Elmentjük a választást
-    updateStaticTexts(); // Frissítjük a feliratokat (🏆 Bajnokságok, stb.)
-    renderMatches(); // Újrarajzoljuk a meccseket az új nyelven
-    s();
-    renderDateStrip();
-
-    // Frissítjük a gomb feliratát is
-    const langBtn = document.getElementById('lang-btn');
-    if (langBtn) langBtn.innerText = currentLang;
-}
-
-// Sötét/Világos mód váltása
-function toggleTheme() {
-    document.body.classList.toggle('light');
-    const themeBtn = document.getElementById('theme-btn');
-    if (themeBtn) {
-        themeBtn.innerText = document.body.classList.contains('light') ? '🌙' : '☀️';
-    }
-    // Elmentjük a választást a böngészőbe
-    localStorage.setItem('lp_theme', document.body.classList.contains('light') ? 'light' : 'dark');
-}
-
-// Oldal betöltésekor ellenőrizzük, volt-e mentett téma
-if (localStorage.getItem('lp_theme') === 'light') {
-    document.body.classList.add('light');
-    window.addEventListener('load', () => {
-        if (document.getElementById('theme-btn')) document.getElementById('theme-btn').innerText = '🌙';
-    });
-}
-
-function renderLeagues() {
-   const listContainer = document.getElementById("league-list");
-    if (!listContainer) return;
-
-    // CSAK az adott naphoz tartozó meccseket nézzük a liga-listához
-   const matchesOnSelectedDate = allMatches.filter(m => {
-    const mDate = m.utcDate.split('T')[0];
-    return mDate === selectedDate;
-});
-
-    const unique = new Map();
-    matchesOnSelectedDate.forEach(m => {
-        if (m.competition && m.competition.id) {
-            unique.set(String(m.competition.id), m.competition);
-        }
-    });
-
-    const leagueItemsHtml = [...unique.values()].map(l => {
-        const idStr = l.id.toString();
-        // Akkor aktív, ha a Set-ben benne van, VAGY ha a Set üres (ekkor minden aktív)
-        const isActive = selectedLeagues.has(idStr);
-        
-        return `
-            <div class="league-item ${isActive ? 'active' : ''}" 
-                 onclick="handleLeagueClick('${idStr}')">
-                <div class="league-icon-wrapper">
-                    <img src="${l.emblem}" alt="${l.name}" onerror="this.src='https://via.placeholder.com/32?text=?'">
-                </div>
-                <span class="league-name-text">${l.name}</span>
-            </div>`;
-    }).join('');
-
-    listContainer.innerHTML = leagueItemsHtml;
-}
-
-// Segédfüggvény, hogy ne legyen túl hosszú az onclick
-function toggleLeagueSelection(id) {
-    if (selectedLeagues.has(id)) {
-        selectedLeagues.delete(id);
-    } else {
-        selectedLeagues.add(id);
-    }
-    renderLeagues();
-    renderMatches(); // Frissítjük a középső részt is!
-}
-        
-async function loadUserBetsFromServer() {
-    if (typeof Clerk === 'undefined' || !Clerk.user) return;
-
-    try {
-        const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}`);
-
-        // Itt volt a hiba: 'res' helyett 'response' kell mindenhol!
-        const text = await response.text(); 
-        console.log("Szerver válasza:", text); 
-
-        if (!response.ok) {
-            console.error(`Szerver hiba: ${response.status}`);
-            return;
-        }
-
-        try {
-            const bets = JSON.parse(text);
-            if (Array.isArray(bets)) {
-                localStorage.setItem('lp_activeBets', JSON.stringify(bets));
-                // Csak akkor renderelünk, ha tényleg változott valami
-                if (typeof renderMatches === 'function') renderMatches();
-            }
-        } catch (parseErr) {
-            console.error("A szerver válasza nem érvényes JSON! Valószínűleg HTML hibaoldalt kaptál.");
-        }
-
-    } catch (e) {
-        console.warn("Hálózati hiba:", e);
-    }
-}
-
-// --- 7. INDÍTÁS ---
-let isInitialized = false;
-
-// 1. MECCSEK ÉS UI INDÍTÁSA
-function initSiteFunctions() {
-    if (typeof updateUI === 'function') updateUI(); 
-    if (typeof initNeural === 'function') initNeural(); 
-    if (typeof fetchMatches === 'function') fetchMatches(); 
-    if (typeof startCounters === 'function') startCounters();
-    
-    if (typeof updateData === 'function') updateData();
-    if (typeof checkBetResults === 'function') checkBetResults(); 
-
-    if (typeof renderDateStrip === 'function') renderDateStrip();
-    if (typeof renderLeagues === 'function') renderLeagues();
-    if (typeof renderMatches === 'function') renderMatches();
-
-    setInterval(() => {
-        if (typeof updateData === 'function') updateData();
-        if (typeof checkBetResults === 'function') checkBetResults();
-    }, 30000);
-}
-
+// --- 2. ALKALMAZÁS INDÍTÁSA (startApp) ---
 async function startApp() {
-    // 1. Téma azonnali beállítása (Hogy ne villanjon fehér a sötét mód előtt)
+    // Téma azonnali beállítása
     if (localStorage.getItem('lp_theme') === 'light') document.body.classList.add('light');
 
-    // 2. Alapfunkciók indítása (Meccsek lekérése azonnal indul)
+    // Alapfunkciók (meccsek) indítása Clerk nélkül is
     initSiteFunctions(); 
 
-    // 3. Clerk (Auth) betöltése és kezelése
     try {
         let t = 0;
         while (typeof Clerk === 'undefined' && t < 30) { 
@@ -1733,435 +745,296 @@ async function startApp() {
         if (typeof Clerk !== 'undefined') {
             await Clerk.load({ routing: 'virtual' });
             
-            // Figyeljük a bejelentkezési állapot változását (Be- és kijelentkezésnél is lefut)
+            // Clerk eseményfigyelő (Login/Logout/User változás)
             Clerk.addListener(async ({ user }) => {
                 if (user) {
-                    console.log("Felhasználó bejelentkezve:", user.firstName);
-                    
-                    // User Button megjelenítése
                     const userBtn = document.getElementById('user-button');
                     if (userBtn) Clerk.mountUserButton(userBtn);
 
-                    // Adatok betöltése a szerverről
-                    await loadInitialBalance();      // Egyenleg
-                    await loadUserBetsFromServer(); // Eddigi fogadások
-
-                    // Elindítjuk a háttérben futó egyenleg-ellenőrzőt (Polling)
-                    startBalanceAutoRefresh();
+                    // Adatok betöltése
+                    await loadInitialBalance();
+                    startBalanceAutoRefresh(); // Automatikus frissítő indítása
                 } else {
-                    // Ha kijelentkezik, elrejtjük az egyenleget
-                    const balanceWrap = document.getElementById('balance-wrap');
-                    if (balanceWrap) balanceWrap.style.display = 'none';
-                    localStorage.removeItem('lp_activeBets');
+                    document.getElementById('balance-wrap').style.display = 'none';
+                    if (balanceInterval) clearInterval(balanceInterval);
                 }
             });
-
-            isInitialized = true;
         }
     } catch (error) {
-        console.warn("Clerk hiba, de a meccsek működnek:", error);
+        console.warn("Clerk hiba, de a meccsek mennek tovább:", error);
     }
 }
 
-window.onload = startApp;
-        
-// --- MOBIL NAVIGÁCIÓ JAVÍTÁSA ---
-function toggleM(id) { 
-    // Minden oldalsáv bezárása először
-    document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => {
-        s.classList.remove('open');
-    });
-    // Csak a kiválasztott megnyitása
-    const target = document.getElementById(id);
-    if (target) target.classList.add('open'); 
+// --- 3. EGYENLEG KEZELÉS (Polling & Flash) ---
+function startBalanceAutoRefresh() {
+    if (balanceInterval) clearInterval(balanceInterval);
+    balanceInterval = setInterval(async () => {
+        if (Clerk.user) await loadInitialBalance();
+    }, 20000); // 20 másodpercenként frissít
 }
 
-function closeM() { 
-    // Minden oldalsáv bezárása (a MECCSEK gombhoz)
-    document.querySelectorAll('.sidebar, .standings-sidebar').forEach(s => {
-        s.classList.remove('open');
-    });
+async function loadInitialBalance() {
+    if (!Clerk.user) return;
+    try {
+        const response = await fetch(`/api/user/balance?userId=${Clerk.user.id}&t=${Date.now()}`);
+        const data = await response.json();
+        if (data && data.balance !== undefined) {
+            const balanceSpan = document.getElementById('user-balance');
+            const newBalance = Number(data.balance);
+            
+            // Ha nőtt az egyenleg (nyeremény), vizuális effekt
+            if (window.userBalance !== undefined && newBalance > window.userBalance) {
+                flashBalanceUpdate();
+            }
+
+            if (balanceSpan) balanceSpan.innerText = newBalance.toLocaleString();
+            document.getElementById('balance-wrap').style.display = 'flex';
+            window.userBalance = newBalance;
+        }
+    } catch (err) { console.error("Egyenleg hiba:", err); }
 }
-function saveState() {
-    const state = {
-        selectedLeagues: Array.from(selectedLeagues),
-        selectedDate: selectedDate,
-        currentLang: typeof currentLang !== 'undefined' ? currentLang : 'hu'
-    };
+
+function flashBalanceUpdate() {
+    const span = document.getElementById('user-balance');
+    span.style.color = "#00ff99";
+    span.style.textShadow = "0 0 20px #00ff99";
+    setTimeout(() => { span.style.color = ""; span.style.textShadow = ""; }, 5000);
+}
+
+// --- 4. ADATOK ÉS MECCSEK (Update & Render) ---
+async function updateData() {
+    try {
+        const res = await fetch(`/live-matches?date=${selectedDate}`);
+        const data = await res.json();
+        allMatches = data.matches || data || [];
+
+        // Oddsok lekérése
+        const oddsRes = await fetch("/api/odds-data");
+        globalOdds = await oddsRes.json();
+
+        if (isFirstLoad && allMatches.length > 0) {
+            allMatches.forEach(m => selectedLeagues.add(String(m.competition.id)));
+            isFirstLoad = false;
+        }
+
+        renderLeagues();
+        renderMatches();
+        checkGoals();
+        checkBetResults(); // Minden frissítésnél megnézzük, vége lett-e egy meccsnek
+    } catch (e) { console.error("Update hiba:", e); }
+}
+
+function renderMatches() {
+    const container = document.getElementById('match-container');
+    if (!container) return;
+
+    let filtered = allMatches.filter(m => selectedLeagues.has(String(m.competition.id)));
+    if (currentLeagueId !== 'all') {
+        filtered = filtered.filter(m => String(m.competition.id) === currentLeagueId);
+    }
+
+    container.innerHTML = filtered.map(match => {
+        const isLive = ["IN_PLAY", "PAUSED"].includes(match.status);
+        const score = match.score?.fullTime || { home: 0, away: 0 };
+        const isFlashing = flashingMatches.has(String(match.id)) ? 'goal-highlight' : '';
+        const matchOdds = globalOdds.find(o => String(o.id) === String(match.id))?.odds || { home: 2.1, draw: 3.4, away: 2.8 };
+
+        return `
+            <div class="match-card ${isFlashing}" id="match-${match.id}">
+                <div class="match-info-row">
+                    <div class="team-link" onclick="showStandings(${match.competition.id})">
+                        <img src="${match.homeTeam.crest}" alt="">
+                        <span>${match.homeTeam.name}</span>
+                    </div>
+                    <div class="score-display ${isLive ? 'score-live' : ''}">
+                        ${score.home} - ${score.away}
+                    </div>
+                    <div class="team-link" onclick="showStandings(${match.competition.id})">
+                        <img src="${match.awayTeam.crest}" alt="">
+                        <span>${match.awayTeam.name}</span>
+                    </div>
+                </div>
+                
+                <div class="match-odds-row">
+                    <button class="odds-btn" onclick="placeBet('${match.id}', 'H', ${matchOdds.home}, '${match.homeTeam.name}')">
+                        <span class="odds-label">HAZAI</span>
+                        <span class="odds-val">${matchOdds.home}</span>
+                    </button>
+                    <button class="odds-btn" onclick="placeBet('${match.id}', 'D', ${matchOdds.draw}, 'Döntetlen')">
+                        <span class="odds-label">DÖNTETLEN</span>
+                        <span class="odds-val">${matchOdds.draw}</span>
+                    </button>
+                    <button class="odds-btn" onclick="placeBet('${match.id}', 'V', ${matchOdds.away}, '${match.awayTeam.name}')">
+                        <span class="odds-label">VENDÉG</span>
+                        <span class="odds-val">${matchOdds.away}</span>
+                    </button>
+                </div>
+
+                <div class="btn-chat-toggle" onclick="toggleChat('${match.id}')">💬 CHAT</div>
+                <div id="chat-section-${match.id}" class="match-chat-section">
+                    <div id="chat-messages-${match.id}" class="chat-messages"></div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input-${match.id}" class="chat-input" placeholder="Üzenet...">
+                        <button class="chat-send-btn" onclick="sendMessage('${match.id}')">➤</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// --- 5. FOGADÁSI LOGIKA (Place & Check) ---
+async function placeBet(matchId, type, odds, teamName) {
+    if (!Clerk.user) return alert("A fogadáshoz be kell jelentkezned!");
+    const amount = parseInt(prompt(`Fogadás összege a(z) ${teamName} csapatra (Odds: ${odds}):`, "100"));
+    
+    if (!amount || amount <= 0) return;
+    if (amount > window.userBalance) return alert("Nincs elég egyenleged!");
 
     try {
-        localStorage.setItem('lucky_pitch_state', JSON.stringify(state));
-        console.log("Állapot elmentve.");
-    } catch (e) {
-        console.warn("Nem sikerült menteni a localStorage-ba:", e);
-    }
-}
-
-let startX = 0;
-let startY = 0;
-let isDragging = false;
-
-const sbLeft = document.querySelector('.sidebar');
-const sbRight = document.querySelector('.standings-sidebar');
-
-// 1. Overlay check (marad a tiéd)
-if(!document.querySelector('.sidebar-overlay')) {
-    const ov = document.createElement('div');
-    ov.className = 'sidebar-overlay';
-    document.body.appendChild(ov);
-    ov.addEventListener('click', closeAllSidebars);
-}
-const overlay = document.querySelector('.sidebar-overlay');
-
-function closeAllSidebars() {
-    sbLeft.classList.remove('open');
-    sbRight.classList.remove('open');
-    overlay.classList.remove('active');
-    document.body.style.cursor = 'default';
-    isDragging = false;
-
-    // FIX: Visszaadjuk a görgetést a főoldalnak
-    document.body.style.overflow = ''; 
-}
-
-// 2. KÖZÖS LOGIKA: Ez dönti el a diffX alapján, mi történjen
-function handleAction(endX, endY, sX, sY) {
-    const diffX = endX - sX;
-    const diffY = endY - sY;
-
-    // Csak ha vízszintes a mozgás és elég hosszú (80px)
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 80) {
-        if (diffX > 0) { // JOBBRA HÚZÁS
-            if (sX < 100) { // Bal szélről indítva -> Ligák nyitása
-                sbLeft.classList.add('open');
-                overlay.classList.add('active');
-            } else if (sbRight.classList.contains('open')) { // Tabella bezárása
-                closeAllSidebars();
-            }
-        } else { // BALRA HÚZÁS
-            if (sX > window.innerWidth - 100) { // Jobb szélről indítva -> Tabella nyitása
-                sbRight.classList.add('open');
-                overlay.classList.add('active');
-            } else if (sbLeft.classList.contains('open')) { // Ligák bezárása
-                closeAllSidebars();
-            }
-        }
-    }
-}
-
-// 3. EGYSÉGESÍTETT ESEMÉNYKEZELŐK
-const startAction = (e) => {
-    const posX = e.type.includes('mouse') ? e.pageX : e.changedTouches[0].screenX;
-    const posY = e.type.includes('mouse') ? e.pageY : e.changedTouches[0].screenY;
-    
-    // Csak a széleken (100px) vagy ha már nyitva van valamelyik sáv
-    if (posX < 100 || posX > window.innerWidth - 100 || sbLeft.classList.contains('open') || sbRight.classList.contains('open')) {
-        startX = posX;
-        startY = posY;
-        isDragging = true;
-        if (e.type.includes('mouse')) document.body.style.cursor = 'grabbing';
-    }
-};
-
-const moveAction = (e) => {
-    if (!isDragging) return;
-    
-    // Megakadályozzuk az oldal "elúszását" (fehér sáv fix)
-    // Csak akkor vonjuk el az irányítást, ha szélről indult a swipe
-    if (startX < 100 || startX > window.innerWidth - 100 || sbLeft.classList.contains('open') || sbRight.classList.contains('open')) {
-        if (e.cancelable) e.preventDefault();
-    }
-};
-
-const endAction = (e) => {
-    if (!isDragging) return;
-    
-    const endX = e.type.includes('mouse') ? e.pageX : e.changedTouches[0].screenX;
-    const endY = e.type.includes('mouse') ? e.pageY : e.changedTouches[0].screenY;
-    
-    handleAction(endX, endY, startX, startY);
-    
-    isDragging = false;
-    document.body.style.cursor = 'default';
-};
-
-// --- FELIRATKOZÁS ---
-
-// Egér
-document.addEventListener('mousedown', startAction);
-document.addEventListener('mousemove', moveAction);
-document.addEventListener('mouseup', endAction);
-
-// Mobil (Touch)
-document.addEventListener('touchstart', startAction, {passive: true});
-document.addEventListener('touchmove', moveAction, {passive: false}); // Fontos a false a preventDefault miatt!
-document.addEventListener('touchend', endAction, {passive: true});
-
-// --- PROFIL HOVER TIPP TÁBLÁZAT JAVÍTOTT VERZIÓ ---
-
-function initSexyTooltip() {
-    if (document.getElementById('user-tips-tooltip')) return;
-
-    const tooltip = document.createElement('div');
-    tooltip.id = 'user-tips-tooltip';
-    tooltip.className = 'sexy-tooltip';
-    tooltip.innerHTML = `
-        <div class="tooltip-header">AKTUÁLIS TIPPJEID</div>
-        <table class="tooltip-table">
-            <thead>
-                <tr>
-                    <th>Meccs</th>
-                    <th>Tipp</th>
-                    <th>Odds</th>
-                </tr>
-            </thead>
-            <tbody id="tooltip-tips-body">
-                <tr><td colspan="3" style="text-align:center; padding:10px;">Betöltés...</td></tr>
-            </tbody>
-        </table>
-    `;
-    document.body.appendChild(tooltip);
-
-  let hideTimeout;
-
-    // 2. Clerk UserButton megkeresése (mivel dinamikusan töltődik be)
-    const findClerkInterval = setInterval(() => {
-        const userBtn = document.querySelector('.cl-userButtonTrigger');
-        
-        if (userBtn) {
-            clearInterval(findClerkInterval);
-
-            // Megnyitás az ikonra vitelkor
-            userBtn.addEventListener('mouseenter', () => {
-                clearTimeout(hideTimeout);
-                updateTooltipData(); // Adatok lekérése a Supabase-ből
-                
-                const rect = userBtn.getBoundingClientRect();
-                const tooltipWidth = 280;
-                
-                // FIXED POZÍCIÓ: Csak a látható ablakhoz viszonyítunk
-                // Így görgetéskor is az ikon alatt marad
-                let top = rect.bottom + 10; 
-                let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
-
-                // Szél ellenőrzés (ne lógjon ki a képernyőről)
-                if (left < 10) left = 10;
-                if (left + tooltipWidth > window.innerWidth - 10) {
-                    left = window.innerWidth - tooltipWidth - 10;
-                }
-
-                tooltip.style.top = top + 'px';
-                tooltip.style.left = left + 'px';
-                tooltip.classList.add('active');
-            });
-
-            // Bezárás késleltetve, ha elhagyjuk az ikont
-            userBtn.addEventListener('mouseleave', () => {
-                hideTimeout = setTimeout(() => {
-                    tooltip.classList.remove('active');
-                }, 300);
-            });
-
-            // Ha a táblázatra visszük az egeret, maradjon kint
-            tooltip.addEventListener('mouseenter', () => {
-                clearTimeout(hideTimeout);
-            });
-
-            // Ha elhagyjuk a táblázatot is, akkor tűnjön el
-            tooltip.addEventListener('mouseleave', () => {
-                tooltip.classList.remove('active');
-            });
-        }
-    }, 1000); 
-}
-
-// Adatok betöltése
-async function updateTooltipData() {
-    const body = document.getElementById('tooltip-tips-body');
-    if (!body) return;
-
-    try {
-        const userId = window.Clerk?.user?.id;
-        if (!userId) {
-            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:10px;">Jelentkezz be!</td></tr>';
-            return;
-        }
-
-        const response = await fetch(`/api/user/bets?userId=${userId}`);
-        const bets = await response.json();
-
-        // Debug info a konzolra
-        console.log("Beérkező adatok:", bets);
-
-        if (!bets || bets.length === 0) {
-            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:#888;">Nincsenek tippjeid.</td></tr>';
-            return;
-        }
-
-        // Itt NEM szűrünk dátumra, csak sorbarendezzük (ha a backend nem tenné meg) 
-        // és kivesszük a legutolsó 7-et
-        const latestBets = bets.slice(0, 7);
-
-        body.innerHTML = latestBets.map(bet => {
-            // Státusz alapú színkódok (OPEN = szürke/kék, WON = zöld, LOST = piros)
-            let statusColor = '#ccc';
-            if (bet.status === 'WON') statusColor = '#00ff99';
-            if (bet.status === 'LOST') statusColor = '#ff4d4d';
-            if (bet.status === 'OPEN') statusColor = '#00b7ff';
-
-            return `
-                <tr>
-                    <td style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 6px 0; font-size: 11px;">
-                        ${bet.team_name}
-                    </td>
-                    <td style="color: var(--neon-blue); font-weight: bold; text-align: center; font-size: 11px;">
-                        ${bet.type || '-'}
-                    </td>
-                    <td style="text-align: right; font-family: 'Orbitron'; font-weight: bold; color: ${statusColor}; font-size: 11px;">
-                        ${bet.odds}
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-    } catch (err) {
-        console.error("Hiba az adatok megjelenítésekor:", err);
-        body.innerHTML = '<tr><td colspan="3" style="text-align:center; color: red; padding:10px;">Hiba történt...</td></tr>';
-    }
-}
-// Futtatás indítása
-initSexyTooltip();
-
-// LIGA KATTINTÁS JAVÍTOTT LEZÁRÁSA
-document.querySelectorAll('.league-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const leagueId = item.getAttribute('data-league-id');
-
-        if (typeof currentLeagueId !== 'undefined' && currentLeagueId === leagueId) {
-            currentLeagueId = 'all';
-            item.classList.remove('active');
-        } else {
-            document.querySelectorAll('.league-item').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            currentLeagueId = leagueId;
-        }
-        
-        if (typeof renderMatches === 'function') renderMatches();
-    });
-});
-function handleLeagueClick(id) {
-    const idStr = String(id);
-    
-    // Váltás: ha benne van kivesszük, ha nincs betesszük
-    if (selectedLeagues.has(idStr)) {
-        selectedLeagues.delete(idStr);
-    } else {
-        selectedLeagues.add(idStr);
-    }
-
-    // AZONNALI vizuális visszajelzés (nem várunk az API-ra)
-    renderLeagues(); 
-    renderMatches(); 
-}
-// Socket inicializálása
-const socket = io();
-
-// --- CHAT RENDSZER ---
-
-/**
- * Üzenet küldése a szervernek
- */
-function sendChatMessage(matchId) {
-    const input = document.getElementById(`chat-input-${matchId}`);
-    if (!input) return;
-
-    const message = input.value.trim();
-    
-    if (message && typeof socket !== 'undefined') {
-        console.log("Üzenet küldése a szerverre:", { matchId, message });
-        
-        socket.emit('send-msg', {
-            matchId: matchId,
-            user: (typeof Clerk !== 'undefined' && Clerk.user) ? Clerk.user.firstName : "Vendég",
-            message: message,
-            color: '#00d4ff'
+        const newBalance = window.userBalance - amount;
+        // API hívás az egyenleg levonásához
+        const res = await fetch('/api/user/update-balance', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ userId: Clerk.user.id, balance: newBalance })
         });
-        
-        input.value = ''; // Mező ürítése küldés után
-    } else {
-        console.error("Hiba: Socket nincs inicializálva vagy üres az üzenet!");
-    }
-}
 
-/**
- * Chat ablak megjelenítése/elrejtése és belépés a socket szobába
- */
-function toggleChat(matchId) {
-    const chatSection = document.getElementById(`chat-section-${matchId}`);
-    if (!chatSection) return;
-
-    if (chatSection.style.display === "none") {
-        activeChatId = String(matchId); // Mentjük, hogy ez van nyitva
-        chatSection.style.display = "block";
-        socket.emit('join-chat', matchId);
-    } else {
-        activeChatId = null; // Bezártuk
-        chatSection.style.display = "none";
-    }
-}
-
-// Üzenet érkezésekor mentsük el a history-ba is!
-if (typeof socket !== 'undefined') {
-    socket.on('new-msg', (data) => {
-        // 1. Ellenőrizzük az ID-t
-        const id = data.matchId || data.match_id;
-        if (!id) return;
-
-        console.log("Adat érkezett a chathoz:", data);
-
-        // 2. Mentés az utolsó 5 üzenet közé (STADION üzenetet is mentjük!)
-        if (!chatHistory[id]) chatHistory[id] = [];
-        
-        const isStadion = data.user === "🏟️ STADION";
-        const msgHTML = `
-            <div style="background:${isStadion ? 'rgba(255,62,62,0.15)' : 'rgba(255,255,255,0.05)'}; 
-                        padding:5px 8px; border-radius:6px; font-size:11px; 
-                        border-left: 3px solid ${data.color}; margin-bottom:4px;">
-                <strong style="color:${data.color}">${data.user}:</strong> ${data.message}
-            </div>`;
-        
-        chatHistory[id].push(msgHTML);
-        if (chatHistory[id].length > 5) chatHistory[id] = chatHistory[id].slice(-5);
-
-        // 3. Megjelenítés a HTML-ben (ha létezik a konténer)
-        const container = document.getElementById(`chat-messages-${id}`);
-        if (container) {
-            container.innerHTML = chatHistory[id].join('');
-            container.scrollTop = container.scrollHeight;
+        if (res.ok) {
+            activeBets.push({ matchId, type, odds, amount, teamName });
+            localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
+            await loadInitialBalance();
+            alert("Sikeres fogadás!");
         }
+    } catch (e) { alert("Hiba történt a fogadás során."); }
+}
 
-        // 4. Ha gól van, és zárva a chat, adjunk jelzést a gombon!
-        if (isStadion && activeChatId !== String(id)) {
-            const chatBtn = document.querySelector(`#match-${id} [onclick="toggleChat('${id}')"]`);
-            if (chatBtn) {
-                chatBtn.style.boxShadow = "0 0 15px #ff3e3e";
-                chatBtn.style.borderColor = "#ff3e3e";
-                chatBtn.innerHTML = "⚽ GÓL!";
-                
-                // 10 másodperc után visszaállítjuk
-                setTimeout(() => {
-                    chatBtn.style.boxShadow = "none";
-                    chatBtn.style.borderColor = "#00d4ff";
-                    chatBtn.innerHTML = "💬 CHAT";
-                }, 10000);
+async function checkBetResults() {
+    if (!activeBets.length) return;
+    let changed = false;
+
+    for (let i = activeBets.length - 1; i >= 0; i--) {
+        const bet = activeBets[i];
+        const match = allMatches.find(m => String(m.id) === String(bet.matchId));
+
+        if (match && match.status === "FINISHED") {
+            const h = match.score.fullTime.home;
+            const a = match.score.fullTime.away;
+            let won = (bet.type === 'H' && h > a) || (bet.type === 'D' && h === a) || (bet.type === 'V' && a > h);
+
+            if (won) {
+                const prize = Math.floor(bet.amount * bet.odds);
+                await fetch('/api/user/update-balance', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ userId: Clerk.user.id, balance: window.userBalance + prize })
+                });
+                alert(`NYERTÉL! 🎉 +${prize} LP a(z) ${bet.teamName} meccsen!`);
+            }
+            activeBets.splice(i, 1);
+            changed = true;
+        }
+    }
+    if (changed) {
+        localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
+        loadInitialBalance();
+    }
+}
+
+// --- 6. GÓL ÉS EFFEKTEK ---
+function checkGoals() {
+    allMatches.forEach(match => {
+        const currentScore = `${match.score?.fullTime?.home || 0}-${match.score?.fullTime?.away || 0}`;
+        if (prevScores.has(match.id) && prevScores.get(match.id) !== currentScore) {
+            const [oldH, oldA] = prevScores.get(match.id).split('-').map(Number);
+            const [newH, newA] = currentScore.split('-').map(Number);
+            
+            if (newH > oldH || newA > oldA) {
+                const scoringTeam = newH > oldH ? match.homeTeam : match.awayTeam;
+                triggerGoalEffect(match.id, scoringTeam.name, scoringTeam.crest);
             }
         }
+        prevScores.set(match.id, currentScore);
     });
 }
+
+function triggerGoalEffect(id, teamName, logo) {
+    const banner = document.getElementById('goal-banner');
+    const sound = document.getElementById('goal-sound');
+    
+    document.getElementById('goal-team-name').innerText = teamName;
+    document.getElementById('goal-logo').src = logo;
+    document.getElementById('goal-logo').style.display = 'block';
+    
+    banner.classList.add('show');
+    flashingMatches.add(String(id));
+    renderMatches();
+
+    if (sound) { sound.currentTime = 0; sound.play().catch(() => {}); }
+
+    setTimeout(() => {
+        banner.classList.remove('show');
+        flashingMatches.delete(String(id));
+        renderMatches();
+    }, 10000);
+}
+
+// --- 7. CHAT ÉS EGYÉB FUNKCIÓK ---
+function toggleChat(id) {
+    const section = document.getElementById(`chat-section-${id}`);
+    section.style.display = section.style.display === 'block' ? 'none' : 'block';
+    activeChatId = section.style.display === 'block' ? id : null;
+}
+
+function sendMessage(id) {
+    const input = document.getElementById(`chat-input-${id}`);
+    if (!input.value || !Clerk.user) return;
+    
+    // Itt küldenéd a socket.emit-et a szervernek
+    console.log(`Üzenet a(z) ${id} meccshez: ${input.value}`);
+    input.value = "";
+}
+
+function initSiteFunctions() {
+    updateData();
+    setInterval(updateData, 10000); // 10 másodpercenként friss meccsek
+    generateDateSelector();
+}
+
+function generateDateSelector() {
+    const container = document.getElementById('date-selector');
+    for (let i = -1; i < 4; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        const dStr = getLocalDateString(d);
+        const btn = document.createElement('button');
+        btn.className = `date-btn ${dStr === selectedDate ? 'active' : ''}`;
+        btn.innerText = i === 0 ? "MA" : i === -1 ? "TEGNAP" : dStr.slice(5);
+        btn.onclick = () => {
+            selectedDate = dStr;
+            isFirstLoad = true;
+            document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            updateData();
+        };
+        container.appendChild(btn);
+    }
+}
+
+// Téma váltás
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light');
+    localStorage.setItem('lp_theme', isLight ? 'light' : 'dark');
+    document.getElementById('theme-btn').innerText = isLight ? '🌙' : '☀️';
+}
+
+// Oldal indítása
+window.onload = startApp;
         
     </script>
 </body>
 </html>
+
 
 
 
