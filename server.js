@@ -33,11 +33,13 @@ const supabase = createClient(
 );
 
 // API Kulcsok a környezeti változókból
-const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
+const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || process.env.FOOTBALL_API_KEY;
 const ODDS_API_KEY = process.env.ODDS_API_KEY;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const stripe = require('stripe')(STRIPE_SECRET_KEY);
-
+if (!FOOTBALL_DATA_API_KEY) {
+    console.error("❌ HIBA: Egyik API kulcs sem található (FOOTBALL_DATA_API_KEY vagy FOOTBALL_API_KEY)!");
+}
 // --- MEMÓRIA TÁROLÓK (CACHE) ---
 let matchCache = { data: null, lastFetch: 0 };
 let oddsCache = { data: null, lastFetch: 0 };
@@ -441,6 +443,7 @@ server.listen(PORT, '0.0.0.0', () => {
     📈 Odds API: AKTÍV
     `);
 });
+
 
 
 
