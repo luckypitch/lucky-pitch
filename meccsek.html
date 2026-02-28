@@ -1607,10 +1607,10 @@ function renderLeagues() {
     if (!listContainer) return;
 
     // CSAK az adott naphoz tartozó meccseket nézzük a liga-listához
-    const matchesOnSelectedDate = allMatches.filter(m => {
-        const mDate = m.utcDate.split('T')[0];
-        return mDate === selectedDate;
-    });
+   const matchesOnSelectedDate = allMatches.filter(m => {
+    const mDate = m.utcDate.split('T')[0];
+    return mDate === selectedDate;
+});
 
     const unique = new Map();
     matchesOnSelectedDate.forEach(m => {
@@ -1702,72 +1702,35 @@ function initSiteFunctions() {
     }, 30000);
 }
 
-// 2. A CLERK KEZELÉSE
 async function startApp() {
-    if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
+    // 1. Téma azonnali beállítása
+    if (localStorage.getItem('lp_theme') === 'light') document.body.classList.add('light');
 
-    initSiteFunctions(); // Meccsek azonnal
+    // 2. Meccsek és frissítés azonnali indítása (Ne várjunk a Clerk-re!)
+    initSiteFunctions(); 
 
-    let t = 0;
-    while (typeof Clerk === 'undefined' && t < 50) { 
-        await new Promise(r => setTimeout(r, 100)); 
-        t++; 
-    }
+    // 3. Clerk betöltése a háttérben
+    try {
+        let t = 0;
+        // Csökkentett várakozás, ne blokkoljuk az oldalt
+        while (typeof Clerk === 'undefined' && t < 30) { 
+            await new Promise(r => setTimeout(r, 100)); 
+            t++; 
+        }
 
-    if (typeof Clerk !== 'undefined') {
-        try {
+        if (typeof Clerk !== 'undefined') {
             await Clerk.load({ routing: 'virtual' });
-
-            // FIGYELŐ JAVÍTÁSA:
-            Clerk.addListener(({ user, client }) => {
-                // Csak akkor reloadolunk, ha:
-                // 1. Már be volt töltve minden (isInitialized)
-                // 2. NINCS user (user === null)
-                // 3. ÉS nincs folyamatban lévő bejelentkezési kísérlet (client.signIn.status !== 'needs_first_factor')
-                // Ez megvédi az e-mail kódos ablakot!
-                
-                const isSigningIn = client && client.signIn && client.signIn.status === 'needs_first_factor';
-                const isSigningUp = client && client.signUp && client.signUp.status === 'missing_requirements';
-
-                if (isInitialized && user === null && !isSigningIn && !isSigningUp) {
-                    console.log("Valódi kijelentkezés, mehet a reload.");
-                    localStorage.removeItem('lp_activeBets');
-                    window.location.href = '/meccsek.html';
-                }
-            });
-
+            
+            // Clerk eseményfigyelő... (a többi kódod mehet ide)
             if (Clerk.user) {
                 const userBtn = document.getElementById('user-button');
-                if(userBtn) {
-                    Clerk.mountUserButton(userBtn, {
-                        afterSignOutUrl: window.location.origin + '/meccsek.html'
-                    });
-                }
-                if (typeof loadInitialBalance === 'function') await loadInitialBalance(); 
-                const authLinks = document.getElementById('auth-links');
-                if (authLinks) authLinks.style.display = 'none';
-            } else {
-                const lb = document.getElementById('login-btn');
-                if (lb) { 
-                    lb.style.display = 'block'; 
-                    lb.onclick = (e) => {
-                        e.preventDefault(); 
-                        e.stopImmediatePropagation();
-                        Clerk.openSignIn({ 
-                            routing: 'virtual',
-                            afterSignInUrl: window.location.origin + '/meccsek.html',
-                            afterSignUpUrl: window.location.origin + '/meccsek.html'
-                        });
-                    };
-                }
+                if(userBtn) Clerk.mountUserButton(userBtn);
+                await loadInitialBalance();
             }
-            
-            // Csak a legvégén aktiváljuk a figyelőt
-            isInitialized = true; 
-
-        } catch (error) {
-            console.error("Clerk error:", error);
+            isInitialized = true;
         }
+    } catch (error) {
+        console.warn("Clerk betöltési hiba, de a meccsek mennek tovább:", error);
     }
 }
 
@@ -2170,6 +2133,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
