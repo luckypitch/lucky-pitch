@@ -1027,13 +1027,58 @@ function toggleTheme() {
     localStorage.setItem('lp_theme', isLight ? 'light' : 'dark');
     document.getElementById('theme-btn').innerText = isLight ? '🌙' : '☀️';
 }
+function renderLeagues() {
+   const listContainer = document.getElementById("league-list");
+    if (!listContainer) return;
 
+    // CSAK az adott naphoz tartozó meccseket nézzük a liga-listához
+   const matchesOnSelectedDate = allMatches.filter(m => {
+    const mDate = m.utcDate.split('T')[0];
+    return mDate === selectedDate;
+});
+
+    const unique = new Map();
+    matchesOnSelectedDate.forEach(m => {
+        if (m.competition && m.competition.id) {
+            unique.set(String(m.competition.id), m.competition);
+        }
+    });
+
+    const leagueItemsHtml = [...unique.values()].map(l => {
+        const idStr = l.id.toString();
+        // Akkor aktív, ha a Set-ben benne van, VAGY ha a Set üres (ekkor minden aktív)
+        const isActive = selectedLeagues.has(idStr);
+        
+        return `
+            <div class="league-item ${isActive ? 'active' : ''}" 
+                 onclick="handleLeagueClick('${idStr}')">
+                <div class="league-icon-wrapper">
+                    <img src="${l.emblem}" alt="${l.name}" onerror="this.src='https://via.placeholder.com/32?text=?'">
+                </div>
+                <span class="league-name-text">${l.name}</span>
+            </div>`;
+    }).join('');
+
+    listContainer.innerHTML = leagueItemsHtml;
+}
+
+// Segédfüggvény, hogy ne legyen túl hosszú az onclick
+function toggleLeagueSelection(id) {
+    if (selectedLeagues.has(id)) {
+        selectedLeagues.delete(id);
+    } else {
+        selectedLeagues.add(id);
+    }
+    renderLeagues();
+    renderMatches(); // Frissítjük a középső részt is!
+}
 // Oldal indítása
 window.onload = startApp;
         
     </script>
 </body>
 </html>
+
 
 
 
