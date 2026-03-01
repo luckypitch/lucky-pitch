@@ -1069,6 +1069,8 @@ async function renderMatches() {
 
 function executeRender(userBets) {
     const cont = document.getElementById("match-container");
+    if (!cont) return;
+
     if (!allMatches || allMatches.length === 0) {
         cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3;">ADATOK BETÖLTÉSE...</p>`;
         return;
@@ -1085,96 +1087,102 @@ function executeRender(userBets) {
         return;
     }
 
-    // MAP FÜGGVÉNY - Optimalizált String építés
     cont.innerHTML = filtered.map(m => {
-        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-        const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
-        const timeStr = new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
-        
-        const score = (isLive || isFinished) ? `${m.score.fullTime.home}:${m.score.fullTime.away}` : timeStr;
-        const myBet = userBets.find(b => String(b.match_id || b.matchId) === String(m.id));
-        const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
+        try {
+            const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+            const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
+            const timeStr = new Date(m.utcDate).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+
+            const score = (isLive || isFinished) ? `${m.score.fullTime.home}:${m.score.fullTime.away}` : timeStr;
+            const myBet = userBets.find(b => String(b.match_id || b.matchId) === String(m.id));
+            const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
+            
+            // Odds generálás (ha nincs az objektumban, legyen alapértelmezett)
+            const oH = (m.odds && m.odds.h) || "2.10";
+            const oD = (m.odds && m.odds.d) || "3.20";
+            const oA = (m.odds && m.odds.a) || "2.80";
 return `
-    <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-        ${myBet ? `
-            <div style="position: absolute; top: 0; left: 0; background: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">
-                ${bStatus === 'WON' ? 'WINNER' : bStatus === 'LOST' ? 'LOST' : 'LIVE BET'}
-            </div>
-        ` : ''}
-        
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px;">
-            <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
-                <img src="${m.homeTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
-                <span style="font-size: 11px; font-weight: 500;">${m.homeTeam.name}</span>
-            </div>
-            
-            <div style="flex: 0 0 100px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                <div class="score-display ${isLive ? 'score-live' : ''}" style="font-size: 18px; font-weight: 800; font-family: 'Orbitron';">${score}</div>
-                ${isLive ? '<div class="pulse-red" style="font-size: 8px; color: #ff3e3e;">LIVE</div>' : ''}
-                
-                <a href="/elemzes?id=${m.id}" class="tool-btn analysis-btn">ELEMZÉS</a>
-                
-                <div onclick="toggleChat('${m.id}')" style="cursor: pointer; font-size: 8px; font-family: 'Orbitron'; color: #00d4ff; border: 1px solid #00d4ff; padding: 2px 6px; border-radius: 4px; background: rgba(0, 212, 255, 0.1); width: 70px;">
-                    💬 CHAT
-                </div>
-            </div>
-            
-            <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                <img src="${m.awayTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
-                <span style="font-size: 11px; font-weight: 500;">${m.awayTeam.name}</span>
-            </div>
-        </div>
-
-        <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
-            ${myBet ? `
-                <div style="background: ${bStatus === 'WON' ? 'rgba(0, 255, 136, 0.1)' : bStatus === 'LOST' ? 'rgba(255, 62, 62, 0.1)' : 'rgba(255, 170, 0, 0.1)'}; 
-                            border: 1px dashed ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; 
-                            border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <span style="font-size: 9px; color: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; display: block; font-family: 'Orbitron';">
-                            ${bStatus === 'WON' ? 'NYERTES' : bStatus === 'LOST' ? 'VESZTETT' : (myBet.type || 'LIVE') + ' TIPP'}
-                        </span>
-                        <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
+            <div class="match-card" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                ${myBet ? `
+                    <div style="position: absolute; top: 0; left: 0; background: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">
+                        ${bStatus === 'WON' ? 'WINNER' : bStatus === 'LOST' ? 'LOST' : 'LIVE BET'}
                     </div>
-                    <div style="text-align: right;">
-                        <span style="font-size: 13px; font-weight: bold; color: ${bStatus === 'LOST' ? '#ff3e3e' : '#00ff88'};">
-                            ${bStatus === 'LOST' ? '0' : Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP
-                        </span>
+                ` : ''}
+                
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px;">
+                    <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
+                        <img src="${m.homeTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
+                        <span style="font-size: 11px; font-weight: 500;">${m.homeTeam.name}</span>
+                    </div>
+                    
+                    <div style="flex: 0 0 100px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                        <div class="score-display ${isLive ? 'score-live' : ''}" style="font-size: 18px; font-weight: 800; font-family: 'Orbitron';">${score}</div>
+                        ${isLive ? '<div class="pulse-red" style="font-size: 8px; color: #ff3e3e;">LIVE</div>' : ''}
+                        
+                        <a href="/elemzes?id=${m.id}" class="tool-btn analysis-btn">ELEMZÉS</a>
+                        
+                        <div onclick="toggleChat('${m.id}')" style="cursor: pointer; font-size: 8px; font-family: 'Orbitron'; color: #00d4ff; border: 1px solid #00d4ff; padding: 2px 6px; border-radius: 4px; background: rgba(0, 212, 255, 0.1); width: 70px;">
+                            💬 CHAT
+                        </div>
+                    </div>
+                    
+                    <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
+                        <img src="${m.awayTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
+                        <span style="font-size: 11px; font-weight: 500;">${m.awayTeam.name}</span>
                     </div>
                 </div>
-            ` : (m.status === 'TIMED' || m.status === 'SCHEDULED' || m.status === 'POSTPONED') ? `
-                <div style="display: flex; gap: 8px; width: 100%;">
-                    <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">H ${odds.h}</button>
-                    <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">D ${odds.d}</button>
-                    <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">V ${odds.a}</button>
+
+                <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
+                    ${myBet ? `
+                        <div style="background: ${bStatus === 'WON' ? 'rgba(0, 255, 136, 0.1)' : bStatus === 'LOST' ? 'rgba(255, 62, 62, 0.1)' : 'rgba(255, 170, 0, 0.1)'}; 
+                                    border: 1px dashed ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; 
+                                    border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-size: 9px; color: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; display: block; font-family: 'Orbitron';">
+                                    ${bStatus === 'WON' ? 'NYERTES' : bStatus === 'LOST' ? 'VESZTETT' : (myBet.type || 'LIVE') + ' TIPP'}
+                                </span>
+                                <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 13px; font-weight: bold; color: ${bStatus === 'LOST' ? '#ff3e3e' : '#00ff88'};">
+                                    ${bStatus === 'LOST' ? '0' : Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP
+                                </span>
+                            </div>
+                        </div>
+                    ` : (m.status === 'TIMED' || m.status === 'SCHEDULED' || m.status === 'POSTPONED') ? `
+                        <div style="display: flex; gap: 8px; width: 100%;">
+                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${oH}, 'H')">H ${oH}</button>
+                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${oD}, 'D')">D ${oD}</button>
+                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${oA}, 'V')">V ${oA}</button>
+                        </div>
+                    ` : `
+                        <div style="text-align:center; font-size: 10px; opacity: 0.5; font-family: 'Orbitron';">${isLive ? 'ÉLŐ MECCS - LEZÁRVA' : 'FOGADÁS LEZÁRVA'}</div>
+                    `}
                 </div>
-            ` : `
-                <div style="text-align:center; font-size: 10px; opacity: 0.5; font-family: 'Orbitron';">${isLive ? 'ÉLŐ MECCS - LEZÁRVA' : 'FOGADÁS LEZÁRVA'}</div>
-            `}
-        </div>
 
-        <div id="chat-section-${m.id}" class="match-chat-section" 
-             style="display: ${activeChatId === String(m.id) ? 'block' : 'none'}; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 10px; padding-top: 10px;">
-            
-            <div id="chat-messages-${m.id}" class="chat-messages" 
-                 style="height: 120px; overflow-y: auto; margin-bottom: 10px; display:flex; flex-direction:column; gap:5px; text-align:left;">
-                ${chatHistory[m.id] ? chatHistory[m.id].join('') : ''}
-            </div>
+                <div id="chat-section-${m.id}" class="match-chat-section" 
+                     style="display: ${typeof activeChatId !== 'undefined' && activeChatId === String(m.id) ? 'block' : 'none'}; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 10px; padding-top: 10px;">
+                    
+                    <div id="chat-messages-${m.id}" class="chat-messages" 
+                         style="height: 120px; overflow-y: auto; margin-bottom: 10px; display:flex; flex-direction:column; gap:5px; text-align:left;">
+                        ${(typeof chatHistory !== 'undefined' && chatHistory[m.id]) ? chatHistory[m.id].join('') : ''}
+                    </div>
 
-            <div class="chat-input-area" style="display:flex; gap:5px;">
-                <input type="text" id="chat-input-${m.id}" class="chat-input" placeholder="Trash-talk..." 
-                       style="flex:1; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:5px; color:white; padding:5px 10px; font-size:11px;" 
-                       onkeypress="if(event.key==='Enter') sendChatMessage('${m.id}')">
-                <button onclick="sendChatMessage('${m.id}')" style="background: #00d4ff; border:none; border-radius:5px; padding:0 10px; cursor:pointer; color:black; font-weight:bold;">🚀</button>
-            </div>
-        </div>
-    </div>`;
-    } catch (err) {
-        console.error("Hiba egy kártya generálásakor:", err);
-        return '';
-    }
-}).join('');
+                    <div class="chat-input-area" style="display:flex; gap:5px;">
+                        <input type="text" id="chat-input-${m.id}" class="chat-input" placeholder="Trash-talk..." 
+                               style="flex:1; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:5px; color:white; padding:5px 10px; font-size:11px;" 
+                               onkeypress="if(event.key==='Enter') sendChatMessage('${m.id}')">
+                        <button onclick="sendChatMessage('${m.id}')" style="background: #00d4ff; border:none; border-radius:5px; padding:0 10px; cursor:pointer; color:black; font-weight:bold;">🚀</button>
+                    </div>
+                </div>
+            </div>`;
+        } catch (err) {
+            console.error("Hiba egy kártya generálásakor:", err);
+            return '';
+        }
+    }).join('');
 }
+        
 // --- ÚJ FÜGGVÉNY: LIGÁK KEZELÉSE ---
 function toggleLeague(leagueId, element) {
     if (selectedLeagues.has(leagueId)) {
@@ -2165,5 +2173,6 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
