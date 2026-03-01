@@ -747,38 +747,29 @@ function translateStatus(status) {
 
 async function updateData() {
     try {
-        // 1. Meccsek letöltése - IDŐBÉLYEGGEL (Cache ellen)
+        // 1. Meccsek letöltése - IDŐBÉLYEGGEL (Anti-cache)
         const res = await fetch(`/live-matches?t=${Date.now()}`);
         const data = await res.json();
         
-        // Frissítjük a globális listát
+        // Adatok összefésülése
         allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
 
         // 2. Oddsok letöltése - IDŐBÉLYEGGEL
         try {
-            console.log("Odds lekérése folyamatban...");
             const oddsRes = await fetch(`/api/odds-data?t=${Date.now()}`);
-
-            if (!oddsRes.ok) {
-                throw new Error(`HTTP hiba! Státusz: ${oddsRes.status}`);
-            }
-
-            const oddsData = await oddsRes.json();
-
-            if (oddsData && Array.isArray(oddsData)) {
-                globalOdds = oddsData;
-            } else if (oddsData && oddsData.data && Array.isArray(oddsData.data)) {
-                globalOdds = oddsData.data;
-            } else {
-                console.warn("Az odds formátum nem megfelelő vagy üres.");
-                globalOdds = [];
+            if (oddsRes.ok) {
+                const oddsData = await oddsRes.json();
+                if (oddsData && Array.isArray(oddsData)) {
+                    globalOdds = oddsData;
+                } else if (oddsData && oddsData.data && Array.isArray(oddsData.data)) {
+                    globalOdds = oddsData.data;
+                }
             }
         } catch (e) { 
-            console.error("Odds API hiba:", e); 
-            globalOdds = [];
+            console.warn("Odds API hiba, de folytatjuk a meccsekkel:", e); 
         }
 
-        // 3. Automatikus liga-kijelölés (Csak az első betöltésnél)
+        // 3. Automatikus kijelölés (Csak első betöltésnél)
         if (isFirstLoad && allMatches.length > 0) {
             allMatches.forEach(m => {
                 if (m.competition && m.competition.id) {
@@ -788,19 +779,19 @@ async function updateData() {
             isFirstLoad = false; 
         }
 
-        // 4. MEGJELENÍTÉS FRISSÍTÉSE
-        // Nagyon fontos: a renderMatches kapja meg a friss fogadásokat is!
+        // 4. MEGJELENÍTÉS (A kritikus rész)
+        // Ezek a függvények rajzolják újra a HTML-t az új allMatches adatok alapján
         if (typeof renderDateStrip === 'function') renderDateStrip();
         if (typeof renderLeagues === 'function') renderLeagues();
         if (typeof renderMatches === 'function') renderMatches();
 
-        // 5. Ellenőrzések (Gólok, fogadási eredmények)
+        // 5. Ellenőrzések (Gólok, eredmények)
         if (allMatches.length > 0) {
             if (typeof checkGoals === 'function') checkGoals();
             if (typeof checkBetResults === 'function') checkBetResults();
         }
 
-        console.log(`Frissítve: ${new Date().toLocaleTimeString()} | Meccsek: ${allMatches.length}`);
+        console.log(`[${new Date().toLocaleTimeString()}] Adatok frissítve. Meccsek: ${allMatches.length}`);
 
     } catch (e) {
         console.error("Hiba az updateData futásakor:", e);
@@ -2170,6 +2161,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
