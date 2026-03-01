@@ -710,8 +710,8 @@
     <script>
 // --- 1. GLOBÁLIS ÁLLAPOT ---
 let currentLang = localStorage.getItem('lp_lang') || 'HU';
-const todayStr = new Date().toLocaleDateString('sv');
-let selectedDate = new Date().toISOString().split('T')[0];
+const todayStr = new Date().toISOString().split('T')[0];
+let selectedDate = todayStr;
 let savedLeagues = localStorage.getItem('lp_selectedLeagues');
 let selectedLeagues = new Set();
 let allMatches = [];
@@ -1089,14 +1089,20 @@ async function renderMatches() {
     // --- 2. DÁTUMVÁLASZTÓ ÉS SZŰRÉS ---
     if (typeof renderDateSelector === 'function') renderDateSelector(); 
 
-    const filtered = allMatches.filter(m => {
-        if (!m || !m.utcDate || !m.competition) return false;
-        const mDate = m.utcDate.split('T')[0];
-        const mLeagueId = String(m.competition.id);
-        const isCorrectDate = (mDate === selectedDate);
-        const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
-        return isCorrectDate && isCorrectLeague;
-    });
+   const filtered = allMatches.filter(m => {
+    if (!m || !m.utcDate || !m.competition) return false;
+    
+    const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+    const mDate = m.utcDate.split('T')[0];
+    const mLeagueId = String(m.competition.id);
+
+    // LOGIKA: 
+    // Mutassuk, ha: (A dátum egyezik VAGY éppen ÉLŐBEN megy) ÉS (A liga ki van választva)
+    const isCorrectDate = (mDate === selectedDate || isLive); 
+    const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
+    
+    return isCorrectDate && isCorrectLeague;
+});
 
     // Ha nincs meccs, kiírjuk és MEGÁLLUNK
     if (filtered.length === 0) {
@@ -2196,6 +2202,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
