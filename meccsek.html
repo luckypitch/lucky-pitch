@@ -786,10 +786,14 @@ async function updateData() {
         if (typeof renderMatches === 'function') renderMatches();
 
         // 5. Ellenőrzések (Gólok, eredmények)
-        if (allMatches.length > 0) {
-            if (typeof checkGoals === 'function') checkGoals();
-            if (typeof checkBetResults === 'function') checkBetResults();
-        }
+       if (allMatches.length > 0) {
+    // A gólokat ellenőrizhetjük simán (ha szinkron)
+    if (typeof checkGoals === 'function') checkGoals();
+
+    // A fogadásokat megvárjuk (await), mert Supabase-t frissíthet!
+    if (typeof checkBetResults === 'function') {
+        await checkBetResults(); 
+    }
 
         console.log(`[${new Date().toLocaleTimeString()}] Adatok frissítve. Meccsek: ${allMatches.length}`);
 
@@ -951,16 +955,21 @@ async function checkBetResults() {
         }
     }
 
-    if (updatedAny) {
-        // Frissítjük a LocalStorage-ot a maradék aktív fogadásokkal
-        localStorage.setItem('lp_activeBets', JSON.stringify(betsToCheck));
+   if (updatedAny) {
+        const dataStr = JSON.stringify(betsToCheck);
+        localStorage.setItem('lp_activeBets', dataStr);
         
-        // Ha van ilyen változód, frissítsük azt is
+        // Frissítsük a globális referenciákat
         if (typeof cachedUserBets !== 'undefined') cachedUserBets = betsToCheck;
         if (typeof activeBets !== 'undefined') activeBets = betsToCheck;
 
-        // Újrarajzoljuk a meccskártyákat (hogy eltűnjön a fogadás jelzés)
-        if (typeof renderMatches === 'function') renderMatches();
+        console.log("Fogadások frissítve, újrarajzolás...");
+
+        if (typeof renderMatches === 'function') {
+            renderMatches(); 
+        } else if (typeof executeRender === 'function') {
+            executeRender(betsToCheck);
+        }
     }
 }
 
@@ -2181,6 +2190,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
