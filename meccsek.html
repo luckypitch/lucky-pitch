@@ -754,19 +754,27 @@ async function updateData() {
         // Adatok összefésülése
         allMatches = (data && Array.isArray(data.matches)) ? data.matches : (Array.isArray(data) ? data : []);
 
-        // 2. Oddsok letöltése - IDŐBÉLYEGGEL
+        // 2. Oddsok letöltése - Külön try-catch blokkban, hogy ha ez hibás, a többi fusson
         try {
+            console.log("Odds lekérése folyamatban...");
             const oddsRes = await fetch(`/api/odds-data?t=${Date.now()}`);
-            if (oddsRes.ok) {
-                const oddsData = await oddsRes.json();
-                if (oddsData && Array.isArray(oddsData)) {
-                    globalOdds = oddsData;
-                } else if (oddsData && oddsData.data && Array.isArray(oddsData.data)) {
-                    globalOdds = oddsData.data;
-                }
+
+            if (!oddsRes.ok) {
+                throw new Error(`HTTP hiba! Státusz: ${oddsRes.status}`);
             }
-        } catch (e) { 
-            console.warn("Odds API hiba, de folytatjuk a meccsekkel:", e); 
+
+            const oddsData = await oddsRes.json();
+            
+            if (oddsData && Array.isArray(oddsData)) {
+                globalOdds = oddsData;
+            } else if (oddsData && oddsData.data && Array.isArray(oddsData.data)) {
+                globalOdds = oddsData.data;
+            } else {
+                globalOdds = [];
+            }
+        } catch (e) {
+            console.error("Odds API hiba részletei:", e); 
+            globalOdds = [];
         }
 
         // 3. Automatikus kijelölés (Csak első betöltésnél)
@@ -779,25 +787,23 @@ async function updateData() {
             isFirstLoad = false; 
         }
 
-        // 4. MEGJELENÍTÉS (A kritikus rész)
-        // Ezek a függvények rajzolják újra a HTML-t az új allMatches adatok alapján
+        // 4. MEGJELENÍTÉS
         if (typeof renderDateStrip === 'function') renderDateStrip();
         if (typeof renderLeagues === 'function') renderLeagues();
         if (typeof renderMatches === 'function') renderMatches();
 
         // 5. Ellenőrzések (Gólok, eredmények)
-       if (allMatches.length > 0) {
-    // A gólokat ellenőrizhetjük simán (ha szinkron)
-    if (typeof checkGoals === 'function') checkGoals();
+        if (allMatches.length > 0) {
+            if (typeof checkGoals === 'function') checkGoals();
 
-    // A fogadásokat megvárjuk (await), mert Supabase-t frissíthet!
-    if (typeof checkBetResults === 'function') {
-        await checkBetResults(); 
-    }
+            if (typeof checkBetResults === 'function') {
+                await checkBetResults(); 
+            }
+        } // <--- EZ A ZÁRÓJEL HIÁNYZOTT AZ IF-HEZ
 
         console.log(`[${new Date().toLocaleTimeString()}] Adatok frissítve. Meccsek: ${allMatches.length}`);
 
-    } catch (e) {
+    } catch (e) { // Ez a catch most már a legelső try-hoz tartozik
         console.error("Hiba az updateData futásakor:", e);
     }
 }
@@ -2190,6 +2196,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
