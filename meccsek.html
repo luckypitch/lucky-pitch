@@ -722,9 +722,7 @@ let activeBets = JSON.parse(localStorage.getItem('lp_activeBets')) || [];
 let currentLeagueId = 'all'; // Alapból minden liga
 let isFirstLoad = true; // Segédváltozó a legtetejére
 let activeChatId = null; // Itt tároljuk, melyik meccs chatje van épp nyitva
-const chatHistory = {};  // Tárolja az üzeneteket meccsenként   
-let balanceInterval = null; // Ez hiányzik a kódodból        
-        
+const chatHistory = {};  // Tárolja az üzeneteket meccsenként        
 
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
@@ -1039,151 +1037,156 @@ function getSmartOdds(match) {
     }
     return result;
 }
-let cachedUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');   
 
 // --- 5. MEGJELENÍTÉS ---
 async function renderMatches() {
     const cont = document.getElementById("match-container");
     if (!cont) return;
 
-    // 1. AZONNALI MEGJELENÍTÉS (Cache-ből)
-    // Nem várunk az API-ra, hanem renderelünk azzal, ami van
-    executeRender(cachedUserBets);
-
-    // 2. HÁTTÉRBEN FRISSÍTJÜK A FOGADÁSOKAT (Async)
-    if (typeof Clerk !== 'undefined' && Clerk.user) {
-        fetch(`/api/user/bets?userId=${Clerk.user.id}&t=${Date.now()}`)
-            .then(res => res.json())
-            .then(data => {
-    const newDataStr = JSON.stringify(data);
-    const oldDataStr = JSON.stringify(cachedUserBets);
-    
-    if (newDataStr !== oldDataStr) { // Csak akkor renderelünk újra, ha van változás
-        cachedUserBets = data;
-        localStorage.setItem('lp_activeBets', newDataStr);
-        executeRender(cachedUserBets);
-    }
-})
-            .catch(err => console.warn("Bet fetch error, using cache"));
-    }
-}
-
-function executeRender(userBets) {
-    const cont = document.getElementById("match-container");
-    if (!cont) return;
-
     if (!allMatches || allMatches.length === 0) {
-        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3;">ADATOK BETÖLTÉSE...</p>`;
+        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3;">${currentLang==='HU'?'ADATOK BETÖLTÉSE...':'LOADING MATCHES...'}</p>`;
         return;
     }
+
+    // --- 1. FOGADÁSOK LEKÉRÉSE ---
+    let currentUserBets = [];
+    if (typeof Clerk !== 'undefined' && Clerk.user) {
+        try {
+            const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}&t=${Date.now()}`);
+            if (response.ok) {
+                currentUserBets = await response.json();
+                localStorage.setItem('lp_activeBets', JSON.stringify(currentUserBets));
+            } else {
+                currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
+            }
+        } catch (err) {
+            currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
+        }
+    }
+
+    // --- 2. DÁTUMVÁLASZTÓ ÉS SZŰRÉS ---
+    if (typeof renderDateSelector === 'function') renderDateSelector(); 
 
     const filtered = allMatches.filter(m => {
+        if (!m || !m.utcDate || !m.competition) return false;
         const mDate = m.utcDate.split('T')[0];
         const mLeagueId = String(m.competition.id);
-        return (mDate === selectedDate) && (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
+        const isCorrectDate = (mDate === selectedDate);
+        const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
+        return isCorrectDate && isCorrectLeague;
     });
 
+    // Ha nincs meccs, kiírjuk és MEGÁLLUNK
     if (filtered.length === 0) {
-        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3; font-family:'Orbitron';">NINCS MECCS EKKOR: ${selectedDate}</p>`;
+        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3; font-family:'Orbitron'; font-size:12px;">NINCS MECCS EKKOR: ${selectedDate}</p>`;
         return;
     }
 
+    // Rendezés (Javított szintaxis)
+    filtered.sort((a, b) => {
+        const dateA = new Date(a.utcDate).getTime();
+        const dateB = new Date(b.utcDate).getTime();
+        if (dateA !== dateB) return dateA - dateB;
+        return String(a.id).localeCompare(String(b.id));
+    });
+
+    // --- 3. RENDERELÉS ---
     cont.innerHTML = filtered.map(m => {
         try {
             const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
             const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
-            const timeStr = new Date(m.utcDate).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+            const mDateObj = new Date(m.utcDate);
+            const timeStr = mDateObj.toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
 
-            const score = (isLive || isFinished) ? `${m.score.fullTime.home}:${m.score.fullTime.away}` : timeStr;
-            const myBet = userBets.find(b => String(b.match_id || b.matchId) === String(m.id));
+            const score = (isLive || isFinished) && m.score && m.score.fullTime
+                ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
+                : timeStr;
+
+            const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
+            const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
+            const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
             const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
-            
-            // Odds generálás (ha nincs az objektumban, legyen alapértelmezett)
-            const oH = (m.odds && m.odds.h) || "2.10";
-            const oD = (m.odds && m.odds.d) || "3.20";
-            const oA = (m.odds && m.odds.a) || "2.80";
 return `
-            <div class="match-card" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-                ${myBet ? `
-                    <div style="position: absolute; top: 0; left: 0; background: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">
-                        ${bStatus === 'WON' ? 'WINNER' : bStatus === 'LOST' ? 'LOST' : 'LIVE BET'}
-                    </div>
-                ` : ''}
-                
-                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px;">
-                    <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
-                        <img src="${m.homeTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
-                        <span style="font-size: 11px; font-weight: 500;">${m.homeTeam.name}</span>
-                    </div>
-                    
-                    <div style="flex: 0 0 100px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                        <div class="score-display ${isLive ? 'score-live' : ''}" style="font-size: 18px; font-weight: 800; font-family: 'Orbitron';">${score}</div>
-                        ${isLive ? '<div class="pulse-red" style="font-size: 8px; color: #ff3e3e;">LIVE</div>' : ''}
-                        
-                        <a href="/elemzes?id=${m.id}" class="tool-btn analysis-btn">ELEMZÉS</a>
-                        
-                        <div onclick="toggleChat('${m.id}')" style="cursor: pointer; font-size: 8px; font-family: 'Orbitron'; color: #00d4ff; border: 1px solid #00d4ff; padding: 2px 6px; border-radius: 4px; background: rgba(0, 212, 255, 0.1); width: 70px;">
-                            💬 CHAT
-                        </div>
-                    </div>
-                    
-                    <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
-                        <img src="${m.awayTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
-                        <span style="font-size: 11px; font-weight: 500;">${m.awayTeam.name}</span>
-                    </div>
-                </div>
-
-                <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
-                    ${myBet ? `
-                        <div style="background: ${bStatus === 'WON' ? 'rgba(0, 255, 136, 0.1)' : bStatus === 'LOST' ? 'rgba(255, 62, 62, 0.1)' : 'rgba(255, 170, 0, 0.1)'}; 
-                                    border: 1px dashed ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; 
-                                    border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <span style="font-size: 9px; color: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; display: block; font-family: 'Orbitron';">
-                                    ${bStatus === 'WON' ? 'NYERTES' : bStatus === 'LOST' ? 'VESZTETT' : (myBet.type || 'LIVE') + ' TIPP'}
-                                </span>
-                                <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
-                            </div>
-                            <div style="text-align: right;">
-                                <span style="font-size: 13px; font-weight: bold; color: ${bStatus === 'LOST' ? '#ff3e3e' : '#00ff88'};">
-                                    ${bStatus === 'LOST' ? '0' : Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP
-                                </span>
-                            </div>
-                        </div>
-                    ` : (m.status === 'TIMED' || m.status === 'SCHEDULED' || m.status === 'POSTPONED') ? `
-                        <div style="display: flex; gap: 8px; width: 100%;">
-                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${oH}, 'H')">H ${oH}</button>
-                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${oD}, 'D')">D ${oD}</button>
-                            <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${oA}, 'V')">V ${oA}</button>
-                        </div>
-                    ` : `
-                        <div style="text-align:center; font-size: 10px; opacity: 0.5; font-family: 'Orbitron';">${isLive ? 'ÉLŐ MECCS - LEZÁRVA' : 'FOGADÁS LEZÁRVA'}</div>
-                    `}
-                </div>
-
-                <div id="chat-section-${m.id}" class="match-chat-section" 
-                     style="display: ${typeof activeChatId !== 'undefined' && activeChatId === String(m.id) ? 'block' : 'none'}; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 10px; padding-top: 10px;">
-                    
-                    <div id="chat-messages-${m.id}" class="chat-messages" 
-                         style="height: 120px; overflow-y: auto; margin-bottom: 10px; display:flex; flex-direction:column; gap:5px; text-align:left;">
-                        ${(typeof chatHistory !== 'undefined' && chatHistory[m.id]) ? chatHistory[m.id].join('') : ''}
-                    </div>
-
-                    <div class="chat-input-area" style="display:flex; gap:5px;">
-                        <input type="text" id="chat-input-${m.id}" class="chat-input" placeholder="Trash-talk..." 
-                               style="flex:1; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:5px; color:white; padding:5px 10px; font-size:11px;" 
-                               onkeypress="if(event.key==='Enter') sendChatMessage('${m.id}')">
-                        <button onclick="sendChatMessage('${m.id}')" style="background: #00d4ff; border:none; border-radius:5px; padding:0 10px; cursor:pointer; color:black; font-weight:bold;">🚀</button>
-                    </div>
-                </div>
-            </div>`;
-        } catch (err) {
-            console.error("Hiba egy kártya generálásakor:", err);
-            return '';
-        }
-    }).join('');
-}
+    <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+        ${myBet ? `
+            <div style="position: absolute; top: 0; left: 0; background: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-bottom-right-radius: 6px; font-family: 'Orbitron'; z-index:10;">
+                ${bStatus === 'WON' ? 'WINNER' : bStatus === 'LOST' ? 'LOST' : 'LIVE BET'}
+            </div>
+        ` : ''}
         
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px;">
+            <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.homeTeam.id}, '${m.competition.code}')">
+                <img src="${m.homeTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
+                <span style="font-size: 11px; font-weight: 500;">${m.homeTeam.name}</span>
+            </div>
+            
+            <div style="flex: 0 0 100px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                <div class="score-display ${isLive ? 'score-live' : ''}" style="font-size: 18px; font-weight: 800; font-family: 'Orbitron';">${score}</div>
+                ${isLive ? '<div class="pulse-red" style="font-size: 8px; color: #ff3e3e;">LIVE</div>' : ''}
+                
+                <a href="/elemzes?id=${m.id}" class="tool-btn" style="font-size: 7px; text-decoration: none; width: 70px; display: block;">ELEMZÉS</a>
+                
+                <div onclick="toggleChat('${m.id}')" style="cursor: pointer; font-size: 8px; font-family: 'Orbitron'; color: #00d4ff; border: 1px solid #00d4ff; padding: 2px 6px; border-radius: 4px; background: rgba(0, 212, 255, 0.1); width: 70px;">
+                    💬 CHAT
+                </div>
+            </div>
+            
+            <div class="team-link" style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" onclick="if(typeof showStandings==='function') showStandings(${m.competition.id}, ${m.awayTeam.id}, '${m.competition.code}')">
+                <img src="${m.awayTeam.crest || ''}" style="width: 35px; height: 35px; object-fit: contain; margin-bottom: 5px;" onerror="this.src='https://via.placeholder.com/40'">
+                <span style="font-size: 11px; font-weight: 500;">${m.awayTeam.name}</span>
+            </div>
+        </div>
+
+        <div class="bet-section" style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
+            ${myBet ? `
+                <div style="background: ${bStatus === 'WON' ? 'rgba(0, 255, 136, 0.1)' : bStatus === 'LOST' ? 'rgba(255, 62, 62, 0.1)' : 'rgba(255, 170, 0, 0.1)'}; 
+                            border: 1px dashed ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; 
+                            border-radius: 6px; width: 100%; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-size: 9px; color: ${bStatus === 'WON' ? '#00ff88' : bStatus === 'LOST' ? '#ff3e3e' : '#ffaa00'}; display: block; font-family: 'Orbitron';">
+                            ${bStatus === 'WON' ? 'NYERTES' : bStatus === 'LOST' ? 'VESZTETT' : (myBet.type || 'LIVE') + ' TIPP'}
+                        </span>
+                        <span style="font-size: 13px; font-weight: bold;">${Number(myBet.amount).toLocaleString()} LP</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 13px; font-weight: bold; color: ${bStatus === 'LOST' ? '#ff3e3e' : '#00ff88'};">
+                            ${bStatus === 'LOST' ? '0' : Math.floor(myBet.amount * myBet.odds).toLocaleString()} LP
+                        </span>
+                    </div>
+                </div>
+            ` : (m.status === 'TIMED' || m.status === 'SCHEDULED' || m.status === 'POSTPONED') ? `
+                <div style="display: flex; gap: 8px; width: 100%;">
+                    <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.homeTeam.name.replace(/'/g, "\\'")}', ${odds.h}, 'H')">H ${odds.h}</button>
+                    <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, 'Döntetlen', ${odds.d}, 'D')">D ${odds.d}</button>
+                    <button class="odds-btn" style="flex:1;" onclick="placeBet(${m.id}, '${m.awayTeam.name.replace(/'/g, "\\'")}', ${odds.a}, 'V')">V ${odds.a}</button>
+                </div>
+            ` : `
+                <div style="text-align:center; font-size: 10px; opacity: 0.5; font-family: 'Orbitron';">${isLive ? 'ÉLŐ MECCS - LEZÁRVA' : 'FOGADÁS LEZÁRVA'}</div>
+            `}
+        </div>
+
+        <div id="chat-section-${m.id}" class="match-chat-section" 
+             style="display: ${activeChatId === String(m.id) ? 'block' : 'none'}; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 10px; padding-top: 10px;">
+            
+            <div id="chat-messages-${m.id}" class="chat-messages" 
+                 style="height: 120px; overflow-y: auto; margin-bottom: 10px; display:flex; flex-direction:column; gap:5px; text-align:left;">
+                ${chatHistory[m.id] ? chatHistory[m.id].join('') : ''}
+            </div>
+
+            <div class="chat-input-area" style="display:flex; gap:5px;">
+                <input type="text" id="chat-input-${m.id}" class="chat-input" placeholder="Trash-talk..." 
+                       style="flex:1; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:5px; color:white; padding:5px 10px; font-size:11px;" 
+                       onkeypress="if(event.key==='Enter') sendChatMessage('${m.id}')">
+                <button onclick="sendChatMessage('${m.id}')" style="background: #00d4ff; border:none; border-radius:5px; padding:0 10px; cursor:pointer; color:black; font-weight:bold;">🚀</button>
+            </div>
+        </div>
+    </div>`;
+    } catch (err) {
+        console.error("Hiba egy kártya generálásakor:", err);
+        return '';
+    }
+}).join('');
+}
 // --- ÚJ FÜGGVÉNY: LIGÁK KEZELÉSE ---
 function toggleLeague(leagueId, element) {
     if (selectedLeagues.has(leagueId)) {
@@ -1300,82 +1303,78 @@ async function placeBet(matchId, teamName, odds, type) {
 }
 
 async function checkBetResults() {
+    // 1. Beolvassuk a helyi fogadásokat
     let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
     if (currentBets.length === 0) return;
 
     let changed = false;
 
     for (let bet of currentBets) {
+        // Csak a még nyitott fogadásokat nézzük
         if (bet.status !== 'OPEN') continue;
 
-        const match = allMatches.find(x => String(x.id) === String(matchIdField(bet)));
+        // Megkeressük a meccset az élő adatok között
+        const match = allMatches.find(x => String(x.id) === String(bet.matchId));
 
+        // Ha a meccs véget ért (FINISHED)
         if (match && (match.status === 'FINISHED' || match.status === 'AWARDED')) {
             const homeScore = match.score.fullTime.home;
             const awayScore = match.score.fullTime.away;
-            let actualWinner = homeScore > awayScore ? 'H' : (homeScore < awayScore ? 'V' : 'D');
+            let actualWinner = '';
+
+            if (homeScore > awayScore) actualWinner = 'H';
+            else if (homeScore < awayScore) actualWinner = 'V';
+            else actualWinner = 'D';
 
             if (bet.type === actualWinner) {
+                // --- NYERT! ---
                 const prize = Math.floor(bet.amount * bet.odds);
-                // FONTOS: Előbb a szerverrel beszéltetjük le, és az Ő válasza alapján frissítünk!
-                const success = await processWinOnServer(prize, bet);
-                if (success) {
-                    bet.status = 'WON';
-                    changed = true;
-                }
+                console.log(`GRATULÁLOK! Nyertél ${prize} LP-t a ${bet.teamName} meccsen!`);
+
+                // Jóváírjuk a szerveren és a kliensen is
+                await processWin(prize, bet.matchId);
+                bet.status = 'WON';
             } else {
-                // Vesztett fogadásnál nem kell API hívás az egyenleghez, csak státusz váltás
+                // --- VESZTETT ---
+                console.log(`Sajnos a ${bet.teamName} fogadásod nem jött be.`);
                 bet.status = 'LOST';
-                // Érdemes a szervernek is szólni, hogy lezárult a fogadás vesztesként
-                await markBetAsLost(bet);
-                changed = true;
             }
+            changed = true;
         }
     }
 
+    // Ha történt változás, elmentjük és újrarajzolunk
     if (changed) {
         localStorage.setItem('lp_activeBets', JSON.stringify(currentBets));
-        // Itt már nem hívunk teljes renderMatches-t, csak ha muszáj, 
-        // mert az updateData úgyis megteszi nemsokára.
         if (typeof renderMatches === 'function') renderMatches();
     }
 }
 
-// Segédfüggvény az ID mező kezeléséhez (mert néha match_id, néha matchId)
-function matchIdField(bet) {
-    return bet.matchId || bet.match_id;
-}
-
-async function processWinOnServer(prizeAmount, bet) {
+async function processWin(prizeAmount, matchId) {
     try {
-        // NEM a kliens számolja ki a végösszeget (newBalance), 
-        // hanem a SZERVERNEK küldjük el a nyereményt, amit ő hozzáad a meglévőhöz!
-        const res = await fetch('/api/user/add-win', { // Új végpont javasolt: add-win
+        // Kiszámoljuk az új egyenleget
+        const newBalance = window.userBalance + prizeAmount;
+
+        const res = await fetch('/api/user/update-balance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId: Clerk.user.id,
-                amountToAdd: prizeAmount,
-                matchId: matchIdField(bet)
+                balance: newBalance,
+                // Opcionálisan küldhetünk egy megjegyzést a szervernek
+                note: `Nyeremény a(z) ${matchId} azonosítójú meccsről`
             })
         });
 
         if (res.ok) {
-            const data = await res.json();
-            // A szerver visszaküldi a TÉNYLEGES új egyenleget
-            window.userBalance = data.newBalance;
-            updateBalanceUI(data.newBalance);
-            return true;
+            window.userBalance = newBalance;
+            // Frissítjük a kijelzőt
+            const balanceElem = document.getElementById('user-balance');
+            if (balanceElem) balanceElem.innerText = newBalance.toLocaleString();
         }
     } catch (err) {
-        console.error("Nyeremény jóváírás hiba:", err);
+        console.error("Hiba a nyeremény jóváírásakor:", err);
     }
-    return false;
-}
-
-function updateBalanceUI(balance) {
-    const span = document.getElementById('user-balance');
-    if (span) span.innerText = Number(balance).toLocaleString();
 }
 
 // --- EGYENLEG MENTÉSE AZ ADATBÁZISBA ---
@@ -1710,11 +1709,9 @@ function initSiteFunctions() {
 
 // 2. A CLERK KEZELÉSE
 async function startApp() {
-    // Téma azonnali beállítása
-    if (localStorage.getItem('lp_theme') === 'light') document.body.classList.add('light');
+    if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
 
-    // Alapfunkciók indítása (Meccsek)
-    initSiteFunctions(); 
+    initSiteFunctions(); // Meccsek azonnal
 
     let t = 0;
     while (typeof Clerk === 'undefined' && t < 50) { 
@@ -1726,55 +1723,55 @@ async function startApp() {
         try {
             await Clerk.load({ routing: 'virtual' });
 
-            // FIGYELŐ: Kezeli a be/kijelentkezést, de nem zavarja meg a folyamatban lévő Auth-ot
+            // FIGYELŐ JAVÍTÁSA:
             Clerk.addListener(({ user, client }) => {
+                // Csak akkor reloadolunk, ha:
+                // 1. Már be volt töltve minden (isInitialized)
+                // 2. NINCS user (user === null)
+                // 3. ÉS nincs folyamatban lévő bejelentkezési kísérlet (client.signIn.status !== 'needs_first_factor')
+                // Ez megvédi az e-mail kódos ablakot!
+
                 const isSigningIn = client && client.signIn && client.signIn.status === 'needs_first_factor';
                 const isSigningUp = client && client.signUp && client.signUp.status === 'missing_requirements';
 
-                // Csak akkor reloadolunk, ha valódi, végleges kijelentkezés történt
                 if (isInitialized && user === null && !isSigningIn && !isSigningUp) {
-                    console.log("Valódi kijelentkezés, reload...");
-                    
+                    console.log("Valódi kijelentkezés, mehet a reload.");
                     localStorage.removeItem('lp_activeBets');
                     window.location.href = '/meccsek.html';
                 }
             });
 
             if (Clerk.user) {
-                // Bejelentkezett állapot: Gomb és Egyenleg
                 const userBtn = document.getElementById('user-button');
                 if(userBtn) {
                     Clerk.mountUserButton(userBtn, {
                         afterSignOutUrl: window.location.origin + '/meccsek.html'
                     });
                 }
-                
-                await loadInitialBalance(); 
-                if (!balanceInterval) balanceInterval = setInterval(loadInitialBalance, 20000);
-
+                if (typeof loadInitialBalance === 'function') await loadInitialBalance(); 
                 const authLinks = document.getElementById('auth-links');
-                clearInterval(balanceInterval); balanceInterval = null;
                 if (authLinks) authLinks.style.display = 'none';
             } else {
-                // Kijelentkezett állapot: Login gomb aktiválása
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
                     lb.style.display = 'block'; 
                     lb.onclick = (e) => {
                         e.preventDefault(); 
+                        e.stopImmediatePropagation();
                         Clerk.openSignIn({ 
                             routing: 'virtual',
-                            afterSignInUrl: window.location.origin + '/meccsek.html'
+                            afterSignInUrl: window.location.origin + '/meccsek.html',
+                            afterSignUpUrl: window.location.origin + '/meccsek.html'
                         });
                     };
                 }
             }
 
-            // Most már éles a figyelő
+            // Csak a legvégén aktiváljuk a figyelőt
             isInitialized = true; 
 
         } catch (error) {
-            console.error("Clerk betöltési hiba:", error);
+            console.error("Clerk error:", error);
         }
     }
 }
@@ -1881,19 +1878,24 @@ const startAction = (e) => {
 
 const moveAction = (e) => {
     if (!isDragging) return;
-    const currentX = e.type.includes('mouse') ? e.pageX : e.changedTouches[0].screenX;
-    const currentY = e.type.includes('mouse') ? e.pageY : e.changedTouches[0].screenY;
-    
-    const diffX = Math.abs(currentX - startX);
-    const diffY = Math.abs(currentY - startY);
 
-    // Ha egyértelműen vízszintes a mozgás (X > Y), akkor tiltjuk le a görgetést
-    if (diffX > diffY && diffX > 10) {
+    // Megakadályozzuk az oldal "elúszását" (fehér sáv fix)
+    // Csak akkor vonjuk el az irányítást, ha szélről indult a swipe
+    if (startX < 100 || startX > window.innerWidth - 100 || sbLeft.classList.contains('open') || sbRight.classList.contains('open')) {
         if (e.cancelable) e.preventDefault();
-    } else if (diffY > diffX) {
-        // Ha függőlegesen görget, engedjük el a sávot
-        isDragging = false; 
     }
+};
+
+const endAction = (e) => {
+    if (!isDragging) return;
+
+    const endX = e.type.includes('mouse') ? e.pageX : e.changedTouches[0].screenX;
+    const endY = e.type.includes('mouse') ? e.pageY : e.changedTouches[0].screenY;
+
+    handleAction(endX, endY, startX, startY);
+
+    isDragging = false;
+    document.body.style.cursor = 'default';
 };
 
 // --- FELIRATKOZÁS ---
@@ -1989,7 +1991,6 @@ function initSexyTooltip() {
 // Adatok betöltése
 async function updateTooltipData() {
     const body = document.getElementById('tooltip-tips-body');
-    const latestBets = bets.slice(0, 7);
     if (!body) return;
 
     try {
@@ -2076,7 +2077,7 @@ function handleLeagueClick(id) {
     renderMatches(); 
 }
 // Socket inicializálása
-const socket = (typeof io !== 'undefined') ? io() : null;
+const socket = io();
 
 // --- CHAT RENDSZER ---
 
@@ -2170,10 +2171,10 @@ if (typeof socket !== 'undefined') {
         }
     });
 }
-
     </script>
 </body>
 </html>
+
 
 
 
