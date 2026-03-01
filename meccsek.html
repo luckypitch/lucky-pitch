@@ -723,6 +723,7 @@ let currentLeagueId = 'all'; // Alapból minden liga
 let isFirstLoad = true; // Segédváltozó a legtetejére
 let activeChatId = null; // Itt tároljuk, melyik meccs chatje van épp nyitva
 const chatHistory = {};  // Tárolja az üzeneteket meccsenként        
+        
 
 // --- 2. SEGÉDFÜGGVÉNYEK ---
 function getStatusColor(status) {
@@ -1037,75 +1038,59 @@ function getSmartOdds(match) {
     }
     return result;
 }
+let cachedUserBets = JSON.parse(localStorage.getItem('lp_activeBets')        
 
 // --- 5. MEGJELENÍTÉS ---
 async function renderMatches() {
     const cont = document.getElementById("match-container");
     if (!cont) return;
 
+    // 1. AZONNALI MEGJELENÍTÉS (Cache-ből)
+    // Nem várunk az API-ra, hanem renderelünk azzal, ami van
+    executeRender(cachedUserBets);
+
+    // 2. HÁTTÉRBEN FRISSÍTJÜK A FOGADÁSOKAT (Async)
+    if (typeof Clerk !== 'undefined' && Clerk.user) {
+        fetch(`/api/user/bets?userId=${Clerk.user.id}&t=${Date.now()}`)
+            .then(res => res.json())
+            .then(data => {
+                cachedUserBets = data;
+                localStorage.setItem('lp_activeBets', JSON.stringify(data));
+                // Csak akkor rajzolunk újra, ha tényleg változott valami, 
+                // vagy egyszerűen csak frissítjük a kártyák "bet-section" részét.
+                executeRender(cachedUserBets);
+            })
+            .catch(err => console.warn("Bet fetch error, using cache"));
+    }
+}
+
+function executeRender(userBets) {
+    const cont = document.getElementById("match-container");
     if (!allMatches || allMatches.length === 0) {
-        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3;">${currentLang==='HU'?'ADATOK BETÖLTÉSE...':'LOADING MATCHES...'}</p>`;
+        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3;">ADATOK BETÖLTÉSE...</p>`;
         return;
     }
-
-    // --- 1. FOGADÁSOK LEKÉRÉSE ---
-    let currentUserBets = [];
-    if (typeof Clerk !== 'undefined' && Clerk.user) {
-        try {
-            const response = await fetch(`/api/user/bets?userId=${Clerk.user.id}&t=${Date.now()}`);
-            if (response.ok) {
-                currentUserBets = await response.json();
-                localStorage.setItem('lp_activeBets', JSON.stringify(currentUserBets));
-            } else {
-                currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
-            }
-        } catch (err) {
-            currentUserBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
-        }
-    }
-
-    // --- 2. DÁTUMVÁLASZTÓ ÉS SZŰRÉS ---
-    if (typeof renderDateSelector === 'function') renderDateSelector(); 
 
     const filtered = allMatches.filter(m => {
-        if (!m || !m.utcDate || !m.competition) return false;
         const mDate = m.utcDate.split('T')[0];
         const mLeagueId = String(m.competition.id);
-        const isCorrectDate = (mDate === selectedDate);
-        const isCorrectLeague = (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
-        return isCorrectDate && isCorrectLeague;
+        return (mDate === selectedDate) && (selectedLeagues.size === 0 || selectedLeagues.has(mLeagueId));
     });
 
-    // Ha nincs meccs, kiírjuk és MEGÁLLUNK
     if (filtered.length === 0) {
-        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3; font-family:'Orbitron'; font-size:12px;">NINCS MECCS EKKOR: ${selectedDate}</p>`;
+        cont.innerHTML = `<p style="text-align:center; padding:50px; opacity:0.3; font-family:'Orbitron';">NINCS MECCS EKKOR: ${selectedDate}</p>`;
         return;
     }
 
-    // Rendezés (Javított szintaxis)
-    filtered.sort((a, b) => {
-        const dateA = new Date(a.utcDate).getTime();
-        const dateB = new Date(b.utcDate).getTime();
-        if (dateA !== dateB) return dateA - dateB;
-        return String(a.id).localeCompare(String(b.id));
-    });
-
-    // --- 3. RENDERELÉS ---
+    // MAP FÜGGVÉNY - Optimalizált String építés
     cont.innerHTML = filtered.map(m => {
-        try {
-            const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
-            const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
-            const mDateObj = new Date(m.utcDate);
-            const timeStr = mDateObj.toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
-
-            const score = (isLive || isFinished) && m.score && m.score.fullTime
-                ? `${m.score.fullTime.home}:${m.score.fullTime.away}` 
-                : timeStr;
-
-            const odds = typeof getSmartOdds === 'function' ? getSmartOdds(m) : {h:1.50, d:3.20, a:2.40};
-            const myBet = currentUserBets.find(b => String(b.match_id || b.matchId) === String(m.id));
-            const isFlashing = (typeof flashingMatches !== 'undefined' && flashingMatches.has(String(m.id))) ? 'goal-highlight' : '';
-            const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
+        const isLive = ["IN_PLAY", "LIVE", "PAUSED"].includes(m.status);
+        const isFinished = ["FINISHED", "AWARDED"].includes(m.status);
+        const timeStr = new Date(m.utcDate).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});
+        
+        const score = (isLive || isFinished) ? `${m.score.fullTime.home}:${m.score.fullTime.away}` : timeStr;
+        const myBet = userBets.find(b => String(b.match_id || b.matchId) === String(m.id));
+        const bStatus = myBet ? String(myBet.status).toUpperCase() : null;
 return `
     <div class="match-card ${isFlashing}" id="match-${m.id}" style="display: flex; flex-direction: column; align-items: center; padding: 15px; margin-bottom: 12px; position: relative; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
         ${myBet ? `
@@ -1303,78 +1288,82 @@ async function placeBet(matchId, teamName, odds, type) {
 }
 
 async function checkBetResults() {
-    // 1. Beolvassuk a helyi fogadásokat
     let currentBets = JSON.parse(localStorage.getItem('lp_activeBets') || '[]');
     if (currentBets.length === 0) return;
 
     let changed = false;
 
     for (let bet of currentBets) {
-        // Csak a még nyitott fogadásokat nézzük
         if (bet.status !== 'OPEN') continue;
 
-        // Megkeressük a meccset az élő adatok között
-        const match = allMatches.find(x => String(x.id) === String(bet.matchId));
+        const match = allMatches.find(x => String(x.id) === String(matchIdField(bet)));
 
-        // Ha a meccs véget ért (FINISHED)
         if (match && (match.status === 'FINISHED' || match.status === 'AWARDED')) {
             const homeScore = match.score.fullTime.home;
             const awayScore = match.score.fullTime.away;
-            let actualWinner = '';
-
-            if (homeScore > awayScore) actualWinner = 'H';
-            else if (homeScore < awayScore) actualWinner = 'V';
-            else actualWinner = 'D';
+            let actualWinner = homeScore > awayScore ? 'H' : (homeScore < awayScore ? 'V' : 'D');
 
             if (bet.type === actualWinner) {
-                // --- NYERT! ---
                 const prize = Math.floor(bet.amount * bet.odds);
-                console.log(`GRATULÁLOK! Nyertél ${prize} LP-t a ${bet.teamName} meccsen!`);
-
-                // Jóváírjuk a szerveren és a kliensen is
-                await processWin(prize, bet.matchId);
-                bet.status = 'WON';
+                // FONTOS: Előbb a szerverrel beszéltetjük le, és az Ő válasza alapján frissítünk!
+                const success = await processWinOnServer(prize, bet);
+                if (success) {
+                    bet.status = 'WON';
+                    changed = true;
+                }
             } else {
-                // --- VESZTETT ---
-                console.log(`Sajnos a ${bet.teamName} fogadásod nem jött be.`);
+                // Vesztett fogadásnál nem kell API hívás az egyenleghez, csak státusz váltás
                 bet.status = 'LOST';
+                // Érdemes a szervernek is szólni, hogy lezárult a fogadás vesztesként
+                await markBetAsLost(bet);
+                changed = true;
             }
-            changed = true;
         }
     }
 
-    // Ha történt változás, elmentjük és újrarajzolunk
     if (changed) {
         localStorage.setItem('lp_activeBets', JSON.stringify(currentBets));
+        // Itt már nem hívunk teljes renderMatches-t, csak ha muszáj, 
+        // mert az updateData úgyis megteszi nemsokára.
         if (typeof renderMatches === 'function') renderMatches();
     }
 }
 
-async function processWin(prizeAmount, matchId) {
-    try {
-        // Kiszámoljuk az új egyenleget
-        const newBalance = window.userBalance + prizeAmount;
+// Segédfüggvény az ID mező kezeléséhez (mert néha match_id, néha matchId)
+function matchIdField(bet) {
+    return bet.matchId || bet.match_id;
+}
 
-        const res = await fetch('/api/user/update-balance', {
+async function processWinOnServer(prizeAmount, bet) {
+    try {
+        // NEM a kliens számolja ki a végösszeget (newBalance), 
+        // hanem a SZERVERNEK küldjük el a nyereményt, amit ő hozzáad a meglévőhöz!
+        const res = await fetch('/api/user/add-win', { // Új végpont javasolt: add-win
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId: Clerk.user.id,
-                balance: newBalance,
-                // Opcionálisan küldhetünk egy megjegyzést a szervernek
-                note: `Nyeremény a(z) ${matchId} azonosítójú meccsről`
+                amountToAdd: prizeAmount,
+                matchId: matchIdField(bet)
             })
         });
 
         if (res.ok) {
-            window.userBalance = newBalance;
-            // Frissítjük a kijelzőt
-            const balanceElem = document.getElementById('user-balance');
-            if (balanceElem) balanceElem.innerText = newBalance.toLocaleString();
+            const data = await res.json();
+            // A szerver visszaküldi a TÉNYLEGES új egyenleget
+            window.userBalance = data.newBalance;
+            updateBalanceUI(data.newBalance);
+            return true;
         }
     } catch (err) {
-        console.error("Hiba a nyeremény jóváírásakor:", err);
+        console.error("Nyeremény jóváírás hiba:", err);
     }
+    return false;
+}
+
+function updateBalanceUI(balance) {
+    const span = document.getElementById('user-balance');
+    if (span) span.innerText = Number(balance).toLocaleString();
 }
 
 // --- EGYENLEG MENTÉSE AZ ADATBÁZISBA ---
@@ -1709,9 +1698,11 @@ function initSiteFunctions() {
 
 // 2. A CLERK KEZELÉSE
 async function startApp() {
-    if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
+    // Téma azonnali beállítása
+    if (localStorage.getItem('lp_theme') === 'light') document.body.classList.add('light');
 
-    initSiteFunctions(); // Meccsek azonnal
+    // Alapfunkciók indítása (Meccsek)
+    initSiteFunctions(); 
 
     let t = 0;
     while (typeof Clerk === 'undefined' && t < 50) { 
@@ -1723,55 +1714,55 @@ async function startApp() {
         try {
             await Clerk.load({ routing: 'virtual' });
 
-            // FIGYELŐ JAVÍTÁSA:
+            // FIGYELŐ: Kezeli a be/kijelentkezést, de nem zavarja meg a folyamatban lévő Auth-ot
             Clerk.addListener(({ user, client }) => {
-                // Csak akkor reloadolunk, ha:
-                // 1. Már be volt töltve minden (isInitialized)
-                // 2. NINCS user (user === null)
-                // 3. ÉS nincs folyamatban lévő bejelentkezési kísérlet (client.signIn.status !== 'needs_first_factor')
-                // Ez megvédi az e-mail kódos ablakot!
-
                 const isSigningIn = client && client.signIn && client.signIn.status === 'needs_first_factor';
                 const isSigningUp = client && client.signUp && client.signUp.status === 'missing_requirements';
 
+                // Csak akkor reloadolunk, ha valódi, végleges kijelentkezés történt
                 if (isInitialized && user === null && !isSigningIn && !isSigningUp) {
-                    console.log("Valódi kijelentkezés, mehet a reload.");
+                    console.log("Valódi kijelentkezés, reload...");
+                    
                     localStorage.removeItem('lp_activeBets');
                     window.location.href = '/meccsek.html';
                 }
             });
 
             if (Clerk.user) {
+                // Bejelentkezett állapot: Gomb és Egyenleg
                 const userBtn = document.getElementById('user-button');
                 if(userBtn) {
                     Clerk.mountUserButton(userBtn, {
                         afterSignOutUrl: window.location.origin + '/meccsek.html'
                     });
                 }
-                if (typeof loadInitialBalance === 'function') await loadInitialBalance(); 
+                
+                await loadInitialBalance(); 
+                if (!balanceInterval) balanceInterval = setInterval(loadInitialBalance, 20000);
+
                 const authLinks = document.getElementById('auth-links');
+                clearInterval(balanceInterval); balanceInterval = null;
                 if (authLinks) authLinks.style.display = 'none';
             } else {
+                // Kijelentkezett állapot: Login gomb aktiválása
                 const lb = document.getElementById('login-btn');
                 if (lb) { 
                     lb.style.display = 'block'; 
                     lb.onclick = (e) => {
                         e.preventDefault(); 
-                        e.stopImmediatePropagation();
                         Clerk.openSignIn({ 
                             routing: 'virtual',
-                            afterSignInUrl: window.location.origin + '/meccsek.html',
-                            afterSignUpUrl: window.location.origin + '/meccsek.html'
+                            afterSignInUrl: window.location.origin + '/meccsek.html'
                         });
                     };
                 }
             }
 
-            // Csak a legvégén aktiváljuk a figyelőt
+            // Most már éles a figyelő
             isInitialized = true; 
 
         } catch (error) {
-            console.error("Clerk error:", error);
+            console.error("Clerk betöltési hiba:", error);
         }
     }
 }
@@ -1878,24 +1869,19 @@ const startAction = (e) => {
 
 const moveAction = (e) => {
     if (!isDragging) return;
+    const currentX = e.type.includes('mouse') ? e.pageX : e.changedTouches[0].screenX;
+    const currentY = e.type.includes('mouse') ? e.pageY : e.changedTouches[0].screenY;
+    
+    const diffX = Math.abs(currentX - startX);
+    const diffY = Math.abs(currentY - startY);
 
-    // Megakadályozzuk az oldal "elúszását" (fehér sáv fix)
-    // Csak akkor vonjuk el az irányítást, ha szélről indult a swipe
-    if (startX < 100 || startX > window.innerWidth - 100 || sbLeft.classList.contains('open') || sbRight.classList.contains('open')) {
+    // Ha egyértelműen vízszintes a mozgás (X > Y), akkor tiltjuk le a görgetést
+    if (diffX > diffY && diffX > 10) {
         if (e.cancelable) e.preventDefault();
+    } else if (diffY > diffX) {
+        // Ha függőlegesen görget, engedjük el a sávot
+        isDragging = false; 
     }
-};
-
-const endAction = (e) => {
-    if (!isDragging) return;
-
-    const endX = e.type.includes('mouse') ? e.pageX : e.changedTouches[0].screenX;
-    const endY = e.type.includes('mouse') ? e.pageY : e.changedTouches[0].screenY;
-
-    handleAction(endX, endY, startX, startY);
-
-    isDragging = false;
-    document.body.style.cursor = 'default';
 };
 
 // --- FELIRATKOZÁS ---
@@ -1991,6 +1977,7 @@ function initSexyTooltip() {
 // Adatok betöltése
 async function updateTooltipData() {
     const body = document.getElementById('tooltip-tips-body');
+    const latestBets = bets.slice(0, 7);
     if (!body) return;
 
     try {
@@ -2077,7 +2064,7 @@ function handleLeagueClick(id) {
     renderMatches(); 
 }
 // Socket inicializálása
-const socket = io();
+const socket = (typeof io !== 'undefined') ? io() : null;
 
 // --- CHAT RENDSZER ---
 
@@ -2175,3 +2162,4 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
