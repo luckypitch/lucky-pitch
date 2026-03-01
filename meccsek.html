@@ -900,47 +900,67 @@ function triggerGoalEffect(mId, tName, logo) {
 
 // --- 4. ADATKEZELÉS ---        
 async function checkBetResults() {
-    if (!activeBets || activeBets.length === 0) return;
+    // FONTOS: Győződj meg róla, hogy az activeBets tömbben vannak a fogadások!
+    // Ha a globális változód neve cachedUserBets, akkor használd azt:
+    let betsToCheck = (typeof activeBets !== 'undefined') ? activeBets : cachedUserBets;
+    
+    if (!betsToCheck || betsToCheck.length === 0) return;
 
     let updatedAny = false;
 
-    for (let i = activeBets.length - 1; i >= 0; i--) {
-        const bet = activeBets[i];
+    // Hátulról előre haladunk a törlés miatt
+    for (let i = betsToCheck.length - 1; i >= 0; i--) {
+        const bet = betsToCheck[i];
 
-        // Megkeressük a meccset az élő adatok között
-        const match = allMatches.find(m => String(m.id) === String(bet.matchId));
+        // Megkeressük a meccset az élő adatok (allMatches) között
+        const match = allMatches.find(m => String(m.id) === String(bet.match_id || bet.matchId));
 
-        if (match && match.status === "FINISHED") {
+        // Befejezett státuszok kezelése (API-tól függően több is lehet)
+        const finishedStatuses = ["FINISHED", "AWARDED", "FT"];
+        
+        if (match && finishedStatuses.includes(match.status)) {
             const homeScore = match.score.fullTime.home;
             const awayScore = match.score.fullTime.away;
-            let won = false;
+            let resultStatus = 'LOST'; // Alapértelmezett: vesztett
 
             // Nyert-e a tipp?
+            let won = false;
             if (bet.type === 'H' && homeScore > awayScore) won = true;
             else if (bet.type === 'D' && homeScore === awayScore) won = true;
             else if (bet.type === 'V' && awayScore > homeScore) won = true;
 
             if (won) {
+                resultStatus = 'WON';
                 const prize = Math.floor(bet.amount * bet.odds);
-                const newTotal = window.userBalance + prize;
-
+                
+                // Felugró ablak helyett (ami megakasztja a kódot) javasolt egy toast üzenet
                 alert(`GRATULÁLUNK! 🎉\nA(z) ${match.homeTeam.name} meccsen nyertél ${prize} LP-t!`);
 
-                // Frissítjük a Supabase-t
-                await updateSupabaseBalance(newTotal);
+                // Itt hívjuk meg a szerveroldali egyenleg frissítést
+                if (typeof updateSupabaseBalance === 'function') {
+                    // Javaslat: A szervernek küldd el a matchId-t is, hogy ott is lezárhassa!
+                    await updateSupabaseBalance(prize, true); 
+                }
             } else {
                 alert(`Sajnos nem nyertél... ❌\nA(z) ${match.homeTeam.name} meccs végeredménye: ${homeScore}:${awayScore}`);
             }
 
-            // Töröljük az aktív fogadások közül, mert lezárult
-            activeBets.splice(i, 1);
+            // Eltávolítjuk a helyi listából
+            betsToCheck.splice(i, 1);
             updatedAny = true;
         }
     }
 
     if (updatedAny) {
-        localStorage.setItem('lp_activeBets', JSON.stringify(activeBets));
-        renderMatches();
+        // Frissítjük a LocalStorage-ot a maradék aktív fogadásokkal
+        localStorage.setItem('lp_activeBets', JSON.stringify(betsToCheck));
+        
+        // Ha van ilyen változód, frissítsük azt is
+        if (typeof cachedUserBets !== 'undefined') cachedUserBets = betsToCheck;
+        if (typeof activeBets !== 'undefined') activeBets = betsToCheck;
+
+        // Újrarajzoljuk a meccskártyákat (hogy eltűnjön a fogadás jelzés)
+        if (typeof renderMatches === 'function') renderMatches();
     }
 }
 
@@ -2161,6 +2181,7 @@ if (typeof socket !== 'undefined') {
     </script>
 </body>
 </html>
+
 
 
 
